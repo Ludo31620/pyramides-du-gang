@@ -4,11 +4,16 @@ import { useState } from "react";
 import {
   creerPaquet,
   melangerPaquet,
+  distribuerCartes,
 } from "@/lib/deck";
+
 import PlayingCard from "@/components/PlayingCard";
+import PlayerHand from "@/components/PlayerHand";
 
 export default function DevPage() {
   const [cartes, setCartes] = useState(creerPaquet());
+
+  const { mains, paquetRestant } = distribuerCartes(cartes, 4);
 
   function melanger() {
     setCartes(melangerPaquet(cartes));
@@ -31,13 +36,51 @@ export default function DevPage() {
         Mélanger le paquet
       </button>
 
-      <div className="grid grid-cols-4 gap-4 mt-8">
+      <h2 className="text-3xl font-bold text-yellow-500 mt-10 mb-4">
+        🎴 Paquet complet
+      </h2>
+
+      <div className="grid grid-cols-4 gap-4">
         {cartes.map((carte, index) => (
           <PlayingCard
             key={index}
             carte={carte}
           />
         ))}
+      </div>
+
+      <h2 className="text-3xl font-bold text-yellow-500 mt-12 mb-6">
+        👥 Distribution
+      </h2>
+
+      <PlayerHand
+        nom="Joueur 1"
+        cartes={mains[0]}
+      />
+
+      <PlayerHand
+        nom="Joueur 2"
+        cartes={mains[1]}
+      />
+
+      <PlayerHand
+        nom="Joueur 3"
+        cartes={mains[2]}
+      />
+
+      <PlayerHand
+        nom="Joueur 4"
+        cartes={mains[3]}
+      />
+
+      <div className="mt-10">
+        <h2 className="text-3xl font-bold text-yellow-500">
+          📦 Paquet restant
+        </h2>
+
+        <p className="mt-2 text-xl">
+          {paquetRestant.length} cartes restantes
+        </p>
       </div>
     </main>
   );
