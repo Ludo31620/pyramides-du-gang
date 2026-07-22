@@ -1,7 +1,10 @@
+
 import Logo from "@/components/Logo";
 import Button from "@/components/Button";
 
 export default function Home() {
+
+
   return (
     <main className="min-h-screen bg-[#111111] text-white flex items-center justify-center px-6">
       <div className="w-full max-w-md">
