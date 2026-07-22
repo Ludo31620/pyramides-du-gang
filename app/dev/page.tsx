@@ -5,6 +5,7 @@ import {
   creerPaquet,
   melangerPaquet,
 } from "@/lib/deck";
+import PlayingCard from "@/components/PlayingCard";
 
 export default function DevPage() {
   const [cartes, setCartes] = useState(creerPaquet());
@@ -30,20 +31,12 @@ export default function DevPage() {
         Mélanger le paquet
       </button>
 
-      <div className="grid grid-cols-4 gap-3 mt-8">
+      <div className="grid grid-cols-4 gap-4 mt-8">
         {cartes.map((carte, index) => (
-          <div
+          <PlayingCard
             key={index}
-            className="bg-zinc-800 rounded-xl p-4 text-center"
-          >
-            <p className="text-xl font-bold">
-              {carte.valeur}
-            </p>
-
-            <p className="text-3xl mt-2">
-              {carte.couleur}
-            </p>
-          </div>
+            carte={carte}
+          />
         ))}
       </div>
     </main>
