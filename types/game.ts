@@ -8,4 +8,6 @@ export type Partie = {
   code: string;
   nombreJoueursMax: number;
   joueurs: Joueur[];
+
+  joueurActif: number;
 };

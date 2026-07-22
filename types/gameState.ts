@@ -8,4 +8,6 @@ export type GameState = {
   pyramide: Carte[][];
 
   cartesRestantes: Carte[];
+
+  joueurActif: number;
 };
