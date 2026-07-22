@@ -1,21 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Joueur } from "@/types/game";
 
-type Partie = {
+type PartieLocale = {
   pseudo: string;
   joueurs: number;
   code: string;
 };
 
 export default function Lobby() {
-  const [partie, setPartie] = useState<Partie | null>(null);
+  const [partie, setPartie] = useState<PartieLocale | null>(null);
+  const [joueurs, setJoueurs] = useState<Joueur[]>([]);
 
   useEffect(() => {
     const sauvegarde = sessionStorage.getItem("pyramides-partie");
 
     if (sauvegarde) {
-      setPartie(JSON.parse(sauvegarde));
+      const data = JSON.parse(sauvegarde);
+
+      setPartie(data);
+
+      setJoueurs([
+        {
+          id: "1",
+          pseudo: data.pseudo,
+          hote: true,
+        },
+      ]);
     }
   }, []);
 
@@ -29,13 +41,13 @@ export default function Lobby() {
 
   return (
     <main className="min-h-screen bg-[#111111] text-white flex items-center justify-center px-6">
-      <div className="w-full max-w-md text-center">
+      <div className="w-full max-w-md">
 
-        <h1 className="text-4xl font-bold text-yellow-500">
+        <h1 className="text-4xl font-bold text-yellow-500 text-center">
           🏛️ Lobby
         </h1>
 
-        <div className="mt-8 bg-zinc-900 rounded-xl p-6">
+        <div className="mt-8 bg-zinc-900 rounded-xl p-6 text-center">
 
           <p className="text-gray-400">
             Code de la partie
@@ -51,14 +63,20 @@ export default function Lobby() {
         <div className="mt-6 bg-zinc-900 rounded-xl p-6">
 
           <h2 className="text-xl font-bold">
-            Joueurs (1/{partie.joueurs})
+            Joueurs ({joueurs.length}/{partie.joueurs})
           </h2>
 
-          <div className="mt-4 text-left">
 
-            <p>
-              👑 {partie.pseudo}
-            </p>
+          <div className="mt-4 space-y-3">
+
+            {joueurs.map((joueur) => (
+              <div
+                key={joueur.id}
+                className="bg-zinc-800 rounded-xl p-3"
+              >
+                {joueur.hote ? "👑" : "🎮"} {joueur.pseudo}
+              </div>
+            ))}
 
           </div>
 
