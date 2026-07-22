@@ -3,22 +3,33 @@ import PlayingCard from "./PlayingCard";
 
 type PyramidProps = {
   pyramide: Carte[][];
+  onCardClick?: (
+    ligne: number,
+    colonne: number
+  ) => void;
 };
 
 export default function Pyramid({
   pyramide,
+  onCardClick,
 }: PyramidProps) {
   return (
     <div className="space-y-4">
-      {pyramide.map((ligne, index) => (
+      {pyramide.map((ligne, indexLigne) => (
         <div
-          key={index}
+          key={indexLigne}
           className="flex justify-center gap-3"
         >
-          {ligne.map((carte, i) => (
+          {ligne.map((carte, indexCarte) => (
             <PlayingCard
-              key={i}
+              key={indexCarte}
               carte={carte}
+              onClick={() =>
+                onCardClick?.(
+                  indexLigne,
+                  indexCarte
+                )
+              }
             />
           ))}
         </div>

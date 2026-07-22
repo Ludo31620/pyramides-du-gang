@@ -18,6 +18,7 @@ export type Valeur =
 export type Carte = {
   valeur: Valeur;
   couleur: Couleur;
+  revelee: boolean;
 };
 
 const couleurs: Couleur[] = [
@@ -48,10 +49,11 @@ export function creerPaquet(): Carte[] {
 
   for (const couleur of couleurs) {
     for (const valeur of valeurs) {
-      paquet.push({
-        valeur,
-        couleur,
-      });
+paquet.push({
+  valeur,
+  couleur,
+  revelee: false,
+});
     }
   }
 

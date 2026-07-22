@@ -2,30 +2,34 @@
 
 import { useState } from "react";
 
-import {
-  creerPaquet,
-  melangerPaquet,
-  distribuerCartes,
-} from "@/lib/deck";
-
-import { creerPyramide } from "@/lib/pyramid";
+import { creerPartie } from "@/lib/game";
 
 import PlayingCard from "@/components/PlayingCard";
 import PlayerHand from "@/components/PlayerHand";
 import Pyramid from "@/components/Pyramid";
 
 export default function DevPage() {
-  const [cartes, setCartes] = useState(creerPaquet());
+  const [partie, setPartie] = useState(creerPartie(4));
 
   function melanger() {
-    setCartes(melangerPaquet(cartes));
+    setPartie(creerPartie(4));
   }
 
-  const { mains, paquetRestant } = distribuerCartes(cartes, 4);
+  function retournerCarte(
+    ligne: number,
+    colonne: number
+  ) {
+    const nouvellePyramide = partie.pyramide.map((ligneCartes) =>
+      ligneCartes.map((carte) => ({ ...carte }))
+    );
 
-  const pyramide = creerPyramide(paquetRestant);
+    nouvellePyramide[ligne][colonne].revelee = true;
 
-  const cartesRestantes = paquetRestant.slice(15);
+    setPartie({
+      ...partie,
+      pyramide: nouvellePyramide,
+    });
+  }
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white p-8">
@@ -34,7 +38,7 @@ export default function DevPage() {
       </h1>
 
       <p className="mt-4 text-xl">
-        Nombre de cartes : {cartes.length}
+        Nombre de cartes : {partie.paquet.length}
       </p>
 
       <button
@@ -49,7 +53,7 @@ export default function DevPage() {
       </h2>
 
       <div className="grid grid-cols-4 gap-4">
-        {cartes.map((carte, index) => (
+        {partie.paquet.map((carte, index) => (
           <PlayingCard
             key={index}
             carte={carte}
@@ -63,29 +67,32 @@ export default function DevPage() {
 
       <PlayerHand
         nom="Joueur 1"
-        cartes={mains[0]}
+        cartes={partie.mains[0]}
       />
 
       <PlayerHand
         nom="Joueur 2"
-        cartes={mains[1]}
+        cartes={partie.mains[1]}
       />
 
       <PlayerHand
         nom="Joueur 3"
-        cartes={mains[2]}
+        cartes={partie.mains[2]}
       />
 
       <PlayerHand
         nom="Joueur 4"
-        cartes={mains[3]}
+        cartes={partie.mains[3]}
       />
 
       <h2 className="text-3xl font-bold text-yellow-500 mt-12 mb-6">
         🔺 Pyramide
       </h2>
 
-      <Pyramid pyramide={pyramide} />
+      <Pyramid
+        pyramide={partie.pyramide}
+        onCardClick={retournerCarte}
+      />
 
       <div className="mt-12">
         <h2 className="text-3xl font-bold text-yellow-500">
@@ -93,7 +100,7 @@ export default function DevPage() {
         </h2>
 
         <p className="mt-2 text-xl">
-          {cartesRestantes.length} cartes restantes
+          {partie.cartesRestantes.length} cartes restantes
         </p>
       </div>
     </main>
