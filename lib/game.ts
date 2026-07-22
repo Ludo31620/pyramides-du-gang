@@ -43,3 +43,24 @@ export function creerPartie(
     cartesRestantes,
   };
 }
+
+export function retournerCarte(
+  partie: GameState,
+  ligne: number,
+  colonne: number
+): GameState {
+  const nouvellePyramide = partie.pyramide.map((ligneCartes) =>
+    ligneCartes.map((carte) => ({ ...carte }))
+  );
+
+  if (nouvellePyramide[ligne][colonne].revelee) {
+    return partie;
+  }
+
+  nouvellePyramide[ligne][colonne].revelee = true;
+
+  return {
+    ...partie,
+    pyramide: nouvellePyramide,
+  };
+}

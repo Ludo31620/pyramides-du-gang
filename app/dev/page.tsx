@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 
-import { creerPartie } from "@/lib/game";
+import {
+  creerPartie,
+  retournerCarte,
+} from "@/lib/game";
 
 import PlayingCard from "@/components/PlayingCard";
 import PlayerHand from "@/components/PlayerHand";
@@ -15,20 +18,13 @@ export default function DevPage() {
     setPartie(creerPartie(4));
   }
 
-  function retournerCarte(
+  function handleCardClick(
     ligne: number,
     colonne: number
   ) {
-    const nouvellePyramide = partie.pyramide.map((ligneCartes) =>
-      ligneCartes.map((carte) => ({ ...carte }))
+    setPartie(
+      retournerCarte(partie, ligne, colonne)
     );
-
-    nouvellePyramide[ligne][colonne].revelee = true;
-
-    setPartie({
-      ...partie,
-      pyramide: nouvellePyramide,
-    });
   }
 
   return (
@@ -91,7 +87,7 @@ export default function DevPage() {
 
       <Pyramid
         pyramide={partie.pyramide}
-        onCardClick={retournerCarte}
+        onCardClick={handleCardClick}
       />
 
       <div className="mt-12">
