@@ -1,23 +1,31 @@
 "use client";
 
 import { useState } from "react";
+
 import {
   creerPaquet,
   melangerPaquet,
   distribuerCartes,
 } from "@/lib/deck";
 
+import { creerPyramide } from "@/lib/pyramid";
+
 import PlayingCard from "@/components/PlayingCard";
 import PlayerHand from "@/components/PlayerHand";
+import Pyramid from "@/components/Pyramid";
 
 export default function DevPage() {
   const [cartes, setCartes] = useState(creerPaquet());
 
-  const { mains, paquetRestant } = distribuerCartes(cartes, 4);
-
   function melanger() {
     setCartes(melangerPaquet(cartes));
   }
+
+  const { mains, paquetRestant } = distribuerCartes(cartes, 4);
+
+  const pyramide = creerPyramide(paquetRestant);
+
+  const cartesRestantes = paquetRestant.slice(15);
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white p-8">
@@ -73,13 +81,19 @@ export default function DevPage() {
         cartes={mains[3]}
       />
 
-      <div className="mt-10">
+      <h2 className="text-3xl font-bold text-yellow-500 mt-12 mb-6">
+        🔺 Pyramide
+      </h2>
+
+      <Pyramid pyramide={pyramide} />
+
+      <div className="mt-12">
         <h2 className="text-3xl font-bold text-yellow-500">
-          📦 Paquet restant
+          📦 Cartes restantes
         </h2>
 
         <p className="mt-2 text-xl">
-          {paquetRestant.length} cartes restantes
+          {cartesRestantes.length} cartes restantes
         </p>
       </div>
     </main>
