@@ -285,14 +285,11 @@ export function choisirGorgees(
 
 export function choisirCible(
   partie: GameState,
-  cible:number
+  cible: number
 ): GameState {
-
 
   const gorgées =
     partie.dernierEvenement?.gorgées ?? 0;
-
-
 
   const action = {
 
@@ -308,16 +305,14 @@ export function choisirCible(
 
   };
 
-
-
   return {
 
     ...partie,
 
-    dernierJoueurAction:
-  partie.joueurQuiParle,
+    joueurActionAvantReponse:
+      partie.joueurQuiParle,
 
-    actions:[
+    actions: [
 
       ...partie.actions,
 
@@ -325,26 +320,20 @@ export function choisirCible(
 
     ],
 
-
-
     phase:
       "REPONSE",
-
-
 
     joueurQuiParle:
       cible,
 
-
-
-    dernierEvenement:{
+    dernierEvenement: {
 
       message:
-      `Joueur ${cible+1} doit répondre`,
+        `Joueur ${cible + 1} doit répondre`,
 
       gorgées,
 
-    }
+    },
 
   };
 
