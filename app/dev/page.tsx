@@ -4,135 +4,477 @@ import { useState } from "react";
 
 import {
   creerPartie,
-  retournerCarte,
-  joueurSuivant,
+  retournerCartePyramide,
+  retournerProchaineCarte,
+  passerJoueur,
+  commencerDon,
+  choisirGorgees,
+  choisirCible,
+  reponseCroire,
+  reponseDouter,
+  terminerTour,
+  passerAuJoueurSuivant,
 } from "@/lib/game";
 
-import PlayingCard from "@/components/PlayingCard";
 import PlayerHand from "@/components/PlayerHand";
 import Pyramid from "@/components/Pyramid";
+import ActionPanel from "@/components/ActionPanel";
+import DonPanel from "@/components/DonPanel";
+import TargetPanel from "@/components/TargetPanel";
+import ResponsePanel from "@/components/ResponsePanel";
+
 
 export default function DevPage() {
-  const [partie, setPartie] = useState(creerPartie(4));
 
 
-  function melanger() {
-    setPartie(creerPartie(4));
+  const [partie, setPartie] =
+    useState(
+      creerPartie(4)
+    );
+
+
+
+  function nouvellePartie() {
+
+    setPartie(
+      creerPartie(4)
+    );
+
   }
+
+
 
 
   function handleCardClick(
-    ligne: number,
-    colonne: number
-  ) {
+    ligne:number,
+    colonne:number
+  ){
+
     setPartie(
-      retournerCarte(partie, ligne, colonne)
+      retournerCartePyramide(
+        partie,
+        ligne,
+        colonne
+      )
     );
+
   }
 
 
-  function passerJoueurSuivant() {
+
+
+
+  function handlePasser(){
+
     setPartie(
-      joueurSuivant(partie)
+      passerAuJoueurSuivant(partie)
     );
+
   }
+
+
+
+
+
+  function handleDonner(){
+
+    setPartie(
+      commencerDon(partie)
+    );
+
+  }
+
+
+
+
+
+  function handleChoisirGorgees(
+    nombre:number
+  ){
+
+    setPartie(
+      choisirGorgees(
+        partie,
+        nombre
+      )
+    );
+
+  }
+
+
+
+
+
+  function handleChoisirCible(
+    cible:number
+  ){
+
+    setPartie(
+      choisirCible(
+        partie,
+        cible
+      )
+    );
+
+  }
+
+
+
+
+
+  function handleCroire(){
+
+    setPartie(
+      reponseCroire(partie)
+    );
+
+  }
+
+
+
+
+
+  function handleDouter(){
+
+    setPartie(
+      reponseDouter(partie)
+    );
+
+  }
+
+
+
+
+
+function handleFinTour(){
+
+  const fin =
+    terminerTour(partie);
+
+
+  setPartie(
+    retournerProchaineCarte(fin)
+  );
+
+}
+
+function handleJoueurSuivant(){
+
+  setPartie(
+    passerAuJoueurSuivant(partie)
+  );
+
+}
+
+
 
 
   return (
+
     <main className="min-h-screen bg-zinc-950 text-white p-8">
+
 
       <h1 className="text-4xl font-bold text-yellow-500">
         🧪 Laboratoire
       </h1>
 
 
-      <p className="mt-4 text-xl">
-        Nombre de cartes : {partie.paquet.length}
-      </p>
-
-
-      <div className="mt-6 bg-zinc-900 rounded-xl p-4">
-        <p className="text-xl">
-          🎲 Tour de :
-        </p>
-
-        <p className="text-3xl font-bold text-yellow-500">
-          Joueur {partie.joueurActif + 1}
-        </p>
-
-
-        <button
-          onClick={passerJoueurSuivant}
-          className="
-            mt-4
-            bg-green-500
-            text-black
-            px-6
-            py-3
-            rounded-xl
-            font-bold
-          "
-        >
-          ➡️ Joueur suivant
-        </button>
-      </div>
 
 
       <button
-        onClick={melanger}
+
+        onClick={nouvellePartie}
+
         className="
-          mt-6
-          bg-yellow-500
-          text-black
-          px-6
-          py-3
-          rounded-xl
-          font-bold
+        mt-6
+        bg-yellow-500
+        text-black
+        px-6
+        py-3
+        rounded-xl
+        font-bold
         "
+
       >
-        Mélanger le paquet
+
+        Nouvelle partie
+
       </button>
 
 
-      <h2 className="text-3xl font-bold text-yellow-500 mt-10 mb-4">
-        🎴 Paquet complet
-      </h2>
 
 
-      <div className="grid grid-cols-4 gap-4">
-        {partie.paquet.map((carte, index) => (
-          <PlayingCard
-            key={index}
-            carte={carte}
-          />
-        ))}
+
+      <div className="mt-8 bg-zinc-900 rounded-xl p-5">
+
+
+        <h2 className="text-2xl font-bold">
+          Phase :
+        </h2>
+
+
+        <p className="text-yellow-500 text-3xl font-bold">
+          {partie.phase}
+        </p>
+
+
+
+        {partie.carteActive && (
+
+          <p className="mt-3 text-xl">
+
+            🎴 Carte active :
+
+            {" "}
+
+            {partie.carteActive.valeur}
+
+            {partie.carteActive.couleur}
+
+          </p>
+
+        )}
+
+
       </div>
 
 
-      <h2 className="text-3xl font-bold text-yellow-500 mt-12 mb-6">
-        👥 Distribution
-      </h2>
 
 
-      <PlayerHand
-        nom="Joueur 1"
-        cartes={partie.mains[0]}
-      />
 
-      <PlayerHand
-        nom="Joueur 2"
-        cartes={partie.mains[1]}
-      />
 
-      <PlayerHand
-        nom="Joueur 3"
-        cartes={partie.mains[2]}
-      />
 
-      <PlayerHand
-        nom="Joueur 4"
-        cartes={partie.mains[3]}
-      />
+
+      {partie.phase === "CHOIX" && (
+
+        <ActionPanel
+
+          joueur={
+            partie.joueurQuiParle
+          }
+
+          onDonner={
+            handleDonner
+          }
+
+          onPasser={
+            handlePasser
+          }
+
+        />
+
+      )}
+
+
+
+
+
+
+
+      {partie.phase === "DON" && (
+
+        <DonPanel
+
+          onChoisirGorgees={
+            handleChoisirGorgees
+          }
+
+        />
+
+      )}
+
+
+
+
+
+
+
+      {partie.phase === "CIBLE" && (
+
+        <TargetPanel
+
+          nombreJoueurs={
+            partie.mains.length
+          }
+
+          joueurQuiDonne={
+            partie.joueurQuiParle
+          }
+
+          onChoisirCible={
+            handleChoisirCible
+          }
+
+        />
+
+      )}
+
+
+
+
+
+
+
+      {partie.phase === "REPONSE" && (
+
+        <ResponsePanel
+
+          onCroire={
+            handleCroire
+          }
+
+          onDouter={
+            handleDouter
+          }
+
+        />
+
+      )}
+
+
+
+
+
+
+
+{partie.phase === "RESOLUTION" && (
+
+  <div>
+
+    <button
+
+      onClick={
+        handleFinTour
+      }
+
+      className="
+      mt-6
+      bg-yellow-500
+      text-black
+      px-6
+      py-3
+      rounded-xl
+      font-bold
+      "
+
+    >
+
+      ➡️ Fin du tour
+
+    </button>
+
+
+
+    <button
+
+      onClick={
+        handleJoueurSuivant
+      }
+
+      className="
+      mt-6
+      ml-4
+      bg-yellow-500
+      text-black
+      px-6
+      py-3
+      rounded-xl
+      font-bold
+      "
+
+    >
+
+      ➡️ Joueur suivant
+
+    </button>
+
+
+  </div>
+
+)}
+
+
+
+
+
+
+
+      {partie.dernierEvenement && (
+
+        <div className="mt-6 bg-green-900 rounded-xl p-5">
+
+          <h2 className="text-2xl font-bold">
+            📢 Événement
+          </h2>
+
+
+          <p className="mt-3 text-xl">
+
+            {partie.dernierEvenement.message}
+
+          </p>
+
+
+        </div>
+
+      )}
+
+
+
+
+
+
+
+      <h2 className="text-3xl font-bold text-yellow-500 mt-10 mb-6">
+  👥 Joueurs
+</h2>
+
+
+<div className="mb-8">
+
+  {partie.gorgeesJoueurs.map(
+    (gorgees,index)=>(
+      
+      <p
+        key={index}
+        className="text-xl mt-2"
+      >
+
+        Joueur {index + 1} 🍺 :
+        {" "}
+        {gorgees} gorgée(s)
+
+      </p>
+
+    )
+  )}
+
+</div>
+
+
+
+{partie.mains.map(
+
+  (main,index)=>(
+
+    <PlayerHand
+
+      key={index}
+
+      nom={`Joueur ${index + 1}`}
+
+      cartes={main}
+
+    />
+
+  )
+
+)}
+
+
+
+
+
 
 
       <h2 className="text-3xl font-bold text-yellow-500 mt-12 mb-6">
@@ -140,25 +482,26 @@ export default function DevPage() {
       </h2>
 
 
+
+
+
       <Pyramid
-        pyramide={partie.pyramide}
-        onCardClick={handleCardClick}
+
+        pyramide={
+          partie.pyramide
+        }
+
+        onCardClick={
+          handleCardClick
+        }
+
       />
 
 
-      <div className="mt-12">
-
-        <h2 className="text-3xl font-bold text-yellow-500">
-          📦 Cartes restantes
-        </h2>
-
-
-        <p className="mt-2 text-xl">
-          {partie.cartesRestantes.length} cartes restantes
-        </p>
-
-      </div>
 
     </main>
+
   );
+
 }
+
