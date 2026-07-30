@@ -24,12 +24,53 @@ type JoinRoomPayload = {
   code: string;
 };
 
+type GetRoomPayload = {
+  code: string;
+};
+
 type StartRoomPayload = {
   code: string;
 };
 
 type RoomCallback = (
   result: RoomResult
+) => void;
+
+type GetRoomResult =
+  | {
+      success: true;
+      room: PublicRoom;
+      playerId: string;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+type GetRoomCallback = (
+  result: GetRoomResult
+) => void;
+
+type GetGamePayload = {
+  code: string;
+};
+
+type GameActionPayload = {
+  code: string;
+  action: GameAction;
+};
+
+type GameResult =
+  | {
+      success: true;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+type GameCallback = (
+  result: GameResult
 ) => void;
 
 type StartRoomCallback = (
@@ -141,10 +182,9 @@ function diffuserEtatJeu(
     }
 
     const playerState =
-      gameRoom
-        .getStateForPlayer(
-          playerIndex
-        );
+      gameRoom.getStateForPlayer(
+        playerIndex
+      );
 
     playerSocket.emit(
       "game:state",
@@ -317,6 +357,99 @@ async function demarrerServeur(): Promise<void> {
       );
 
       socket.on(
+        "room:get",
+        (
+          payload:
+            GetRoomPayload,
+          callback:
+            GetRoomCallback
+        ) => {
+          try {
+            const code =
+              payload?.code ?? "";
+
+            const room =
+              roomManager.getRoom(
+                code
+              );
+
+            if (!room) {
+              callback({
+                success: false,
+                error:
+                  "Cette partie n'existe pas.",
+              });
+
+              return;
+            }
+
+            const playerIndex =
+              roomManager
+                .getPlayerIndexBySocket(
+                  room.code,
+                  socket.id
+                );
+
+            if (
+              playerIndex === null
+            ) {
+              callback({
+                success: false,
+                error:
+                  "Le serveur n'a pas pu identifier ton joueur.",
+              });
+
+              return;
+            }
+
+            const player =
+              room.players[
+                playerIndex
+              ];
+
+            if (!player) {
+              callback({
+                success: false,
+                error:
+                  "Le joueur est introuvable dans cette partie.",
+              });
+
+              return;
+            }
+
+            rejoindreSalonSocket(
+              socket,
+              room.code
+            );
+
+            callback({
+              success: true,
+              room,
+              playerId:
+                player.id,
+            });
+
+            console.log(
+              `🔄 Salon synchronisé : ${room.code} pour ${player.pseudo}`
+            );
+          } catch (
+            error: unknown
+          ) {
+            console.error(
+              "Erreur pendant la récupération du salon :",
+              error
+            );
+
+            callback({
+              success: false,
+              error:
+                "Impossible de synchroniser la partie.",
+            });
+          }
+        }
+      );
+
+      socket.on(
         "room:start",
         (
           payload:
@@ -357,8 +490,7 @@ async function demarrerServeur(): Promise<void> {
               "game:started",
               {
                 code:
-                  result.room
-                    .code,
+                  result.room.code,
               }
             );
 
@@ -387,6 +519,201 @@ async function demarrerServeur(): Promise<void> {
           }
         }
       );
+
+socket.on(
+  "game:get",
+  (
+    payload:
+      GetGamePayload,
+    callback:
+      GameCallback
+  ) => {
+    try {
+      const code =
+        payload?.code ?? "";
+
+      const gameRoom =
+        roomManager.getGameRoom(
+          code
+        );
+
+      if (!gameRoom) {
+        callback({
+          success: false,
+          error:
+            "La partie n'est pas démarrée ou n'existe plus.",
+        });
+
+        return;
+      }
+
+      const playerIndex =
+        roomManager
+          .getPlayerIndexBySocket(
+            code,
+            socket.id
+          );
+
+      if (
+        playerIndex === null
+      ) {
+        callback({
+          success: false,
+          error:
+            "Le serveur n'a pas pu identifier ton joueur.",
+        });
+
+        return;
+      }
+
+      rejoindreSalonSocket(
+        socket,
+        gameRoom.code
+      );
+
+      const playerState =
+        gameRoom
+          .getStateForPlayer(
+            playerIndex
+          );
+
+      socket.emit(
+        "game:state",
+        playerState
+      );
+
+      callback({
+        success: true,
+      });
+
+      console.log(
+        `🎯 État du jeu synchronisé pour le joueur ${playerIndex + 1} dans ${gameRoom.code}`
+      );
+    } catch (
+      error: unknown
+    ) {
+      console.error(
+        "Erreur pendant la récupération de l'état du jeu :",
+        error
+      );
+
+      callback({
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Impossible de synchroniser le jeu.",
+      });
+    }
+  }
+);
+
+socket.on(
+  "game:action",
+  (
+    payload:
+      GameActionPayload,
+    callback:
+      GameCallback
+  ) => {
+    try {
+      const code =
+        payload?.code ?? "";
+
+      const action =
+        payload?.action;
+
+      if (!action) {
+        callback({
+          success: false,
+          error:
+            "L'action reçue est invalide.",
+        });
+
+        return;
+      }
+
+      const gameRoom =
+        roomManager.getGameRoom(
+          code
+        );
+
+      if (!gameRoom) {
+        callback({
+          success: false,
+          error:
+            "La partie n'est pas démarrée ou n'existe plus.",
+        });
+
+        return;
+      }
+
+      const playerIndex =
+        roomManager
+          .getPlayerIndexBySocket(
+            code,
+            socket.id
+          );
+
+      if (
+        playerIndex === null
+      ) {
+        callback({
+          success: false,
+          error:
+            "Le serveur n'a pas pu identifier ton joueur.",
+        });
+
+        return;
+      }
+
+      gameRoom.dispatchForPlayer(
+        playerIndex,
+        action
+      );
+
+      diffuserEtatJeu(
+        io,
+        roomManager,
+        gameRoom.code
+      );
+
+      callback({
+        success: true,
+      });
+
+      console.log(
+        `🎮 ${action.type} exécutée par le joueur ${playerIndex + 1} dans ${gameRoom.code}`
+      );
+    } catch (
+      error: unknown
+    ) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Cette action est impossible.";
+
+      console.error(
+        "Action de jeu refusée :",
+        error
+      );
+
+      socket.emit(
+        "game:error",
+        {
+          error:
+            message,
+        }
+      );
+
+      callback({
+        success: false,
+        error:
+          message,
+      });
+    }
+  }
+);
 
       socket.on(
         "disconnect",
@@ -437,6 +764,10 @@ async function demarrerServeur(): Promise<void> {
     () => {
       console.log(
         `🚀 Serveur disponible sur http://localhost:${port}`
+      );
+
+      console.log(
+        `📱 Accès réseau sur http://192.168.1.53:${port}`
       );
 
       console.log(

@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto";
-
 import { GameRoom } from "./GameRoom";
 
 import type {
@@ -14,7 +12,7 @@ import type {
 } from "./types";
 
 const MIN_PLAYERS = 2;
-const MAX_PLAYERS = 10;
+const MAX_PLAYERS = 9;
 
 export class RoomManager {
   private readonly rooms =
@@ -51,7 +49,7 @@ export class RoomManager {
       return {
         success: false,
         error:
-          "Le nombre de joueurs doit être compris entre 2 et 10.",
+          "Le nombre de joueurs doit être compris entre 2 et 9.",
       };
     }
 
@@ -462,14 +460,39 @@ export class RoomManager {
     }
   ): RoomPlayer {
     return {
-      id: randomUUID(),
+      id:
+        this.generatePlayerId(),
       socketId:
         input.socketId,
-      pseudo: input.pseudo,
-      isHost: input.isHost,
+      pseudo:
+        input.pseudo,
+      isHost:
+        input.isHost,
       connectedAt:
         Date.now(),
     };
+  }
+
+  private generatePlayerId(): string {
+    const timestamp =
+      Date.now().toString(36);
+
+    const randomPart =
+      Math.random()
+        .toString(36)
+        .slice(2, 12);
+
+    const secondRandomPart =
+      Math.random()
+        .toString(36)
+        .slice(2, 12);
+
+    return [
+      "player",
+      timestamp,
+      randomPart,
+      secondRandomPart,
+    ].join("-");
   }
 
   private generateUniqueCode(): string {
@@ -548,7 +571,8 @@ export class RoomManager {
     room: Room
   ): PublicRoom {
     return {
-      code: room.code,
+      code:
+        room.code,
       status:
         room.status,
       maxPlayers:
@@ -557,7 +581,8 @@ export class RoomManager {
       players:
         room.players.map(
           (player) => ({
-            id: player.id,
+            id:
+              player.id,
             pseudo:
               player.pseudo,
             isHost:

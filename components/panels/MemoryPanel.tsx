@@ -33,10 +33,10 @@ export default function MemoryPanel({
   const isUrgent =
     remainingSeconds <= 10;
 
-  const cards =
-    state.players[
-      state.turn.currentPlayer
-    ] ?? [];
+const cards =
+  state.players[
+    state.viewerPlayerIndex
+  ] ?? [];
 
   return (
     <section className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900 p-5 shadow-2xl sm:p-8">

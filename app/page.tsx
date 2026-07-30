@@ -57,11 +57,15 @@ const RULES = [
 export default function HomePage() {
   const router = useRouter();
 
-  function handleStartGame() {
+  function handleCreateGame(): void {
     router.push("/creer");
   }
 
-  function handleDiscoverRules() {
+  function handleJoinGame(): void {
+    router.push("/rejoindre");
+  }
+
+  function handleDiscoverRules(): void {
     document
       .getElementById("regles")
       ?.scrollIntoView({
@@ -305,18 +309,17 @@ export default function HomePage() {
               className="
                 mx-auto
                 mt-9
-                flex
+                grid
                 max-w-md
-                flex-col
                 gap-3
-                sm:flex-row
+                sm:grid-cols-2
                 lg:mx-0
               "
             >
               <Button
                 size="lg"
                 fullWidth
-                onClick={handleStartGame}
+                onClick={handleCreateGame}
                 rightIcon={
                   <span aria-hidden="true">
                     →
@@ -330,10 +333,21 @@ export default function HomePage() {
                 variant="secondary"
                 size="lg"
                 fullWidth
-                onClick={handleDiscoverRules}
+                onClick={handleJoinGame}
               >
-                Voir les règles
+                Rejoindre une partie
               </Button>
+
+              <div className="sm:col-span-2">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  fullWidth
+                  onClick={handleDiscoverRules}
+                >
+                  Voir les règles
+                </Button>
+              </div>
             </motion.div>
 
             <motion.div
@@ -362,9 +376,11 @@ export default function HomePage() {
               "
             >
               <span>De 2 à 9 joueurs</span>
+
               <span className="hidden text-[#FFD166] sm:inline">
                 •
               </span>
+
               <span>Chacun joue sur son téléphone</span>
             </motion.div>
           </div>
@@ -619,6 +635,7 @@ export default function HomePage() {
               "
             >
               Trois étapes.
+
               <span className="block text-[#FFD166]">
                 Une seule vérité.
               </span>
@@ -699,14 +716,23 @@ export default function HomePage() {
               duration: theme.animation.normal,
               ease: theme.animation.easing,
             }}
-            className="mx-auto mt-12 max-w-md"
+            className="mx-auto mt-12 grid max-w-md gap-3"
           >
             <Button
               size="lg"
               fullWidth
-              onClick={handleStartGame}
+              onClick={handleCreateGame}
             >
-              Ouvrir le dossier
+              Créer une partie
+            </Button>
+
+            <Button
+              variant="secondary"
+              size="lg"
+              fullWidth
+              onClick={handleJoinGame}
+            >
+              Rejoindre une partie
             </Button>
           </motion.div>
         </section>

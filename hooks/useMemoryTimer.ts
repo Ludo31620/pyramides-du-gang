@@ -14,10 +14,23 @@ export function useMemoryTimer(): void {
     dispatch,
   } = useGame();
 
+  const phase =
+    state?.phase ?? null;
+
+  const remainingSeconds =
+    state?.memory.remainingSeconds ?? 0;
+
+  const viewerPlayerIndex =
+    state?.viewerPlayerIndex ?? null;
+
+  const viewerIsHost =
+    viewerPlayerIndex === 0;
+
   useEffect(() => {
     if (
-      state.phase !== "MEMORY" ||
-      state.memory.remainingSeconds <= 0
+      phase !== "MEMORY" ||
+      remainingSeconds <= 0 ||
+      !viewerIsHost
     ) {
       return;
     }
@@ -35,8 +48,9 @@ export function useMemoryTimer(): void {
       );
     };
   }, [
-    state.phase,
-    state.memory.remainingSeconds,
+    phase,
+    remainingSeconds,
+    viewerIsHost,
     dispatch,
   ]);
 }
