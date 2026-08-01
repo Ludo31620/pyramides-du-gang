@@ -78,7 +78,8 @@ function isAnswerAllowed(
       );
 
     default: {
-      const exhaustiveCheck: never =
+      const exhaustiveCheck:
+        never =
         question;
 
       throw new Error(
@@ -100,8 +101,14 @@ function checkAnswer(
         isRed(newCard);
 
       return (
-        (answer === "RED" && red) ||
-        (answer === "BLACK" && !red)
+        (
+          answer === "RED" &&
+          red
+        ) ||
+        (
+          answer === "BLACK" &&
+          !red
+        )
       );
     }
 
@@ -116,13 +123,18 @@ function checkAnswer(
       }
 
       const newValue =
-        VALUE_ORDER[newCard.valeur];
+        VALUE_ORDER[
+          newCard.valeur
+        ];
 
       const firstValue =
-        VALUE_ORDER[firstCard.valeur];
+        VALUE_ORDER[
+          firstCard.valeur
+        ];
 
       if (
-        newValue === firstValue
+        newValue ===
+        firstValue
       ) {
         return false;
       }
@@ -130,11 +142,13 @@ function checkAnswer(
       return (
         (
           answer === "HIGHER" &&
-          newValue > firstValue
+          newValue >
+            firstValue
         ) ||
         (
           answer === "LOWER" &&
-          newValue < firstValue
+          newValue <
+            firstValue
         )
       );
     }
@@ -156,13 +170,19 @@ function checkAnswer(
       }
 
       const firstValue =
-        VALUE_ORDER[firstCard.valeur];
+        VALUE_ORDER[
+          firstCard.valeur
+        ];
 
       const secondValue =
-        VALUE_ORDER[secondCard.valeur];
+        VALUE_ORDER[
+          secondCard.valeur
+        ];
 
       const newValue =
-        VALUE_ORDER[newCard.valeur];
+        VALUE_ORDER[
+          newCard.valeur
+        ];
 
       const minimum =
         Math.min(
@@ -177,15 +197,20 @@ function checkAnswer(
         );
 
       const inside =
-        newValue > minimum &&
-        newValue < maximum;
+        newValue >
+          minimum &&
+        newValue <
+          maximum;
 
       const outside =
-        newValue < minimum ||
-        newValue > maximum;
+        newValue <
+          minimum ||
+        newValue >
+          maximum;
 
       if (
-        answer === "INSIDE"
+        answer ===
+        "INSIDE"
       ) {
         return inside;
       }
@@ -197,22 +222,26 @@ function checkAnswer(
       switch (answer) {
         case "SPADES":
           return (
-            newCard.couleur === "♠"
+            newCard.couleur ===
+            "♠"
           );
 
         case "HEARTS":
           return (
-            newCard.couleur === "♥"
+            newCard.couleur ===
+            "♥"
           );
 
         case "DIAMONDS":
           return (
-            newCard.couleur === "♦"
+            newCard.couleur ===
+            "♦"
           );
 
         case "CLUBS":
           return (
-            newCard.couleur === "♣"
+            newCard.couleur ===
+            "♣"
           );
 
         default:
@@ -221,7 +250,8 @@ function checkAnswer(
     }
 
     default: {
-      const exhaustiveCheck: never =
+      const exhaustiveCheck:
+        never =
         question;
 
       throw new Error(
@@ -238,7 +268,9 @@ function createHistoryEvent(
   return {
     player,
     message,
-    timestamp: Date.now(),
+
+    timestamp:
+      Date.now(),
   };
 }
 
@@ -250,22 +282,15 @@ function finishDistributionStep(
     question,
   } = state.distribution;
 
-  if (question < 3) {
-    return {
-      ...state,
-
-      distribution: {
-        ...state.distribution,
-
-        question: (
-          question + 1
-        ) as DistributionQuestion,
-
-        awaitingGive: false,
-      },
-    };
-  }
-
+  /*
+   * Tant qu’il reste un joueur dans
+   * le tour de table actuel, on garde
+   * la même question et on passe au
+   * joueur suivant.
+   *
+   * Exemple :
+   * J1 Q1 → J2 Q1 → J3 Q1.
+   */
   if (
     currentPlayer <
     state.players.length - 1
@@ -279,24 +304,96 @@ function finishDistributionStep(
         currentPlayer:
           currentPlayer + 1,
 
-        question: 0,
+        question,
 
-        awaitingGive: false,
+        awaitingGive:
+          false,
+
+        /*
+         * Le résultat du joueur précédent
+         * ne doit pas apparaître sur
+         * l’écran du joueur suivant.
+         */
+        lastResult:
+          null,
+
+        /*
+         * La notification de gorgée reste
+         * disponible afin que la cible
+         * puisse recevoir son animation.
+         */
+        lastDrink:
+          state.distribution
+            .lastDrink,
       },
     };
   }
 
+  /*
+   * Le dernier joueur vient de répondre
+   * à la question actuelle.
+   *
+   * S’il reste une question, on revient
+   * au premier joueur et on avance
+   * d’une question.
+   *
+   * Exemple :
+   * J3 Q1 → J1 Q2.
+   */
+  if (
+    question < 3
+  ) {
+    return {
+      ...state,
+
+      distribution: {
+        ...state.distribution,
+
+        currentPlayer: 0,
+
+        question: (
+          question + 1
+        ) as DistributionQuestion,
+
+        awaitingGive:
+          false,
+
+        lastResult:
+          null,
+
+        lastDrink:
+          state.distribution
+            .lastDrink,
+      },
+    };
+  }
+
+  /*
+   * Le dernier joueur vient de terminer
+   * la quatrième question.
+   *
+   * La distribution est terminée :
+   * on crée la pyramide et on démarre
+   * la phase de mémorisation.
+   */
   const pyramid =
-    creerPyramide(state.deck);
+    creerPyramide(
+      state.deck
+    );
 
   const totalCards =
     pyramid.reduce(
-      (total, row) =>
-        total + row.length,
+      (
+        total,
+        row
+      ) =>
+        total +
+        row.length,
       0
     );
 
-  return {
+  const memoryState:
+    GameState = {
     ...state,
 
     pyramid,
@@ -312,7 +409,22 @@ function finishDistributionStep(
 
     distribution: {
       ...state.distribution,
-      awaitingGive: false,
+
+      awaitingGive:
+        false,
+
+      lastResult:
+        null,
+
+      /*
+       * On conserve la dernière gorgée
+       * pendant le passage à MEMORY afin
+       * que la cible reçoive bien
+       * sa notification.
+       */
+      lastDrink:
+        state.distribution
+          .lastDrink,
     },
 
     turn: {
@@ -324,10 +436,12 @@ function finishDistributionStep(
         ).keys(),
       ],
 
-      pendingAction: null,
+      pendingAction:
+        null,
     },
 
-    phase: "MEMORY",
+    phase:
+      "MEMORY",
 
     history: [
       ...state.history,
@@ -338,6 +452,14 @@ function finishDistributionStep(
       ),
     ],
   };
+
+  /*
+   * Initialise le compte à rebours
+   * et les jokers de mémorisation.
+   */
+  return startMemory(
+    memoryState
+  );
 }
 
 export function answerDistribution(
@@ -354,7 +476,8 @@ export function answerDistribution(
   }
 
   if (
-    state.distribution.awaitingGive
+    state.distribution
+      .awaitingGive
   ) {
     throw new Error(
       "Le joueur doit d’abord donner sa gorgée."
@@ -388,6 +511,15 @@ export function answerDistribution(
     );
   }
 
+  /*
+   * Avec la distribution par tours
+   * de table :
+   *
+   * question 0 → aucune carte ;
+   * question 1 → une carte ;
+   * question 2 → deux cartes ;
+   * question 3 → trois cartes.
+   */
   if (
     playerCards.length !==
     question
@@ -418,9 +550,13 @@ export function answerDistribution(
 
   const players =
     state.players.map(
-      (cards, index) => {
+      (
+        cards,
+        index
+      ) => {
         if (
-          index !== currentPlayer
+          index !==
+          currentPlayer
         ) {
           return cards;
         }
@@ -433,14 +569,21 @@ export function answerDistribution(
     );
 
   const result = {
-    player: currentPlayer,
+    player:
+      currentPlayer,
+
     question,
+
     answer,
-    card: drawnCard,
+
+    card:
+      drawnCard,
+
     correct,
   };
 
-  const baseState: GameState = {
+  const baseState:
+    GameState = {
     ...state,
 
     players,
@@ -457,9 +600,9 @@ export function answerDistribution(
       lastResult:
         result,
 
-      /**
+      /*
        * Une nouvelle réponse efface
-       * l’ancienne notification de gorgée.
+       * l’ancienne notification.
        */
       lastDrink:
         null,
@@ -482,6 +625,11 @@ export function answerDistribution(
     ],
   };
 
+  /*
+   * Après une bonne réponse, le joueur
+   * doit choisir une cible avant que
+   * la distribution continue.
+   */
   if (correct) {
     return baseState;
   }
@@ -490,7 +638,9 @@ export function answerDistribution(
     ...baseState.drinks,
   ];
 
-  drinks[currentPlayer] += 1;
+  drinks[
+    currentPlayer
+  ] += 1;
 
   return finishDistributionStep({
     ...baseState,
@@ -512,8 +662,10 @@ export function giveDistributionDrink(
   }
 
   if (
-    !state.distribution.awaitingGive ||
-    !state.distribution.lastResult
+    !state.distribution
+      .awaitingGive ||
+    !state.distribution
+      .lastResult
       ?.correct
   ) {
     throw new Error(
@@ -522,7 +674,9 @@ export function giveDistributionDrink(
   }
 
   if (
-    !Number.isInteger(target) ||
+    !Number.isInteger(
+      target
+    ) ||
     target < 0 ||
     target >=
       state.players.length
@@ -537,7 +691,8 @@ export function giveDistributionDrink(
       .currentPlayer;
 
   if (
-    target === giver
+    target ===
+    giver
   ) {
     throw new Error(
       "Un joueur ne peut pas se donner sa propre gorgée."
@@ -550,7 +705,8 @@ export function giveDistributionDrink(
 
   drinks[target] += 1;
 
-  const updatedState: GameState = {
+  const updatedState:
+    GameState = {
     ...state,
 
     drinks,

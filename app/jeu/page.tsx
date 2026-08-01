@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -9,11 +10,15 @@ import {
   useRouter,
 } from "next/navigation";
 
-import ActionPanel from "@/components/panels/ActionPanel";
-import CurrentCard from "@/components/board/CurrentCard";
-import GameHeader from "@/components/layout/GameHeader";
-import PlayerList from "@/components/players/PlayerList";
+import {
+  AnimatePresence,
+} from "framer-motion";
+
+
 import PyramidBoard from "@/components/board/PyramidBoard";
+import GameAnnouncement from "@/components/game/GameAnnouncement";
+import ActionPanel from "@/components/panels/ActionPanel";
+import PlayerDrawer from "@/components/players/PlayerDrawer";
 
 import GameProvider, {
   useGame,
@@ -23,162 +28,24 @@ import {
   useMemoryTimer,
 } from "@/hooks/useMemoryTimer";
 
+import {
+  lireSessionPartie,
+} from "@/lib/gameSession";
+
 import type {
   Phase,
 } from "@/lib/gameEngine/types";
 
-const MIN_PLAYER_COUNT = 2;
-const MAX_PLAYER_COUNT = 9;
-
-interface StoredPlayer {
-  id?: string;
-  pseudo?: string;
-  hote?: boolean;
-  isHost?: boolean;
-}
-
-interface StoredGame {
-  code?: string;
-  roomCode?: string;
-  salonCode?: string;
-
-  joueurs?: StoredPlayer[];
-  players?: StoredPlayer[];
-
-  playerCount?: number;
-  nombreJoueurs?: number;
-}
-
 interface StoredGameInfo {
   roomCode: string;
-  playerCount: number;
   playerNames: string[];
 }
 
-function getStoredGameInfo():
-  | StoredGameInfo
-  | null {
-  const storedGame =
-    sessionStorage.getItem(
-      "pyramides-partie"
-    );
-
-  if (!storedGame) {
-    return null;
-  }
-
-  try {
-    const parsedGame =
-      JSON.parse(
-        storedGame
-      ) as StoredGame;
-
-    const players =
-      Array.isArray(
-        parsedGame.joueurs
-      )
-        ? parsedGame.joueurs
-        : Array.isArray(
-              parsedGame.players
-            )
-          ? parsedGame.players
-          : [];
-
-    let playerCount:
-      | number
-      | null =
-      players.length > 0
-        ? players.length
-        : null;
-
-    if (
-      playerCount === null &&
-      typeof parsedGame
-        .playerCount ===
-        "number"
-    ) {
-      playerCount =
-        parsedGame.playerCount;
-    }
-
-    if (
-      playerCount === null &&
-      typeof parsedGame
-        .nombreJoueurs ===
-        "number"
-    ) {
-      playerCount =
-        parsedGame
-          .nombreJoueurs;
-    }
-
-    const roomCode =
-      parsedGame.code ??
-      parsedGame.roomCode ??
-      parsedGame.salonCode ??
-      "";
-
-    const normalizedRoomCode =
-      roomCode
-        .trim()
-        .toUpperCase();
-
-    if (
-      !/^PG-\d{4}$/.test(
-        normalizedRoomCode
-      )
-    ) {
-      return null;
-    }
-
-    if (
-      playerCount === null ||
-      !Number.isInteger(
-        playerCount
-      ) ||
-      playerCount <
-        MIN_PLAYER_COUNT ||
-      playerCount >
-        MAX_PLAYER_COUNT
-    ) {
-      return null;
-    }
-
-    const playerNames =
-      Array.from(
-        {
-          length:
-            playerCount,
-        },
-        (
-          _,
-          playerIndex
-        ) => {
-          const pseudo =
-            players[
-              playerIndex
-            ]?.pseudo?.trim();
-
-          return (
-            pseudo ||
-            `Joueur ${
-              playerIndex + 1
-            }`
-          );
-        }
-      );
-
-    return {
-      roomCode:
-        normalizedRoomCode,
-
-      playerCount,
-
-      playerNames,
-    };
-  } catch {
-    return null;
-  }
+interface AnnouncementState {
+  announcementKey: number;
+  eyebrow?: string;
+  title: string;
+  icon?: string;
 }
 
 function getActivePlayerIndex(
@@ -191,19 +58,23 @@ function getActivePlayerIndex(
 ): number | null {
   switch (phase) {
     case "DISTRIBUTION":
-      return state
-        .distribution
-        .currentPlayer;
+      return (
+        state.distribution
+          .currentPlayer
+      );
 
     case "PLAYER_TURN":
-      return state.turn
-        .currentPlayer;
+      return (
+        state.turn
+          .currentPlayer
+      );
 
     case "PLAYER_RESPONSE":
       return (
         state.turn
           .pendingAction
-          ?.target ?? null
+          ?.target ??
+        null
       );
 
     default:
@@ -231,7 +102,9 @@ function WaitingForPlayer({
       </h2>
 
       <p className="mt-3 text-sm leading-6 text-zinc-400">
-        La partie continuera automatiquement dès que sa décision sera prise.
+        La partie continuera
+        automatiquement dès que sa
+        décision sera prise.
       </p>
     </section>
   );
@@ -244,7 +117,8 @@ function GameLoadingScreen() {
         <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-yellow-400 border-r-transparent" />
 
         <p className="mt-4 text-sm font-semibold text-zinc-400">
-          Synchronisation de la partie...
+          Synchronisation de la
+          partie...
         </p>
       </div>
     </main>
@@ -265,7 +139,204 @@ function GameScreen({
     refreshState,
   } = useGame();
 
+  const [
+    announcement,
+    setAnnouncement,
+  ] =
+    useState<AnnouncementState | null>(
+      null
+    );
+
+  const initializedRef =
+    useRef(false);
+
+  const previousPhaseRef =
+    useRef<Phase | null>(
+      null
+    );
+
+  const previousActivePlayerRef =
+    useRef<number | null>(
+      null
+    );
+
+
+
+  const previousDrinkRef =
+    useRef<string | null>(
+      null
+    );
+
   useMemoryTimer();
+
+  useEffect(() => {
+    if (!state) {
+      return;
+    }
+
+    const currentPhase =
+      state.phase;
+
+    const currentActivePlayer =
+      getActivePlayerIndex(
+        currentPhase,
+        state
+      );
+
+    const currentRevealedCards =
+      state.progress
+        .revealedCards;
+
+    const lastDrink =
+      state.distribution
+        .lastDrink;
+
+    const currentDrinkId =
+      lastDrink
+        ? `${lastDrink.giver}-${lastDrink.target}-${state.history.length}`
+        : null;
+
+    /*
+     * Premier état reçu après l’ouverture
+     * de la page ou une reconnexion.
+     *
+     * Les valeurs sont mémorisées sans
+     * déclencher d’annonce artificielle.
+     */
+    if (!initializedRef.current) {
+      initializedRef.current =
+        true;
+
+      previousPhaseRef.current =
+        currentPhase;
+
+      previousActivePlayerRef.current =
+        currentActivePlayer;
+
+
+
+      previousDrinkRef.current =
+        currentDrinkId;
+
+      return;
+    }
+
+    const previousPhase =
+      previousPhaseRef.current;
+
+    const previousActivePlayer =
+      previousActivePlayerRef.current;
+
+
+
+    const phaseChanged =
+      previousPhase !==
+      currentPhase;
+
+
+
+    const viewerPlayerIndex =
+      state.viewerPlayerIndex;
+
+    const newDrinkNotification =
+      currentDrinkId !== null &&
+      currentDrinkId !==
+        previousDrinkRef.current &&
+      lastDrink?.target ===
+        viewerPlayerIndex;
+
+    const viewerBecameActive =
+      currentActivePlayer ===
+        viewerPlayerIndex &&
+      (
+        previousActivePlayer !==
+          viewerPlayerIndex ||
+        phaseChanged
+      );
+
+    if (newDrinkNotification) {
+      setAnnouncement({
+        announcementKey:
+          Date.now(),
+
+        eyebrow:
+          "Distribution",
+
+        title:
+          "Tu bois 1 gorgée !",
+
+        icon:
+          "🍺",
+      });
+    } else if (
+      phaseChanged &&
+      currentPhase ===
+        "MEMORY"
+    ) {
+      setAnnouncement({
+        announcementKey:
+          Date.now(),
+
+        eyebrow:
+          "Préparation",
+
+        title:
+          "Mémorise tes cartes",
+
+        icon:
+          "🧠",
+      });
+    } else if (
+      viewerBecameActive &&
+      currentPhase ===
+        "PLAYER_RESPONSE"
+    ) {
+      setAnnouncement({
+        announcementKey:
+          Date.now(),
+
+        eyebrow:
+          "Tu es la cible",
+
+        title:
+          "À toi de répondre",
+
+        icon:
+          "❗",
+      });
+
+} else if (
+  viewerBecameActive &&
+  currentPhase ===
+    "PLAYER_TURN"
+) {
+  setAnnouncement({
+    announcementKey:
+      Date.now(),
+
+    eyebrow:
+      "Tour actif",
+
+    title:
+      "À toi de jouer",
+
+    icon:
+      "🟡",
+  });
+}
+
+previousDrinkRef.current =
+  currentDrinkId;
+
+previousPhaseRef.current =
+  currentPhase;
+
+previousActivePlayerRef.current =
+  currentActivePlayer;
+
+}, [
+  state,
+]);      
 
   if (
     loading ||
@@ -286,16 +357,13 @@ function GameScreen({
     );
 
   const viewerIsActive =
-    activePlayerIndex === null ||
+    activePlayerIndex ===
+      null ||
     activePlayerIndex ===
       viewerPlayerIndex;
 
-  const hostIndex =
-    0;
-
   const viewerIsHost =
-    viewerPlayerIndex ===
-    hostIndex;
+    viewerPlayerIndex === 0;
 
   const canUseActionPanel =
     (() => {
@@ -326,11 +394,13 @@ function GameScreen({
     })();
 
   const isWaitingForAnotherPlayer =
-    activePlayerIndex !== null &&
+    activePlayerIndex !==
+      null &&
     !viewerIsActive;
 
   const activePlayerName =
-    activePlayerIndex !== null
+    activePlayerIndex !==
+      null
       ? (
           playerNames[
             activePlayerIndex
@@ -358,6 +428,9 @@ function GameScreen({
     ) : (
       <ActionPanel
         state={state}
+        playerNames={
+          playerNames
+        }
         onDispatch={
           canUseActionPanel
             ? dispatch
@@ -368,13 +441,45 @@ function GameScreen({
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 sm:py-8">
-        <GameHeader />
+      <PlayerDrawer
+        state={state}
+        playerNames={
+          playerNames
+        }
+      />
 
+      <AnimatePresence>
+        {announcement && (
+          <GameAnnouncement
+            announcementKey={
+              announcement
+                .announcementKey
+            }
+            eyebrow={
+              announcement.eyebrow
+            }
+            title={
+              announcement.title
+            }
+            icon={
+              announcement.icon
+            }
+            onComplete={() => {
+              setAnnouncement(
+                null
+              );
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-4 px-3 py-3 sm:px-5 sm:py-5">
         {!connected && (
           <section className="rounded-2xl border border-orange-400/20 bg-orange-400/10 px-5 py-4">
             <p className="text-sm font-bold text-orange-300">
-              Connexion au serveur interrompue. Reconnexion en cours...
+              Connexion au serveur
+              interrompue. Reconnexion
+              en cours...
             </p>
           </section>
         )}
@@ -402,30 +507,18 @@ function GameScreen({
             {actionContent}
           </div>
         ) : (
-          <div className="grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.8fr)]">
-            <aside className="order-1 flex flex-col gap-6 lg:order-2">
-              {actionContent}
+          <div className="flex flex-1 flex-col gap-4">
+            {actionContent}
 
-              <PlayerList
-                state={state}
-              />
-            </aside>
-
-            <section className="order-2 flex min-w-0 flex-col gap-6 lg:order-1">
-              <CurrentCard
-                state={state}
-              />
-
-              <PyramidBoard
-                state={state}
-              />
-            </section>
+           <section className="flex min-w-0 flex-1 flex-col">
+  <PyramidBoard
+    state={state}
+  />
+</section>
           </div>
         )}
 
-        <footer className="pb-3 text-center text-xs text-zinc-600">
-          Pyramides du Gang · by Ludo B
-        </footer>
+        
       </div>
     </main>
   );
@@ -439,9 +532,9 @@ export default function JeuPage() {
     gameInfo,
     setGameInfo,
   ] =
-    useState<StoredGameInfo | null>(
-      null
-    );
+    useState<
+      StoredGameInfo | null
+    >(null);
 
   const [
     storageChecked,
@@ -449,14 +542,58 @@ export default function JeuPage() {
   ] = useState(false);
 
   useEffect(() => {
-    setGameInfo(
-      getStoredGameInfo()
-    );
+    const session =
+      lireSessionPartie();
 
-    setStorageChecked(true);
+    if (!session) {
+      setGameInfo(null);
+
+      setStorageChecked(
+        true
+      );
+
+      return;
+    }
+
+    const playerNames =
+      Array.from(
+        {
+          length:
+            session.playerCount,
+        },
+        (
+          _,
+          playerIndex
+        ) => {
+          const pseudo =
+            session.players[
+              playerIndex
+            ]?.pseudo?.trim();
+
+          return (
+            pseudo ||
+            `Joueur ${
+              playerIndex +
+              1
+            }`
+          );
+        }
+      );
+
+    setGameInfo({
+      roomCode:
+        session.code,
+
+      playerNames,
+    });
+
+    setStorageChecked(
+      true
+    );
   }, []);
 
-  function returnToLobby(): void {
+  function returnToLobby():
+    void {
     router.replace(
       "/lobby"
     );
@@ -481,7 +618,9 @@ export default function JeuPage() {
           </h1>
 
           <p className="mt-4 text-sm leading-6 text-zinc-400">
-            Le code ou les informations de la partie sont absents ou invalides.
+            Le code ou les
+            informations de la partie
+            sont absents ou invalides.
           </p>
 
           <button
@@ -502,6 +641,9 @@ export default function JeuPage() {
     <GameProvider
       roomCode={
         gameInfo.roomCode
+      }
+      playerNames={
+        gameInfo.playerNames
       }
     >
       <GameScreen

@@ -1,12 +1,25 @@
-import { createServer } from "node:http";
+import {
+  createServer,
+} from "node:http";
 
 import next from "next";
+
 import {
   Server,
   type Socket,
 } from "socket.io";
 
-import { RoomManager } from "./server/RoomManager";
+import {
+  RoomManager,
+} from "./server/RoomManager";
+
+import type {
+  GameAction,
+} from "./lib/gameEngine/actions";
+
+import type {
+  Carte,
+} from "./lib/deck";
 
 import type {
   PublicRoom,
@@ -32,6 +45,15 @@ type StartRoomPayload = {
   code: string;
 };
 
+type GetGamePayload = {
+  code: string;
+};
+
+type GameActionPayload = {
+  code: string;
+  action: GameAction;
+};
+
 type RoomCallback = (
   result: RoomResult
 ) => void;
@@ -51,15 +73,6 @@ type GetRoomCallback = (
   result: GetRoomResult
 ) => void;
 
-type GetGamePayload = {
-  code: string;
-};
-
-type GameActionPayload = {
-  code: string;
-  action: GameAction;
-};
-
 type GameResult =
   | {
       success: true;
@@ -76,6 +89,54 @@ type GameCallback = (
 type StartRoomCallback = (
   result: StartRoomResult
 ) => void;
+
+type RevealAnimationResult =
+  | {
+      success: true;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+type RevealAnimationCallback = (
+  result: RevealAnimationResult
+) => void;
+
+
+
+interface RevealAnimationPayload {
+  card: Carte;
+  drinks: number;
+  animationKey: number;
+}
+
+type BluffAnimationRequestPayload = {
+  target: number;
+};
+
+type BluffAnimationResult =
+  | {
+      success: true;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+type BluffAnimationCallback = (
+  result: BluffAnimationResult
+) => void;
+
+interface BluffAnimationPayload {
+  giver: number;
+  target: number;
+  drinks: number;
+  animationKey: number;
+}
+
+const LOBBY_DISCONNECT_GRACE_MS =
+  2 * 60 * 1000;
 
 const dev =
   process.env.NODE_ENV !==
@@ -101,6 +162,54 @@ const handle =
 
 const roomManager =
   new RoomManager();
+
+const pendingLobbyRemovals =
+  new Map<
+    string,
+    ReturnType<
+      typeof setTimeout
+    >
+  >();
+
+function obtenirPlayerToken(
+  socket: Socket
+): string {
+  const rawToken =
+    socket.handshake.auth
+      ?.playerToken;
+
+  if (
+    typeof rawToken !==
+    "string"
+  ) {
+    return "";
+  }
+
+  return rawToken
+    .trim()
+    .slice(0, 200);
+}
+
+function annulerSuppressionJoueur(
+  playerId: string
+): void {
+  const timeout =
+    pendingLobbyRemovals.get(
+      playerId
+    );
+
+  if (!timeout) {
+    return;
+  }
+
+  clearTimeout(
+    timeout
+  );
+
+  pendingLobbyRemovals.delete(
+    playerId
+  );
+}
 
 function rejoindreSalonSocket(
   socket: Socket,
@@ -135,6 +244,41 @@ function diffuserSalon(
     "room:updated",
     room
   );
+}
+
+function reconnecterJoueur(
+  socket: Socket,
+  code: string
+): RoomResult {
+  const playerToken =
+    obtenirPlayerToken(
+      socket
+    );
+
+  const result =
+    roomManager.reconnectPlayer({
+      socketId:
+        socket.id,
+
+      playerToken,
+
+      code,
+    });
+
+  if (
+    result.success
+  ) {
+    annulerSuppressionJoueur(
+      result.playerId
+    );
+
+    rejoindreSalonSocket(
+      socket,
+      result.room.code
+    );
+  }
+
+  return result;
 }
 
 function diffuserEtatJeu(
@@ -199,7 +343,204 @@ function diffuserEtatJeu(
   );
 }
 
-async function demarrerServeur(): Promise<void> {
+function creerPayloadAnimationRevelation(
+  roomCode: string,
+  socketId: string
+): RevealAnimationPayload {
+  const gameRoom =
+    roomManager.getGameRoom(
+      roomCode
+    );
+
+  if (!gameRoom) {
+    throw new Error(
+      "La partie n'est pas démarrée ou n'existe plus."
+    );
+  }
+
+  const room =
+    roomManager.getRoom(
+      roomCode
+    );
+
+  if (!room) {
+    throw new Error(
+      "Le salon n'existe plus."
+    );
+  }
+
+  const playerIndex =
+    roomManager
+      .getPlayerIndexBySocket(
+        roomCode,
+        socketId
+      );
+
+  if (
+    playerIndex === null
+  ) {
+    throw new Error(
+      "Le serveur n'a pas pu identifier ton joueur."
+    );
+  }
+
+  const player =
+    room.players[
+      playerIndex
+    ];
+
+  if (
+    !player ||
+    !player.isHost
+  ) {
+    throw new Error(
+      "Seul l'hôte peut révéler une carte."
+    );
+  }
+
+  const state =
+    gameRoom.getState();
+
+  if (
+    state.phase !==
+    "WAITING"
+  ) {
+    throw new Error(
+      "La prochaine carte ne peut pas encore être révélée."
+    );
+  }
+
+  const realNextRow =
+    state.pyramid.length -
+    1 -
+    state.progress.nextRow;
+
+  const nextCard =
+    state.pyramid[
+      realNextRow
+    ]?.[
+      state.progress.nextColumn
+    ];
+
+  if (!nextCard) {
+    throw new Error(
+      "La prochaine carte de la pyramide est introuvable."
+    );
+  }
+
+  return {
+    card: {
+      ...nextCard,
+    },
+
+    drinks:
+      state.progress.nextRow +
+      1,
+
+    animationKey:
+      Date.now(),
+  };
+}
+
+function creerPayloadAnimationBluff(
+  roomCode: string,
+  socketId: string,
+  target: number
+): BluffAnimationPayload {
+  const gameRoom =
+    roomManager.getGameRoom(
+      roomCode
+    );
+
+  if (!gameRoom) {
+    throw new Error(
+      "La partie n'est pas démarrée ou n'existe plus."
+    );
+  }
+
+  const playerIndex =
+    roomManager
+      .getPlayerIndexBySocket(
+        roomCode,
+        socketId
+      );
+
+  if (
+    playerIndex === null
+  ) {
+    throw new Error(
+      "Le serveur n'a pas pu identifier ton joueur."
+    );
+  }
+
+  const state =
+    gameRoom.getState();
+
+  if (
+    state.phase !==
+    "PLAYER_TURN"
+  ) {
+    throw new Error(
+      "Une annonce de bluff n'est pas possible maintenant."
+    );
+  }
+
+  if (
+    state.turn.currentPlayer !==
+    playerIndex
+  ) {
+    throw new Error(
+      "Ce n'est pas ton tour."
+    );
+  }
+
+  if (
+    !Number.isInteger(
+      target
+    ) ||
+    target < 0 ||
+    target >=
+      state.players.length
+  ) {
+    throw new Error(
+      "La cible est invalide."
+    );
+  }
+
+  if (
+    target ===
+    playerIndex
+  ) {
+    throw new Error(
+      "Tu ne peux pas te cibler toi-même."
+    );
+  }
+
+  if (
+    !state.current.card
+  ) {
+    throw new Error(
+      "Aucune carte de pyramide n'est active."
+    );
+  }
+
+  return {
+    giver:
+      playerIndex,
+
+    target,
+
+    drinks:
+      state.current.row +
+      1,
+
+    animationKey:
+      Date.now(),
+  };
+}
+
+async function demarrerServeur():
+  Promise<void> {
   await app.prepare();
 
   const httpServer =
@@ -237,20 +578,23 @@ async function demarrerServeur(): Promise<void> {
         ) => {
           try {
             const result =
-              roomManager
-                .createRoom({
-                  socketId:
-                    socket.id,
+              roomManager.createRoom({
+                socketId:
+                  socket.id,
 
-                  pseudo:
-                    payload
-                      ?.pseudo ??
-                    "",
+                playerToken:
+                  obtenirPlayerToken(
+                    socket
+                  ),
 
-                  maxPlayers:
-                    payload
-                      ?.maxPlayers,
-                });
+                pseudo:
+                  payload?.pseudo ??
+                  "",
+
+                maxPlayers:
+                  payload
+                    ?.maxPlayers,
+              });
 
             if (
               !result.success
@@ -258,6 +602,10 @@ async function demarrerServeur(): Promise<void> {
               callback(result);
               return;
             }
+
+            annulerSuppressionJoueur(
+              result.playerId
+            );
 
             rejoindreSalonSocket(
               socket,
@@ -301,21 +649,23 @@ async function demarrerServeur(): Promise<void> {
         ) => {
           try {
             const result =
-              roomManager
-                .joinRoom({
-                  socketId:
-                    socket.id,
+              roomManager.joinRoom({
+                socketId:
+                  socket.id,
 
-                  pseudo:
-                    payload
-                      ?.pseudo ??
-                    "",
+                playerToken:
+                  obtenirPlayerToken(
+                    socket
+                  ),
 
-                  code:
-                    payload
-                      ?.code ??
-                    "",
-                });
+                pseudo:
+                  payload?.pseudo ??
+                  "",
+
+                code:
+                  payload?.code ??
+                  "",
+              });
 
             if (
               !result.success
@@ -323,6 +673,10 @@ async function demarrerServeur(): Promise<void> {
               callback(result);
               return;
             }
+
+            annulerSuppressionJoueur(
+              result.playerId
+            );
 
             rejoindreSalonSocket(
               socket,
@@ -365,72 +719,37 @@ async function demarrerServeur(): Promise<void> {
             GetRoomCallback
         ) => {
           try {
-            const code =
-              payload?.code ?? "";
-
-            const room =
-              roomManager.getRoom(
-                code
+            const result =
+              reconnecterJoueur(
+                socket,
+                payload?.code ??
+                  ""
               );
 
-            if (!room) {
-              callback({
-                success: false,
-                error:
-                  "Cette partie n'existe pas.",
-              });
-
-              return;
-            }
-
-            const playerIndex =
-              roomManager
-                .getPlayerIndexBySocket(
-                  room.code,
-                  socket.id
-                );
-
             if (
-              playerIndex === null
+              !result.success
             ) {
-              callback({
-                success: false,
-                error:
-                  "Le serveur n'a pas pu identifier ton joueur.",
-              });
-
+              callback(result);
               return;
             }
-
-            const player =
-              room.players[
-                playerIndex
-              ];
-
-            if (!player) {
-              callback({
-                success: false,
-                error:
-                  "Le joueur est introuvable dans cette partie.",
-              });
-
-              return;
-            }
-
-            rejoindreSalonSocket(
-              socket,
-              room.code
-            );
 
             callback({
               success: true,
-              room,
+
+              room:
+                result.room,
+
               playerId:
-                player.id,
+                result.playerId,
             });
 
+            diffuserSalon(
+              io,
+              result.room
+            );
+
             console.log(
-              `🔄 Salon synchronisé : ${room.code} pour ${player.pseudo}`
+              `🔄 Salon synchronisé : ${result.room.code}`
             );
           } catch (
             error: unknown
@@ -458,17 +777,32 @@ async function demarrerServeur(): Promise<void> {
             StartRoomCallback
         ) => {
           try {
-            const result =
-              roomManager
-                .startRoom({
-                  socketId:
-                    socket.id,
+            const reconnectResult =
+              reconnecterJoueur(
+                socket,
+                payload?.code ??
+                  ""
+              );
 
-                  code:
-                    payload
-                      ?.code ??
-                    "",
-                });
+            if (
+              !reconnectResult.success
+            ) {
+              callback(
+                reconnectResult
+              );
+
+              return;
+            }
+
+            const result =
+              roomManager.startRoom({
+                socketId:
+                  socket.id,
+
+                code:
+                  payload?.code ??
+                  "",
+              });
 
             if (
               !result.success
@@ -520,66 +854,213 @@ async function demarrerServeur(): Promise<void> {
         }
       );
 
+      socket.on(
+        "game:get",
+        (
+          payload:
+            GetGamePayload,
+          callback:
+            GameCallback
+        ) => {
+          try {
+            const code =
+              payload?.code ??
+              "";
+
+            const reconnectResult =
+              reconnecterJoueur(
+                socket,
+                code
+              );
+
+            if (
+              !reconnectResult.success
+            ) {
+              callback({
+                success: false,
+
+                error:
+                  reconnectResult.error,
+              });
+
+              return;
+            }
+
+            const gameRoom =
+              roomManager.getGameRoom(
+                code
+              );
+
+            if (!gameRoom) {
+              callback({
+                success: false,
+                error:
+                  "La partie n'est pas démarrée ou n'existe plus.",
+              });
+
+              return;
+            }
+
+            const playerIndex =
+              roomManager
+                .getPlayerIndexBySocket(
+                  code,
+                  socket.id
+                );
+
+            if (
+              playerIndex === null
+            ) {
+              callback({
+                success: false,
+                error:
+                  "Le serveur n'a pas pu identifier ton joueur.",
+              });
+
+              return;
+            }
+
+            const playerState =
+              gameRoom
+                .getStateForPlayer(
+                  playerIndex
+                );
+
+            socket.emit(
+              "game:state",
+              playerState
+            );
+
+            callback({
+              success: true,
+            });
+
+            console.log(
+              `🎯 État du jeu synchronisé pour le joueur ${playerIndex + 1} dans ${gameRoom.code}`
+            );
+          } catch (
+            error: unknown
+          ) {
+            console.error(
+              "Erreur pendant la récupération de l'état du jeu :",
+              error
+            );
+
+            callback({
+              success: false,
+
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Impossible de synchroniser le jeu.",
+            });
+          }
+        }
+      );
+
+      socket.on(
+        "game:request-reveal-animation",
+        (
+          callback:
+            RevealAnimationCallback
+        ) => {
+          try {
+            const roomCode =
+              roomManager
+                .getRoomCodeBySocket(
+                  socket.id
+                );
+
+            if (!roomCode) {
+              callback({
+                success: false,
+                error:
+                  "Le serveur n'a pas pu retrouver ta partie.",
+              });
+
+              return;
+            }
+
+            const payload =
+              creerPayloadAnimationRevelation(
+                roomCode,
+                socket.id
+              );
+
+            io.to(
+              roomCode
+            ).emit(
+              "game:reveal-animation",
+              payload
+            );
+
+            callback({
+              success: true,
+            });
+
+            console.log(
+              `🎬 Animation de révélation diffusée dans ${roomCode}`
+            );
+          } catch (
+            error: unknown
+          ) {
+            const message =
+              error instanceof Error
+                ? error.message
+                : "Impossible de lancer l'animation de révélation.";
+
+            console.error(
+              "Animation de révélation refusée :",
+              error
+            );
+
+            callback({
+              success: false,
+              error:
+                message,
+            });
+          }
+        }
+      );
+
 socket.on(
-  "game:get",
+  "game:request-bluff-animation",
   (
     payload:
-      GetGamePayload,
+      BluffAnimationRequestPayload,
     callback:
-      GameCallback
+      BluffAnimationCallback
   ) => {
     try {
-      const code =
-        payload?.code ?? "";
-
-      const gameRoom =
-        roomManager.getGameRoom(
-          code
-        );
-
-      if (!gameRoom) {
-        callback({
-          success: false,
-          error:
-            "La partie n'est pas démarrée ou n'existe plus.",
-        });
-
-        return;
-      }
-
-      const playerIndex =
+      const roomCode =
         roomManager
-          .getPlayerIndexBySocket(
-            code,
+          .getRoomCodeBySocket(
             socket.id
           );
 
-      if (
-        playerIndex === null
-      ) {
+      if (!roomCode) {
         callback({
           success: false,
+
           error:
-            "Le serveur n'a pas pu identifier ton joueur.",
+            "Le serveur n'a pas pu retrouver ta partie.",
         });
 
         return;
       }
 
-      rejoindreSalonSocket(
-        socket,
-        gameRoom.code
-      );
+      const animationPayload =
+        creerPayloadAnimationBluff(
+          roomCode,
+          socket.id,
+          payload?.target
+        );
 
-      const playerState =
-        gameRoom
-          .getStateForPlayer(
-            playerIndex
-          );
-
-      socket.emit(
-        "game:state",
-        playerState
+      io.to(
+        roomCode
+      ).emit(
+        "game:bluff-animation",
+        animationPayload
       );
 
       callback({
@@ -587,103 +1068,7 @@ socket.on(
       });
 
       console.log(
-        `🎯 État du jeu synchronisé pour le joueur ${playerIndex + 1} dans ${gameRoom.code}`
-      );
-    } catch (
-      error: unknown
-    ) {
-      console.error(
-        "Erreur pendant la récupération de l'état du jeu :",
-        error
-      );
-
-      callback({
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Impossible de synchroniser le jeu.",
-      });
-    }
-  }
-);
-
-socket.on(
-  "game:action",
-  (
-    payload:
-      GameActionPayload,
-    callback:
-      GameCallback
-  ) => {
-    try {
-      const code =
-        payload?.code ?? "";
-
-      const action =
-        payload?.action;
-
-      if (!action) {
-        callback({
-          success: false,
-          error:
-            "L'action reçue est invalide.",
-        });
-
-        return;
-      }
-
-      const gameRoom =
-        roomManager.getGameRoom(
-          code
-        );
-
-      if (!gameRoom) {
-        callback({
-          success: false,
-          error:
-            "La partie n'est pas démarrée ou n'existe plus.",
-        });
-
-        return;
-      }
-
-      const playerIndex =
-        roomManager
-          .getPlayerIndexBySocket(
-            code,
-            socket.id
-          );
-
-      if (
-        playerIndex === null
-      ) {
-        callback({
-          success: false,
-          error:
-            "Le serveur n'a pas pu identifier ton joueur.",
-        });
-
-        return;
-      }
-
-      gameRoom.dispatchForPlayer(
-        playerIndex,
-        action
-      );
-
-      diffuserEtatJeu(
-        io,
-        roomManager,
-        gameRoom.code
-      );
-
-      callback({
-        success: true,
-      });
-
-      console.log(
-        `🎮 ${action.type} exécutée par le joueur ${playerIndex + 1} dans ${gameRoom.code}`
+        `🎬 Animation de bluff diffusée dans ${roomCode} : joueur ${animationPayload.giver + 1} vers joueur ${animationPayload.target + 1}`
       );
     } catch (
       error: unknown
@@ -691,23 +1076,16 @@ socket.on(
       const message =
         error instanceof Error
           ? error.message
-          : "Cette action est impossible.";
+          : "Impossible de lancer l'animation de bluff.";
 
       console.error(
-        "Action de jeu refusée :",
+        "Animation de bluff refusée :",
         error
-      );
-
-      socket.emit(
-        "game:error",
-        {
-          error:
-            message,
-        }
       );
 
       callback({
         success: false,
+
         error:
           message,
       });
@@ -716,17 +1094,138 @@ socket.on(
 );
 
       socket.on(
-        "disconnect",
-        (raison) => {
-          const roomCode =
-            roomManager
-              .getRoomCodeBySocket(
-                socket.id
+        "game:action",
+        (
+          payload:
+            GameActionPayload,
+          callback:
+            GameCallback
+        ) => {
+          try {
+            const code =
+              payload?.code ??
+              "";
+
+            const action =
+              payload?.action;
+
+            if (!action) {
+              callback({
+                success: false,
+                error:
+                  "L'action reçue est invalide.",
+              });
+
+              return;
+            }
+
+            const reconnectResult =
+              reconnecterJoueur(
+                socket,
+                code
               );
 
-          const roomUpdated =
+            if (
+              !reconnectResult.success
+            ) {
+              callback({
+                success: false,
+
+                error:
+                  reconnectResult.error,
+              });
+
+              return;
+            }
+
+            const gameRoom =
+              roomManager.getGameRoom(
+                code
+              );
+
+            if (!gameRoom) {
+              callback({
+                success: false,
+                error:
+                  "La partie n'est pas démarrée ou n'existe plus.",
+              });
+
+              return;
+            }
+
+            const playerIndex =
+              roomManager
+                .getPlayerIndexBySocket(
+                  code,
+                  socket.id
+                );
+
+            if (
+              playerIndex === null
+            ) {
+              callback({
+                success: false,
+                error:
+                  "Le serveur n'a pas pu identifier ton joueur.",
+              });
+
+              return;
+            }
+
+            gameRoom.dispatchForPlayer(
+              playerIndex,
+              action
+            );
+
+            diffuserEtatJeu(
+              io,
+              roomManager,
+              gameRoom.code
+            );
+
+            callback({
+              success: true,
+            });
+
+            console.log(
+              `🎮 ${action.type} exécutée par le joueur ${playerIndex + 1} dans ${gameRoom.code}`
+            );
+          } catch (
+            error: unknown
+          ) {
+            const message =
+              error instanceof Error
+                ? error.message
+                : "Cette action est impossible.";
+
+            console.error(
+              "Action de jeu refusée :",
+              error
+            );
+
+            socket.emit(
+              "game:error",
+              {
+                error:
+                  message,
+              }
+            );
+
+            callback({
+              success: false,
+              error:
+                message,
+            });
+          }
+        }
+      );
+
+      socket.on(
+        "disconnect",
+        (raison) => {
+          const disconnectedPlayer =
             roomManager
-              .removePlayerBySocket(
+              .disconnectPlayerBySocket(
                 socket.id
               );
 
@@ -736,22 +1235,66 @@ socket.on(
           );
 
           if (
-            roomUpdated
+            !disconnectedPlayer
           ) {
-            diffuserSalon(
-              io,
-              roomUpdated
-            );
-          } else if (
-            roomCode
-          ) {
-            console.log(
-              `🗑️ Partie supprimée : ${roomCode}`
-            );
+            return;
           }
 
-          console.log(
-            `🏠 Salons actifs : ${roomManager.getRoomCount()}`
+          if (
+            disconnectedPlayer
+              .status ===
+            "IN_GAME"
+          ) {
+            console.log(
+              `💾 Joueur ${disconnectedPlayer.playerId} conservé dans ${disconnectedPlayer.code}`
+            );
+
+            return;
+          }
+
+          annulerSuppressionJoueur(
+            disconnectedPlayer
+              .playerId
+          );
+
+          const timeout =
+            setTimeout(
+              () => {
+                pendingLobbyRemovals.delete(
+                  disconnectedPlayer
+                    .playerId
+                );
+
+                const updatedRoom =
+                  roomManager
+                    .removePlayerById(
+                      disconnectedPlayer
+                        .code,
+
+                      disconnectedPlayer
+                        .playerId
+                    );
+
+                if (
+                  updatedRoom
+                ) {
+                  diffuserSalon(
+                    io,
+                    updatedRoom
+                  );
+                }
+
+                console.log(
+                  `🧹 Joueur déconnecté supprimé du lobby ${disconnectedPlayer.code}`
+                );
+              },
+              LOBBY_DISCONNECT_GRACE_MS
+            );
+
+          pendingLobbyRemovals.set(
+            disconnectedPlayer
+              .playerId,
+            timeout
           );
         }
       );
@@ -767,7 +1310,7 @@ socket.on(
       );
 
       console.log(
-        `📱 Accès réseau sur http://192.168.1.53:${port}`
+        `📱 Accès réseau sur http://192.168.1.97:${port}`
       );
 
       console.log(
@@ -782,7 +1325,9 @@ socket.on(
 }
 
 demarrerServeur().catch(
-  (error: unknown) => {
+  (
+    error: unknown
+  ) => {
     console.error(
       "Impossible de démarrer le serveur :",
       error

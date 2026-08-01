@@ -13,14 +13,17 @@ import type {
 } from "socket.io-client";
 
 import {
+  enregistrerSessionPartie,
+  MAX_PLAYER_COUNT,
+  MIN_PLAYER_COUNT,
+  supprimerSessionPartie,
+  type StoredGameSession,
+  type StoredRoomPlayer,
+} from "@/lib/gameSession";
+
+import {
   obtenirSocket,
 } from "@/lib/socket";
-
-const MIN_PLAYER_COUNT = 2;
-const MAX_PLAYER_COUNT = 9;
-
-const STORAGE_PARTIE_KEY =
-  "pyramides-partie";
 
 interface PublicRoomPlayer {
   id: string;
@@ -30,9 +33,11 @@ interface PublicRoomPlayer {
 
 interface PublicRoom {
   code: string;
+
   status:
     | "LOBBY"
     | "IN_GAME";
+
   maxPlayers: number;
   players: PublicRoomPlayer[];
 }
@@ -48,12 +53,21 @@ type CreateRoomResult =
       error: string;
     };
 
-interface StoredGame {
-  pseudo: string;
-  joueurs: number;
-  code: string;
-  playerId: string;
-  isHost: boolean;
+function convertirJoueurs(
+  players: PublicRoomPlayer[]
+): StoredRoomPlayer[] {
+  return players.map(
+    (player) => ({
+      id:
+        player.id,
+
+      pseudo:
+        player.pseudo,
+
+      isHost:
+        player.isHost,
+    })
+  );
 }
 
 function connecterSocket(
@@ -131,22 +145,25 @@ function demanderCreationPartie(
   maxPlayers: number
 ): Promise<CreateRoomResult> {
   return new Promise(
-    (
-      resolve
-    ) => {
-      let reponseRecue = false;
+    (resolve) => {
+      let reponseRecue =
+        false;
 
       const timeoutId =
         window.setTimeout(
           () => {
-            if (reponseRecue) {
+            if (
+              reponseRecue
+            ) {
               return;
             }
 
-            reponseRecue = true;
+            reponseRecue =
+              true;
 
             resolve({
               success: false,
+
               error:
                 "Le serveur n'a pas répondu à temps.",
             });
@@ -164,11 +181,14 @@ function demanderCreationPartie(
           result:
             CreateRoomResult
         ) => {
-          if (reponseRecue) {
+          if (
+            reponseRecue
+          ) {
             return;
           }
 
-          reponseRecue = true;
+          reponseRecue =
+            true;
 
           window.clearTimeout(
             timeoutId
@@ -203,13 +223,16 @@ export default function CreerPartie() {
   const [
     messageErreur,
     setMessageErreur,
-  ] = useState<
-    string | null
-  >(null);
+  ] =
+    useState<string | null>(
+      null
+    );
 
   async function creerPartie():
     Promise<void> {
-    if (creationEnCours) {
+    if (
+      creationEnCours
+    ) {
       return;
     }
 
@@ -220,7 +243,10 @@ export default function CreerPartie() {
           /\s+/g,
           " "
         )
-        .slice(0, 20);
+        .slice(
+          0,
+          20
+        );
 
     if (!pseudoNettoye) {
       setMessageErreur(
@@ -246,10 +272,16 @@ export default function CreerPartie() {
       return;
     }
 
-    setCreationEnCours(true);
-    setMessageErreur(null);
+    setCreationEnCours(
+      true
+    );
+
+    setMessageErreur(
+      null
+    );
 
     try {
+      supprimerSessionPartie();
       const socket =
         obtenirSocket();
 
@@ -264,7 +296,9 @@ export default function CreerPartie() {
           joueurs
         );
 
-      if (!result.success) {
+      if (
+        !result.success
+      ) {
         setMessageErreur(
           result.error
         );
@@ -272,32 +306,48 @@ export default function CreerPartie() {
         return;
       }
 
-      const storedGame:
-        StoredGame = {
-          pseudo:
-            pseudoNettoye,
+      const joueurLocal =
+        result.room.players.find(
+          (player) =>
+            player.id ===
+            result.playerId
+        );
 
-          joueurs:
-            result.room
-              .maxPlayers,
+      const session:
+        StoredGameSession = {
+        code:
+          result.room.code,
 
-          code:
-            result.room.code,
+        playerId:
+          result.playerId,
 
-          playerId:
-            result.playerId,
+        pseudo:
+          joueurLocal
+            ?.pseudo ??
+          pseudoNettoye,
 
-          isHost: true,
-        };
+        isHost:
+          joueurLocal
+            ?.isHost ??
+          true,
 
-      sessionStorage.setItem(
-        STORAGE_PARTIE_KEY,
-        JSON.stringify(
-          storedGame
-        )
+        maxPlayers:
+          result.room.maxPlayers,
+
+        players:
+          convertirJoueurs(
+            result.room.players
+          ),
+
+        playerCount:
+          result.room.players.length,
+      };
+
+      enregistrerSessionPartie(
+        session
       );
 
-      router.push(
+      router.replace(
         "/lobby"
       );
     } catch (
@@ -353,8 +403,7 @@ export default function CreerPartie() {
                 event
               ) =>
                 setPseudo(
-                  event.target
-                    .value
+                  event.target.value
                 )
               }
               onKeyDown={(
@@ -392,8 +441,7 @@ export default function CreerPartie() {
               ) =>
                 setJoueurs(
                   Number(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 )
               }
@@ -431,7 +479,8 @@ export default function CreerPartie() {
             </select>
 
             <p className="mt-2 text-sm text-zinc-400">
-              De 2 à 9 joueurs
+              De {MIN_PLAYER_COUNT} à{" "}
+              {MAX_PLAYER_COUNT} joueurs
               maximum
             </p>
           </div>

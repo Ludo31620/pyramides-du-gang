@@ -1,53 +1,70 @@
 "use client";
 
 import {
-  useCallback,
   useState,
 } from "react";
 
 import {
-  AnimatePresence,
-} from "framer-motion";
+  getPlayerName,
+} from "@/lib/gameEngine/getPlayerName";
 
 import {
-  BluffAnnouncementAnimation,
-} from "@/components/game/animations";
+  obtenirSocket,
+} from "@/lib/socket";
 
 import type {
   GameAction,
 } from "@/lib/gameEngine/actions";
 
 import type {
-  GameState,
-} from "@/lib/gameEngine/types";
+  PlayerGameState,
+} from "@/lib/gameEngine/publicTypes";
 
 interface PlayerTurnPanelProps {
-  state: GameState;
+  state: PlayerGameState;
+
+  playerNames: string[];
 
   onDispatch?: (
     action: GameAction
   ) => void;
 }
 
-interface PendingAnnouncement {
-  target: number;
-  animationKey: number;
-}
+type BluffAnimationRequestResult =
+  | {
+      success: true;
+    }
+  | {
+      success: false;
+      error: string;
+    };
 
 export default function PlayerTurnPanel({
   state,
+  playerNames,
   onDispatch,
 }: PlayerTurnPanelProps) {
   const [
-    pendingAnnouncement,
-    setPendingAnnouncement,
+    requestPending,
+    setRequestPending,
+  ] = useState(false);
+
+  const [
+    requestError,
+    setRequestError,
   ] =
-    useState<PendingAnnouncement | null>(
+    useState<string | null>(
       null
     );
 
   const currentPlayer =
     state.turn.currentPlayer;
+
+  const currentPlayerName =
+    getPlayerName(
+      playerNames,
+      currentPlayer
+    );
 
   const currentCard =
     state.current.card;
@@ -57,10 +74,16 @@ export default function PlayerTurnPanel({
 
   const possibleTargets =
     state.players
-      .map((_, player) => player)
+      .map(
+        (
+          _,
+          playerIndex
+        ) => playerIndex
+      )
       .filter(
-        (player) =>
-          player !== currentPlayer
+        (playerIndex) =>
+          playerIndex !==
+          currentPlayer
       );
 
   function handleGive(
@@ -69,57 +92,65 @@ export default function PlayerTurnPanel({
     if (
       !onDispatch ||
       !currentCard ||
-      pendingAnnouncement
+      requestPending
     ) {
       return;
     }
 
-    /*
-     * Le moteur ne reçoit pas encore GIVE.
-     *
-     * On garde donc le jeu en PLAYER_TURN
-     * pendant toute la cinématique.
-     */
-    setPendingAnnouncement({
-      target,
-      animationKey:
-        Date.now(),
-    });
-  }
+    const socket =
+      obtenirSocket();
 
-  const completeAnnouncement =
-    useCallback((): void => {
-      if (
-        !pendingAnnouncement
-      ) {
-        return;
-      }
-
-      const target =
-        pendingAnnouncement.target;
-
-      /*
-       * L’animation est terminée.
-       * On crée maintenant la pendingAction
-       * dans le moteur.
-       */
-      onDispatch?.({
-        type: "GIVE",
-        target,
-      });
-
-      setPendingAnnouncement(
-        null
+    if (!socket.connected) {
+      setRequestError(
+        "La connexion au serveur est interrompue."
       );
-    }, [
-      onDispatch,
-      pendingAnnouncement,
-    ]);
+
+      return;
+    }
+
+    setRequestPending(
+      true
+    );
+
+    setRequestError(
+      null
+    );
+
+    socket.emit(
+      "game:request-bluff-animation",
+      {
+        target,
+      },
+      (
+        result:
+          BluffAnimationRequestResult
+      ) => {
+        if (result.success) {
+          /*
+           * Le GameProvider reçoit ensuite
+           * l'animation synchronisée.
+           *
+           * À la fin de cette animation,
+           * il envoie l'action GIVE.
+           */
+          return;
+        }
+
+        setRequestPending(
+          false
+        );
+
+        setRequestError(
+          result.error
+        );
+      }
+    );
+  }
 
   function handlePass(): void {
     if (
       !onDispatch ||
-      pendingAnnouncement
+      requestPending
     ) {
       return;
     }
@@ -130,96 +161,93 @@ export default function PlayerTurnPanel({
   }
 
   return (
-    <>
-      <AnimatePresence>
-        {pendingAnnouncement && (
-          <BluffAnnouncementAnimation
-            giver={
-              currentPlayer
-            }
-            target={
-              pendingAnnouncement.target
-            }
-            drinks={drinks}
-            animationKey={
-              pendingAnnouncement.animationKey
-            }
-            onComplete={
-              completeAnnouncement
-            }
-          />
-        )}
-      </AnimatePresence>
+    <section className="rounded-3xl border border-white/10 bg-zinc-900 p-6 sm:p-8">
+      <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
+        Tour actif
+      </p>
 
-      <section className="rounded-3xl border border-white/10 bg-zinc-900 p-6 sm:p-8">
-        <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
-          Tour actif
+      <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
+        {currentPlayerName}
+      </h2>
+
+      <p className="mt-3 text-sm leading-6 text-zinc-400">
+        Tu peux annoncer que tu
+        possèdes une carte de la même
+        valeur que celle révélée, ou
+        passer ton tour.
+      </p>
+
+      <div className="mt-6 flex flex-col items-center">
+        <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-zinc-500">
+          Carte révélée
         </p>
 
-        <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
-          Joueur {currentPlayer + 1}
-        </h2>
+        <div className="flex h-36 w-28 flex-col items-center justify-center rounded-2xl border-2 border-zinc-300 bg-white shadow-xl">
+          {currentCard ? (
+            <span
+              className={
+                currentCard.couleur ===
+                  "♥" ||
+                currentCard.couleur ===
+                  "♦"
+                  ? "text-3xl font-black text-red-600"
+                  : "text-3xl font-black text-black"
+              }
+            >
+              {currentCard.valeur}
+              {currentCard.couleur}
+            </span>
+          ) : (
+            <span className="px-2 text-center text-sm font-bold text-zinc-500">
+              Aucune carte
+            </span>
+          )}
+        </div>
+      </div>
 
-        <p className="mt-3 text-sm leading-6 text-zinc-400">
-          Tu peux annoncer que tu
-          possèdes une carte de même
-          valeur ou passer ton tour.
+      <div className="mt-6 rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-4 text-center">
+        <p className="text-sm text-zinc-400">
+          Valeur de cette ligne
         </p>
 
-        <div className="mt-6 flex flex-col items-center">
-          <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-zinc-500">
-            Carte révélée
-          </p>
+        <p className="mt-1 text-2xl font-black text-yellow-400">
+          {drinks} gorgée
+          {drinks > 1
+            ? "s"
+            : ""}
+        </p>
+      </div>
 
-          <div className="flex h-36 w-28 flex-col items-center justify-center rounded-2xl border-2 border-zinc-300 bg-white shadow-xl">
-            {currentCard ? (
-              <span
-                className={
-                  currentCard.couleur ===
-                    "♥" ||
-                  currentCard.couleur ===
-                    "♦"
-                    ? "text-3xl font-black text-red-600"
-                    : "text-3xl font-black text-black"
-                }
-              >
-                {currentCard.valeur}
-                {currentCard.couleur}
-              </span>
-            ) : (
-              <span className="px-2 text-center text-sm font-bold text-zinc-500">
-                Aucune carte
-              </span>
-            )}
-          </div>
+      {requestError && (
+        <div
+          role="alert"
+          className="mt-6 rounded-2xl border border-red-900 bg-red-950/60 p-4 text-sm font-semibold text-red-300"
+        >
+          {requestError}
         </div>
+      )}
 
-        <div className="mt-6 rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-4 text-center">
-          <p className="text-sm text-zinc-400">
-            Valeur de cette ligne
-          </p>
+      <div className="mt-8">
+        <p className="text-sm font-black uppercase tracking-wide text-white">
+          J&apos;annonce avoir la même
+          valeur
+        </p>
 
-          <p className="mt-1 text-2xl font-black text-yellow-400">
-            {drinks} gorgée
-            {drinks > 1
-              ? "s"
-              : ""}
-          </p>
-        </div>
+        <p className="mt-1 text-sm text-zinc-500">
+          Choisis la personne à qui tu
+          fais cette annonce.
+        </p>
 
-        <div className="mt-8">
-          <p className="text-sm font-black uppercase tracking-wide text-white">
-            Je bluffe
-          </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {possibleTargets.map(
+            (target) => {
+              const targetName =
+                getPlayerName(
+                  playerNames,
+                  target
+                );
 
-          <p className="mt-1 text-sm text-zinc-500">
-            Choisis le joueur qui
-            recevra l’annonce.
-          </p>
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {possibleTargets.map(
-              (target) => (
+              return (
                 <button
                   key={target}
                   type="button"
@@ -231,8 +259,7 @@ export default function PlayerTurnPanel({
                   disabled={
                     !onDispatch ||
                     !currentCard ||
-                    pendingAnnouncement !==
-                      null
+                    requestPending
                   }
                   className="
                     rounded-2xl
@@ -241,9 +268,7 @@ export default function PlayerTurnPanel({
                     bg-yellow-400/10
                     px-5
                     py-4
-                    text-base
-                    font-black
-                    text-yellow-400
+                    text-left
                     transition
                     hover:border-yellow-300
                     hover:bg-yellow-400
@@ -253,53 +278,61 @@ export default function PlayerTurnPanel({
                     disabled:opacity-40
                   "
                 >
-                  Donner à Joueur{" "}
-                  {target + 1}
+                  <span className="block text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    Donner à
+                  </span>
+
+                  <span className="mt-1 block text-lg font-black text-yellow-400">
+                    {requestPending
+                      ? "Synchronisation..."
+                      : targetName}
+                  </span>
                 </button>
-              )
-            )}
-          </div>
+              );
+            }
+          )}
         </div>
+      </div>
 
-        <button
-          type="button"
-          onClick={handlePass}
-          disabled={
-            !onDispatch ||
-            pendingAnnouncement !==
-              null
-          }
-          className="
-            mt-6
-            w-full
-            rounded-2xl
-            border
-            border-white/10
-            bg-zinc-800
-            px-6
-            py-4
-            text-base
-            font-black
-            uppercase
-            tracking-wide
-            text-white
-            transition
-            hover:bg-zinc-700
-            active:scale-[0.98]
-            disabled:cursor-not-allowed
-            disabled:opacity-40
-          "
-        >
-          Passer mon tour
-        </button>
+      <button
+        type="button"
+        onClick={
+          handlePass
+        }
+        disabled={
+          !onDispatch ||
+          requestPending
+        }
+        className="
+          mt-6
+          w-full
+          rounded-2xl
+          border
+          border-white/10
+          bg-zinc-800
+          px-6
+          py-4
+          text-base
+          font-black
+          uppercase
+          tracking-wide
+          text-white
+          transition
+          hover:bg-zinc-700
+          active:scale-[0.98]
+          disabled:cursor-not-allowed
+          disabled:opacity-40
+        "
+      >
+        Passer mon tour
+      </button>
 
-        {!onDispatch && (
-          <p className="mt-3 text-center text-xs text-zinc-600">
-            Actions désactivées sur
-            cette page de test.
-          </p>
-        )}
-      </section>
-    </>
+      {!onDispatch && (
+        <p className="mt-3 text-center text-xs text-zinc-600">
+          Actions désactivées sur
+          cette page de test.
+        </p>
+      )}
+    </section>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import PlayingCard from "@/components/game/cards/PlayingCard";
+
 import type {
   Carte,
 } from "@/lib/deck";
@@ -12,12 +14,18 @@ type PlayerHandProps = {
   hidden?: boolean;
 };
 
+const HIDDEN_CARD: Carte = {
+  valeur: "As",
+  couleur: "♠",
+  revelee: false,
+};
+
 export default function PlayerHand({
   cards,
   hidden = false,
 }: PlayerHandProps) {
   return (
-    <div className="flex flex-wrap justify-center gap-4">
+    <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
       {cards.map(
         (
           card,
@@ -28,50 +36,22 @@ export default function PlayerHand({
             card === null;
 
           return (
-            <div
+            <PlayingCard
               key={
                 card
                   ? `${card.valeur}-${card.couleur}-${index}`
                   : `hidden-card-${index}`
               }
-              className={[
-                "flex",
-                "h-32",
-                "w-24",
-                "items-center",
-                "justify-center",
-                "rounded-xl",
-                "border-2",
-                "text-2xl",
-                "font-bold",
-                "shadow-lg",
-                "transition-all",
-                "duration-300",
+              card={
                 cardIsHidden
-                  ? "border-zinc-700 bg-zinc-950"
-                  : "border-zinc-300 bg-white",
-              ].join(" ")}
-            >
-              {cardIsHidden ? (
-                <span className="text-4xl text-zinc-600">
-                  🂠
-                </span>
-              ) : (
-                <span
-                  className={
-                    card.couleur ===
-                      "♥" ||
-                    card.couleur ===
-                      "♦"
-                      ? "text-red-600"
-                      : "text-black"
-                  }
-                >
-                  {card.valeur}
-                  {card.couleur}
-                </span>
-              )}
-            </div>
+                  ? HIDDEN_CARD
+                  : card
+              }
+              faceUp={
+                !cardIsHidden
+              }
+              size="lg"
+            />
           );
         }
       )}

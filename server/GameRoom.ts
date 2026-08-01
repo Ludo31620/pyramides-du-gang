@@ -15,28 +15,12 @@ import type {
 } from "../lib/gameEngine/types";
 
 import type {
+  PlayerGameState,
+} from "../lib/gameEngine/publicTypes";
+
+import type {
   PublicRoom,
 } from "./types";
-
-export interface PlayerGameState
-  extends Omit<
-    GameState,
-    "players" | "pyramid"
-  > {
-  viewerPlayerIndex: number;
-
-  players: Array<
-    Array<Carte | null>
-  >;
-
-  pyramid: Array<
-    Array<Carte | null>
-  >;
-
-  nextCardForReveal:
-    | Carte
-    | null;
-}
 
 export class GameRoom {
   public readonly code: string;
@@ -142,6 +126,57 @@ export class GameRoom {
           }
         : null;
 
+    const visiblePlayers:
+      Array<
+        Array<Carte | null>
+      > =
+      state.players.map(
+        (
+          hand,
+          handIndex
+        ) => {
+          if (
+            handIndex ===
+            playerIndex
+          ) {
+            return hand.map(
+              (card) => ({
+                ...card,
+              })
+            );
+          }
+
+          return hand.map(
+            () => null
+          );
+        }
+      );
+
+    const publicPyramid =
+      state.pyramid.map(
+        (row) =>
+          row.map(
+            (card) => {
+              if (
+                card.revelee
+              ) {
+                return {
+                  hidden: false,
+
+                  card: {
+                    ...card,
+                  },
+                };
+              }
+
+              return {
+                hidden: true,
+                card: null,
+              };
+            }
+          )
+      );
+
     return {
       ...state,
 
@@ -151,45 +186,10 @@ export class GameRoom {
       nextCardForReveal,
 
       players:
-        state.players.map(
-          (
-            hand,
-            handIndex
-          ) => {
-            if (
-              handIndex ===
-              playerIndex
-            ) {
-              return hand.map(
-                (card) => ({
-                  ...card,
-                })
-              );
-            }
+        visiblePlayers,
 
-            return hand.map(
-              () => null
-            );
-          }
-        ),
-
-      /*
-       * Seules les cartes réellement
-       * révélées sont envoyées aux
-       * téléphones.
-       */
       pyramid:
-        state.pyramid.map(
-          (row) =>
-            row.map(
-              (card) =>
-                card.revelee
-                  ? {
-                      ...card,
-                    }
-                  : null
-            )
-        ),
+        publicPyramid,
 
       /*
        * Le paquet restant ne doit jamais

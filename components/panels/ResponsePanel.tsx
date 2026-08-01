@@ -1,15 +1,21 @@
 "use client";
 
+import {
+  getPlayerName,
+} from "@/lib/gameEngine/getPlayerName";
+
 import type {
   GameAction,
 } from "@/lib/gameEngine/actions";
 
 import type {
-  GameState,
-} from "@/lib/gameEngine/types";
+  PlayerGameState,
+} from "@/lib/gameEngine/publicTypes";
 
 interface ResponsePanelProps {
-  state: GameState;
+  state: PlayerGameState;
+
+  playerNames: string[];
 
   onDispatch?: (
     action: GameAction
@@ -18,6 +24,7 @@ interface ResponsePanelProps {
 
 export default function ResponsePanel({
   state,
+  playerNames,
   onDispatch,
 }: ResponsePanelProps) {
   const action =
@@ -26,6 +33,18 @@ export default function ResponsePanel({
   if (!action) {
     return null;
   }
+
+  const giverName =
+    getPlayerName(
+      playerNames,
+      action.giver
+    );
+
+  const targetName =
+    getPlayerName(
+      playerNames,
+      action.target
+    );
 
   function believe(): void {
     if (!onDispatch) {
@@ -49,37 +68,45 @@ export default function ResponsePanel({
 
   return (
     <section className="rounded-3xl border border-white/10 bg-zinc-900 p-6 sm:p-8">
-
       <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
-        Bluff
+        Me crois-tu ?
       </p>
 
-      <h2 className="mt-2 text-2xl font-black text-white">
-        Joueur {action.target + 1}
+      <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
+        {targetName}
       </h2>
 
-      <p className="mt-4 text-zinc-300 leading-7">
-        Le joueur{" "}
-        <span className="font-black">
-          {action.giver + 1}
+      <p className="mt-4 leading-7 text-zinc-300">
+        <span className="font-black text-white">
+          {giverName}
         </span>{" "}
-        affirme posséder une carte de la même valeur que celle de la pyramide.
+        affirme posséder une carte de la
+        même valeur que celle révélée dans
+        la pyramide.
+      </p>
+
+      <p className="mt-4 text-lg font-black text-yellow-400">
+        Le crois-tu ?
       </p>
 
       <div className="mt-6 rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-6 text-center">
-
         <p className="text-sm text-zinc-400">
-          Gorgées annoncées
+          Gorgées en jeu
         </p>
 
         <p className="mt-2 text-5xl font-black text-yellow-400">
           {action.drinks}
         </p>
 
+        <p className="mt-2 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">
+          gorgée
+          {action.drinks > 1
+            ? "s"
+            : ""}
+        </p>
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
-
         <button
           type="button"
           onClick={believe}
@@ -95,10 +122,11 @@ export default function ResponsePanel({
             transition
             hover:bg-green-500
             active:scale-[0.98]
+            disabled:cursor-not-allowed
             disabled:opacity-40
           "
         >
-          🍺 Je bois
+          ✅ Je le crois
         </button>
 
         <button
@@ -116,14 +144,19 @@ export default function ResponsePanel({
             transition
             hover:bg-red-500
             active:scale-[0.98]
+            disabled:cursor-not-allowed
             disabled:opacity-40
           "
         >
-          ❗ Menteur !
+          ❌ Menteur !
         </button>
-
       </div>
 
+      {!onDispatch && (
+        <p className="mt-4 text-center text-xs text-zinc-600">
+          Seul le joueur ciblé peut répondre.
+        </p>
+      )}
     </section>
   );
 }

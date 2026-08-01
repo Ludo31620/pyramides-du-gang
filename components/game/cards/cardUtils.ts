@@ -55,6 +55,21 @@ export const CARD_CENTER_SUIT_CLASSES: Record<
   xl: "text-6xl",
 };
 
+/**
+ * Taille des symboles disposés au centre
+ * des cartes numériques.
+ */
+export const CARD_PIP_CLASSES: Record<
+  PlayingCardSize,
+  string
+> = {
+  xs: "text-[9px]",
+  sm: "text-sm",
+  md: "text-lg",
+  lg: "text-[1.8rem]",
+  xl: "text-[2.3rem]",
+};
+
 export function isRedSuit(
   couleur: Couleur
 ): boolean {
@@ -67,13 +82,17 @@ export function isRedSuit(
 export function isRedCard(
   card: Carte
 ): boolean {
-  return isRedSuit(card.couleur);
+  return isRedSuit(
+    card.couleur
+  );
 }
 
 export function getSuitColorClass(
   couleur: Couleur
 ): string {
-  return isRedSuit(couleur)
+  return isRedSuit(
+    couleur
+  )
     ? "text-[#D9485F]"
     : "text-[#1E1E1E]";
 }
@@ -82,7 +101,10 @@ export function getShortValue(
   valeur: Valeur
 ): string {
   const values: Partial<
-    Record<Valeur, string>
+    Record<
+      Valeur,
+      string
+    >
   > = {
     As: "A",
     Valet: "V",
@@ -90,7 +112,10 @@ export function getShortValue(
     Roi: "R",
   };
 
-  return values[valeur] ?? valeur;
+  return (
+    values[valeur] ??
+    valeur
+  );
 }
 
 export function getCardLabel(
@@ -101,7 +126,10 @@ export function getCardLabel(
 
 export function joinClasses(
   ...classes: Array<
-    string | false | null | undefined
+    | string
+    | false
+    | null
+    | undefined
   >
 ): string {
   return classes

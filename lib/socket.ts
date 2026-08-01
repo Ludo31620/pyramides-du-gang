@@ -3,13 +3,17 @@ import {
   type Socket,
 } from "socket.io-client";
 
+const PLAYER_TOKEN_STORAGE_KEY =
+  "pyramides-player-token";
+
 function createFallbackUuid(): string {
   const bytes =
     new Uint8Array(16);
 
   if (
     typeof globalThis.crypto
-      ?.getRandomValues === "function"
+      ?.getRandomValues ===
+    "function"
   ) {
     globalThis.crypto.getRandomValues(
       bytes
@@ -65,16 +69,30 @@ function createFallbackUuid(): string {
   ].join("-");
 }
 
+function createUuid(): string {
+  if (
+    typeof globalThis.crypto
+      ?.randomUUID ===
+    "function"
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return createFallbackUuid();
+}
+
 function installRandomUuidFallback(): void {
   if (
-    typeof window === "undefined"
+    typeof window ===
+    "undefined"
   ) {
     return;
   }
 
   if (
     typeof globalThis.crypto
-      ?.randomUUID === "function"
+      ?.randomUUID ===
+    "function"
   ) {
     return;
   }
@@ -85,7 +103,6 @@ function installRandomUuidFallback(): void {
       "randomUUID",
       {
         configurable: true,
-
         value:
           createFallbackUuid,
       }
@@ -95,24 +112,133 @@ function installRandomUuidFallback(): void {
      * Certains anciens Safari empêchent
      * de modifier l'objet crypto.
      *
-     * Le jeu peut néanmoins continuer,
-     * car notre propre code n'utilise pas
-     * directement randomUUID.
+     * Le jeu utilise également son propre
+     * générateur de secours.
      */
   }
 }
 
-installRandomUuidFallback();
+function normalizePlayerToken(
+  token: string | null
+): string {
+  if (!token) {
+    return "";
+  }
+
+  return token
+    .trim()
+    .slice(0, 200);
+}
+
+export function obtenirPlayerToken():
+  string {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    throw new Error(
+      "Le playerToken ne peut être récupéré que dans le navigateur."
+    );
+  }
+
+  const storedToken =
+    normalizePlayerToken(
+      window.localStorage.getItem(
+        PLAYER_TOKEN_STORAGE_KEY
+      )
+    );
+
+  if (storedToken) {
+    return storedToken;
+  }
+
+  const newToken =
+    createUuid();
+
+  window.localStorage.setItem(
+    PLAYER_TOKEN_STORAGE_KEY,
+    newToken
+  );
+
+  return newToken;
+}
+
+function createSocket(): Socket {
+  const playerToken =
+    obtenirPlayerToken();
+
+  return io({
+    autoConnect: false,
+
+    auth: {
+      playerToken,
+    },
+  });
+}
 
 let socket: Socket | null =
   null;
 
 export function obtenirSocket(): Socket {
-  if (!socket) {
-    socket = io({
-      autoConnect: false,
-    });
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    throw new Error(
+      "Le socket ne peut être créé que dans le navigateur."
+    );
   }
+
+  const playerToken =
+    obtenirPlayerToken();
+
+  if (!socket) {
+    socket =
+      createSocket();
+
+    return socket;
+  }
+
+  /*
+   * L'objet Socket.IO peut survivre entre
+   * plusieurs navigations côté client.
+   *
+   * On remet donc systématiquement le token
+   * courant avant une éventuelle reconnexion.
+   */
+  socket.auth = {
+    playerToken,
+  };
 
   return socket;
 }
+
+export function reconnecterSocket():
+  void {
+  const currentSocket =
+    obtenirSocket();
+
+  currentSocket.auth = {
+    playerToken:
+      obtenirPlayerToken(),
+  };
+
+  if (
+    currentSocket.connected
+  ) {
+    return;
+  }
+
+  currentSocket.connect();
+}
+
+export function deconnecterSocket():
+  void {
+  if (!socket) {
+    return;
+  }
+
+  socket.disconnect();
+}
+
+installRandomUuidFallback();

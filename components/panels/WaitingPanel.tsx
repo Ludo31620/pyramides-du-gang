@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useState,
 } from "react";
 
@@ -13,6 +14,10 @@ import {
   RevealAnimation,
 } from "@/components/game/animations";
 
+import {
+  obtenirSocket,
+} from "@/lib/socket";
+
 import type {
   Carte,
 } from "@/lib/deck";
@@ -22,18 +27,11 @@ import type {
 } from "@/lib/gameEngine/actions";
 
 import type {
-  GameState,
-} from "@/lib/gameEngine/types";
-
-type WaitingGameState =
-  GameState & {
-    nextCardForReveal?:
-      | Carte
-      | null;
-  };
+  PlayerGameState,
+} from "@/lib/gameEngine/publicTypes";
 
 interface WaitingPanelProps {
-  state: WaitingGameState;
+  state: PlayerGameState;
 
   onDispatch?: (
     action: GameAction
@@ -45,6 +43,21 @@ interface PendingReveal {
   drinks: number;
   animationKey: number;
 }
+
+interface RevealAnimationPayload {
+  card: Carte;
+  drinks: number;
+  animationKey: number;
+}
+
+type RevealRequestResult =
+  | {
+      success: true;
+    }
+  | {
+      success: false;
+      error: string;
+    };
 
 export default function WaitingPanel({
   state,
@@ -58,61 +71,159 @@ export default function WaitingPanel({
       null
     );
 
+  const [
+    requestPending,
+    setRequestPending,
+  ] = useState(false);
+
+  const [
+    revealError,
+    setRevealError,
+  ] =
+    useState<string | null>(
+      null
+    );
+
   const firstCard =
-    state.progress.revealedCards === 0;
+    state.progress.revealedCards ===
+    0;
 
   const remainingCards =
     state.progress.totalCards -
     state.progress.revealedCards;
 
+  useEffect(() => {
+    const socket =
+      obtenirSocket();
+
+    function handleRevealAnimation(
+      payload:
+        RevealAnimationPayload
+    ): void {
+      if (
+        !payload ||
+        !payload.card ||
+        !Number.isFinite(
+          payload.drinks
+        ) ||
+        !Number.isFinite(
+          payload.animationKey
+        )
+      ) {
+        return;
+      }
+
+      setPendingReveal({
+        card: {
+          ...payload.card,
+        },
+
+        drinks:
+          payload.drinks,
+
+        animationKey:
+          payload.animationKey,
+      });
+
+      setRequestPending(
+        false
+      );
+
+      setRevealError(
+        null
+      );
+    }
+
+    socket.on(
+      "game:reveal-animation",
+      handleRevealAnimation
+    );
+
+    return () => {
+      socket.off(
+        "game:reveal-animation",
+        handleRevealAnimation
+      );
+    };
+  }, []);
+
   function handleReveal(): void {
     if (
       !onDispatch ||
-      pendingReveal
+      pendingReveal ||
+      requestPending
     ) {
       return;
     }
 
-    const nextCard =
-      state.nextCardForReveal;
+    setRequestPending(
+      true
+    );
 
-    if (!nextCard) {
-      console.error(
-        "La prochaine carte de la pyramide est introuvable.",
-        {
-          nextRow:
-            state.progress.nextRow,
+    setRevealError(
+      null
+    );
 
-          nextColumn:
-            state.progress.nextColumn,
+    const socket =
+      obtenirSocket();
 
-          progress:
-            state.progress,
-        }
+    if (!socket.connected) {
+      setRequestPending(
+        false
+      );
+
+      setRevealError(
+        "La connexion au serveur est interrompue."
       );
 
       return;
     }
 
-    setPendingReveal({
-      card: nextCard,
+    socket.emit(
+      "game:request-reveal-animation",
+      (
+        result:
+          RevealRequestResult
+      ) => {
+        if (
+          result.success
+        ) {
+          return;
+        }
 
-      drinks:
-        state.progress.nextRow +
-        1,
+        setRequestPending(
+          false
+        );
 
-      animationKey:
-        Date.now(),
-    });
+        setRevealError(
+          result.error
+        );
+      }
+    );
   }
 
   const completeReveal =
     useCallback((): void => {
-      onDispatch?.({
-        type: "REVEAL_CARD",
-      });
+      /*
+       * Seul l’hôte possède onDispatch
+       * pendant la phase WAITING.
+       *
+       * Les autres joueurs ferment simplement
+       * leur animation sans envoyer d’action.
+       */
+      if (onDispatch) {
+        onDispatch({
+          type: "REVEAL_CARD",
+        });
+      }
 
-      setPendingReveal(null);
+      setPendingReveal(
+        null
+      );
+
+      setRequestPending(
+        false
+      );
     }, [
       onDispatch,
     ]);
@@ -161,9 +272,15 @@ export default function WaitingPanel({
           </p>
 
           <p className="mt-1 text-lg font-black text-white">
-            {state.progress.revealedCards}
+            {
+              state.progress
+                .revealedCards
+            }
             {" / "}
-            {state.progress.totalCards}
+            {
+              state.progress
+                .totalCards
+            }
             {" cartes révélées"}
           </p>
 
@@ -180,12 +297,25 @@ export default function WaitingPanel({
           </p>
         </div>
 
+        {revealError && (
+          <div
+            role="alert"
+            className="mt-5 rounded-2xl border border-red-900 bg-red-950/60 p-4 text-sm font-semibold text-red-300"
+          >
+            {revealError}
+          </div>
+        )}
+
         <button
           type="button"
-          onClick={handleReveal}
+          onClick={
+            handleReveal
+          }
           disabled={
             !onDispatch ||
-            pendingReveal !== null ||
+            pendingReveal !==
+              null ||
+            requestPending ||
             !state.nextCardForReveal
           }
           className="
@@ -209,9 +339,11 @@ export default function WaitingPanel({
         >
           {pendingReveal
             ? "Révélation..."
-            : firstCard
-              ? "Révéler la première carte"
-              : "Révéler la carte suivante"}
+            : requestPending
+              ? "Synchronisation..."
+              : firstCard
+                ? "Révéler la première carte"
+                : "Révéler la carte suivante"}
         </button>
 
         {!onDispatch && (

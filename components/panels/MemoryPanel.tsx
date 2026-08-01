@@ -3,11 +3,11 @@
 import PlayerHand from "@/components/players/PlayerHand";
 
 import type {
-  GameState,
-} from "@/lib/gameEngine/types";
+  PlayerGameState,
+} from "@/lib/gameEngine/publicTypes";
 
 type MemoryPanelProps = {
-  state: GameState;
+  state: PlayerGameState;
 };
 
 const MEMORY_DURATION_SECONDS = 60;
@@ -18,25 +18,24 @@ export default function MemoryPanel({
   const remainingSeconds =
     state.memory.remainingSeconds;
 
-  const progressPercentage =
-    Math.max(
-      0,
-      Math.min(
-        100,
-        (
-          remainingSeconds /
-          MEMORY_DURATION_SECONDS
-        ) * 100
-      )
-    );
+  const progressPercentage = Math.max(
+    0,
+    Math.min(
+      100,
+      (
+        remainingSeconds /
+        MEMORY_DURATION_SECONDS
+      ) * 100
+    )
+  );
 
   const isUrgent =
     remainingSeconds <= 10;
 
-const cards =
-  state.players[
-    state.viewerPlayerIndex
-  ] ?? [];
+  const cards =
+    state.players[
+      state.viewerPlayerIndex
+    ] ?? [];
 
   return (
     <section className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900 p-5 shadow-2xl sm:p-8">
@@ -68,6 +67,7 @@ const cards =
             }
           >
             {remainingSeconds}
+
             <span className="ml-1 text-base">
               s
             </span>
@@ -101,7 +101,9 @@ const cards =
       </div>
 
       <p className="mt-6 text-center text-sm leading-6 text-zinc-500">
-        À la fin du compte à rebours, tes cartes seront cachées et tu devras les mémoriser.
+        À la fin du compte à rebours,
+        tes cartes seront cachées et tu
+        devras les mémoriser.
       </p>
     </section>
   );

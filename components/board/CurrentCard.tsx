@@ -1,9 +1,11 @@
 import PyramidCard from "./PyramidCard";
 
-import type { GameState } from "@/lib/gameEngine/types";
+import type {
+  PlayerGameState,
+} from "@/lib/gameEngine/publicTypes";
 
 interface CurrentCardProps {
-  state: GameState;
+  state: PlayerGameState;
 }
 
 export default function CurrentCard({
@@ -21,6 +23,7 @@ export default function CurrentCard({
         {current.card ? (
           <PyramidCard
             card={current.card}
+            hidden={false}
             size="large"
           />
         ) : (

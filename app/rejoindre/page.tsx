@@ -1,4 +1,12 @@
 "use client";
+import {
+  enregistrerSessionPartie,
+  type StoredGameSession,
+} from "@/lib/gameSession";
+
+import {
+  obtenirSocket,
+} from "@/lib/socket";
 
 import {
   useMemo,
@@ -17,12 +25,9 @@ import type {
   Socket,
 } from "socket.io-client";
 
-import {
-  obtenirSocket,
-} from "@/lib/socket";
 
-const STORAGE_PARTIE_KEY =
-  "pyramides-partie";
+
+
 
 const MIN_PSEUDO_LENGTH = 2;
 const MAX_PSEUDO_LENGTH = 20;
@@ -53,15 +58,7 @@ type JoinRoomResult =
       error: string;
     };
 
-interface StoredGame {
-  pseudo: string;
-  code: string;
-  playerId: string;
-  isHost: boolean;
-  joueurs: number;
-  players: PublicRoomPlayer[];
-  playerCount: number;
-}
+
 
 function normaliserPseudo(
   value: string
@@ -399,12 +396,25 @@ export default function RejoindrePage() {
         socket
       );
 
-      const result =
-        await rejoindreSalon(
-          socket,
-          pseudoNettoye,
-          codeNettoye
-        );
+console.log("=== AVANT JOIN ===");
+console.log("socket.id :", socket.id);
+console.log("socket.connected :", socket.connected);
+console.log("code demandé :", codeNettoye);
+
+const result =
+  await rejoindreSalon(
+    socket,
+    pseudoNettoye,
+    codeNettoye
+  );
+
+console.log("=== APRÈS JOIN ===");
+console.log(result);
+
+
+
+        console.log("CODE DEMANDÉ :", codeNettoye);
+console.log("RÉSULTAT SERVEUR :", result);
 
       if (!result.success) {
         setMessageErreur(
@@ -430,40 +440,49 @@ if (!joueurLocal) {
 
 }
 
-const partieStockee:
-  StoredGame = {
-    pseudo:
-      joueurLocal.pseudo,
+const session: StoredGameSession = {
+  code:
+    result.room.code,
 
-    code:
-      result.room.code,
+  playerId:
+    result.playerId,
 
-    playerId:
-      result.playerId,
+  pseudo:
+    joueurLocal.pseudo,
 
-    isHost:
-      joueurLocal.isHost,
+  isHost:
+    joueurLocal.isHost,
 
-    joueurs:
-      result.room.maxPlayers,
+  maxPlayers:
+    result.room.maxPlayers,
 
-    players:
-      result.room.players,
+  players:
+    result.room.players.map(
+      (player) => ({
+        id:
+          player.id,
 
-    playerCount:
-      result.room.players.length,
-  };
+        pseudo:
+          player.pseudo,
 
-      sessionStorage.setItem(
-        STORAGE_PARTIE_KEY,
-        JSON.stringify(
-          partieStockee
-        )
-      );
+        isHost:
+          player.isHost,
+      })
+    ),
 
-      router.push(
-        "/lobby"
-      );
+  playerCount:
+    result.room.players.length,
+};
+
+enregistrerSessionPartie(
+  session
+);
+
+router.replace(
+  "/lobby"
+);
+
+
     } catch (
       error: unknown
     ) {

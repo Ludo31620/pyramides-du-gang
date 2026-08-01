@@ -1,6 +1,10 @@
 "use client";
 
 import {
+  getPlayerName,
+} from "@/lib/gameEngine/getPlayerName";
+
+import {
   useEffect,
   useRef,
   useState,
@@ -19,6 +23,9 @@ import type {
 interface BluffAnnouncementAnimationProps {
   giver: number;
   target: number;
+
+  playerNames: string[];
+
   drinks: number;
   animationKey: number;
   onComplete: () => void;
@@ -26,8 +33,9 @@ interface BluffAnnouncementAnimationProps {
 
 type AnimationStage =
   | "ARRIVAL"
-  | "ATTACK"
-  | "DRINKS"
+  | "PLAYER"
+  | "CLAIM"
+  | "CARDS"
   | "LEAVING";
 
 const HIDDEN_CARD: Carte = {
@@ -39,10 +47,12 @@ const HIDDEN_CARD: Carte = {
 export default function BluffAnnouncementAnimation({
   giver,
   target,
+  playerNames,
   drinks,
   animationKey,
   onComplete,
 }: BluffAnnouncementAnimationProps) {
+
   const [
     stage,
     setStage,
@@ -62,13 +72,17 @@ export default function BluffAnnouncementAnimation({
   useEffect(() => {
     onCompleteRef.current =
       onComplete;
-  }, [onComplete]);
+  }, [
+    onComplete,
+  ]);
 
   useEffect(() => {
     completedRef.current =
       false;
 
-    setStage("ARRIVAL");
+    setStage(
+      "ARRIVAL"
+    );
 
     function addTimer(
       callback: () => void,
@@ -86,7 +100,9 @@ export default function BluffAnnouncementAnimation({
     }
 
     addTimer(() => {
-      setStage("ATTACK");
+      setStage(
+        "PLAYER"
+      );
 
       if (
         typeof navigator !==
@@ -94,23 +110,52 @@ export default function BluffAnnouncementAnimation({
         "vibrate" in navigator
       ) {
         navigator.vibrate?.(
-          [30, 25, 45]
+          35
         );
       }
-    }, 550);
+    }, 400);
 
     addTimer(() => {
-      setStage("DRINKS");
-    }, 1150);
+      setStage(
+        "CLAIM"
+      );
+    }, 850);
 
     addTimer(() => {
-      setStage("LEAVING");
-    }, 2250);
+      setStage(
+        "CARDS"
+      );
+
+      if (
+        typeof navigator !==
+          "undefined" &&
+        "vibrate" in navigator
+      ) {
+        navigator.vibrate?.(
+          [
+            25,
+            30,
+            45,
+          ]
+        );
+      }
+    }, 1350);
+
+    addTimer(() => {
+      setStage(
+        "LEAVING"
+      );
+    }, 2400);
 
     addTimer(() => {
       if (
         completedRef.current
-      ) {
+      ) 
+      
+
+
+      {
+        
         return;
       }
 
@@ -118,7 +163,7 @@ export default function BluffAnnouncementAnimation({
         true;
 
       onCompleteRef.current();
-    }, 2550);
+    }, 2750);
 
     return () => {
       timersRef.current.forEach(
@@ -131,34 +176,52 @@ export default function BluffAnnouncementAnimation({
 
       timersRef.current = [];
     };
-  }, [animationKey]);
+  }, [
+    animationKey,
+  ]);
 
-  const showAttack =
-    stage === "ATTACK" ||
-    stage === "DRINKS" ||
+const giverName =
+  getPlayerName(
+    playerNames,
+    giver
+  );
+
+const targetName =
+  getPlayerName(
+    playerNames,
+    target
+  );
+
+  const showPlayer =
+    stage === "PLAYER" ||
+    stage === "CLAIM" ||
+    stage === "CARDS" ||
     stage === "LEAVING";
 
-  const showDrinks =
-    stage === "DRINKS" ||
+  const showClaim =
+    stage === "CLAIM" ||
+    stage === "CARDS" ||
+    stage === "LEAVING";
+
+  const showCards =
+    stage === "CARDS" ||
     stage === "LEAVING";
 
   const leaving =
     stage === "LEAVING";
 
-  const drinkLabel =
-    drinks === 1
-      ? "GORGÉE"
-      : "GORGÉES";
-
   return (
     <motion.div
-      key={animationKey}
+      key={
+        animationKey
+      }
       role="dialog"
       aria-modal="true"
       aria-label={
-        `Le joueur ${giver + 1} attaque ` +
-        `le joueur ${target + 1} avec ` +
-        `${drinks} ${drinkLabel.toLowerCase()}.`
+      `${giverName} affirme à ${targetName}
+posséder une carte de la même valeur.
+${drinks} gorgée${drinks > 1 ? "s" : ""}
+sont en jeu.`
       }
       className="
         fixed
@@ -168,7 +231,7 @@ export default function BluffAnnouncementAnimation({
         items-center
         justify-center
         overflow-hidden
-        bg-black/90
+        bg-black/95
         px-5
         py-8
         backdrop-blur-md
@@ -188,17 +251,19 @@ export default function BluffAnnouncementAnimation({
       transition={{
         duration:
           leaving
-            ? 0.28
-            : 0.18,
-        ease: "easeOut",
+            ? 0.32
+            : 0.2,
+
+        ease:
+          "easeOut",
       }}
     >
       <motion.div
         aria-hidden="true"
         className="
           absolute
-          h-[440px]
-          w-[440px]
+          h-[520px]
+          w-[520px]
           rounded-full
           bg-yellow-400/10
           blur-3xl
@@ -211,26 +276,30 @@ export default function BluffAnnouncementAnimation({
           opacity:
             leaving
               ? 0
-              : 1,
+              : showClaim
+                ? 1
+                : 0.55,
+
           scale:
-            showDrinks
-              ? 1.2
+            showCards
+              ? 1.18
               : 1,
         }}
         transition={{
           duration: 0.7,
-          ease: "easeOut",
+          ease:
+            "easeOut",
         }}
       />
 
-      {stage === "ATTACK" && (
+      {stage === "CARDS" && (
         <motion.div
           aria-hidden="true"
           className="
             pointer-events-none
             absolute
             inset-0
-            bg-white
+            bg-yellow-100
           "
           initial={{
             opacity: 0,
@@ -238,13 +307,14 @@ export default function BluffAnnouncementAnimation({
           animate={{
             opacity: [
               0,
-              0.55,
+              0.3,
               0,
             ],
           }}
           transition={{
-            duration: 0.24,
-            ease: "easeOut",
+            duration: 0.28,
+            ease:
+              "easeOut",
           }}
         />
       )}
@@ -254,180 +324,59 @@ export default function BluffAnnouncementAnimation({
           relative
           flex
           w-full
-          max-w-sm
+          max-w-lg
           flex-col
           items-center
           justify-center
           text-center
         "
       >
-        <motion.p
-          className="
-            text-xs
-            font-black
-            uppercase
-            tracking-[0.35em]
-            text-yellow-400
-            sm:text-sm
-          "
-          initial={{
-            opacity: 0,
-            y: -15,
-          }}
-          animate={{
-            opacity:
-              leaving
-                ? 0
-                : 1,
-            y: 0,
-          }}
-          transition={{
-            duration: 0.35,
-            delay: 0.1,
-          }}
-        >
-          Annonce de bluff
-        </motion.p>
-
         <motion.div
+          aria-hidden="true"
           className="
-            relative
-            mt-7
             flex
-            h-[250px]
-            w-full
+            h-20
+            w-20
             items-center
             justify-center
+            rounded-full
+            border
+            border-yellow-400/25
+            bg-yellow-400/10
+            text-5xl
+            shadow-[0_0_40px_rgba(250,204,21,0.18)]
           "
           initial={{
             opacity: 0,
-            y: 180,
-            scale: 0.4,
-            rotateZ: -14,
+            scale: 0.3,
+            rotate: -25,
           }}
           animate={{
             opacity:
               leaving
                 ? 0
                 : 1,
-
-            y:
-              leaving
-                ? -50
-                : 0,
 
             scale:
-              stage === "ATTACK"
-                ? [
-                    1,
-                    1.1,
-                    1,
-                  ]
-                : 1,
-
-            rotateZ: 0,
-          }}
-          transition={{
-            opacity: {
-              duration: 0.3,
-            },
-
-            y: {
-              duration:
-                leaving
-                  ? 0.3
-                  : 0.6,
-
-              ease: [
-                0.22,
-                1,
-                0.36,
-                1,
-              ],
-            },
-
-            scale: {
-              duration:
-                stage === "ATTACK"
-                  ? 0.3
-                  : 0.6,
-
-              ease: "easeOut",
-            },
-
-            rotateZ: {
-              duration: 0.6,
-
-              ease: [
-                0.22,
-                1,
-                0.36,
-                1,
-              ],
-            },
-          }}
-        >
-          <motion.div
-            className="
-              origin-center
-              scale-[1.2]
-              sm:scale-[1.35]
-            "
-            animate={{
-              filter:
-                showAttack
-                  ? "drop-shadow(0 0 26px rgba(255, 209, 102, 0.65))"
-                  : "drop-shadow(0 0 0 rgba(255, 209, 102, 0))",
-            }}
-            transition={{
-              duration: 0.3,
-            }}
-          >
-            <PlayingCard
-              card={HIDDEN_CARD}
-              faceUp={false}
-              size="lg"
-            />
-          </motion.div>
-        </motion.div>
-
-        <motion.div
-          className="
-            mt-3
-            flex
-            min-h-32
-            flex-col
-            items-center
-            justify-center
-          "
-          initial={{
-            opacity: 0,
-            y: 24,
-            scale: 0.82,
-          }}
-          animate={{
-            opacity:
-              showAttack &&
-              !leaving
+              showPlayer
                 ? 1
-                : 0,
-
-            y:
-              showAttack
-                ? 0
-                : 24,
-
-            scale:
-              showAttack
-                ? [
-                    0.82,
-                    1.08,
+                : [
+                    0.3,
+                    1.18,
                     1,
-                  ]
-                : 0.82,
+                  ],
+
+            rotate:
+              showPlayer
+                ? 0
+                : [
+                    -25,
+                    8,
+                    0,
+                  ],
           }}
           transition={{
-            duration: 0.46,
+            duration: 0.55,
 
             ease: [
               0.34,
@@ -437,94 +386,77 @@ export default function BluffAnnouncementAnimation({
             ],
           }}
         >
-          <p
-            className="
-              text-2xl
-              font-black
-              text-white
-              sm:text-3xl
-            "
-          >
-            Joueur {giver + 1}
-          </p>
-
-          <motion.p
-            className="
-              my-2
-              text-sm
-              font-black
-              uppercase
-              tracking-[0.3em]
-              text-zinc-400
-            "
-            initial={{
-              opacity: 0,
-              scale: 0.6,
-            }}
-            animate={{
-              opacity:
-                showAttack
-                  ? 1
-                  : 0,
-              scale:
-                showAttack
-                  ? 1
-                  : 0.6,
-            }}
-            transition={{
-              delay: 0.12,
-              duration: 0.3,
-              ease: "easeOut",
-            }}
-          >
-            attaque
-          </motion.p>
-
-          <p
-            className="
-              text-2xl
-              font-black
-              text-yellow-400
-              sm:text-3xl
-            "
-          >
-            Joueur {target + 1}
-          </p>
+          🎭
         </motion.div>
 
-        <motion.div
+        <motion.p
           className="
-            mt-5
-            flex
-            min-h-20
-            items-center
-            justify-center
+            mt-7
+            text-sm
+            font-black
+            uppercase
+            tracking-[0.32em]
+            text-zinc-500
           "
           initial={{
             opacity: 0,
-            y: 22,
-            scale: 0.5,
+            y: 12,
           }}
           animate={{
             opacity:
-              showDrinks &&
+              showPlayer &&
               !leaving
                 ? 1
                 : 0,
 
             y:
-              showDrinks
+              showPlayer
                 ? 0
-                : 22,
+                : 12,
+          }}
+          transition={{
+            duration: 0.3,
+            ease:
+              "easeOut",
+          }}
+        >
+          Joueur
+        </motion.p>
+
+        <motion.h2
+          className="
+            mt-1
+            text-5xl
+            font-black
+            leading-none
+            text-white
+            sm:text-6xl
+          "
+          initial={{
+            opacity: 0,
+            y: 28,
+            scale: 0.75,
+          }}
+          animate={{
+            opacity:
+              showPlayer &&
+              !leaving
+                ? 1
+                : 0,
+
+            y:
+              showPlayer
+                ? 0
+                : 28,
 
             scale:
-              showDrinks
+              showPlayer
                 ? [
-                    0.5,
-                    1.3,
+                    0.75,
+                    1.1,
                     1,
                   ]
-                : 0.5,
+                : 0.75,
           }}
           transition={{
             duration: 0.48,
@@ -537,45 +469,298 @@ export default function BluffAnnouncementAnimation({
             ],
           }}
         >
-          <div
-            className="
-              inline-flex
-              items-baseline
-              gap-3
-              rounded-2xl
-              border
-              border-yellow-400/25
-              bg-yellow-400/10
-              px-7
-              py-4
-              shadow-[0_0_35px_rgba(250,204,21,0.12)]
-            "
-          >
-            <span
-              className="
-                text-5xl
-                font-black
-                leading-none
-                text-yellow-400
-                drop-shadow-[0_0_20px_rgba(250,204,21,0.45)]
-              "
-            >
-              {drinks}
-            </span>
+          {giverName}
+        </motion.h2>
 
-            <span
-              className="
-                text-sm
-                font-black
-                uppercase
-                tracking-[0.2em]
-                text-white
-              "
-            >
-              {drinkLabel}
-            </span>
-          </div>
+        <motion.div
+          className="
+            mt-7
+            flex
+            min-h-32
+            flex-col
+            items-center
+            justify-center
+          "
+          initial={{
+            opacity: 0,
+            y: 30,
+          }}
+          animate={{
+            opacity:
+              showClaim &&
+              !leaving
+                ? 1
+                : 0,
+
+            y:
+              showClaim
+                ? 0
+                : 30,
+          }}
+          transition={{
+            duration: 0.45,
+
+            ease: [
+              0.22,
+              1,
+              0.36,
+              1,
+            ],
+          }}
+        >
+          <motion.p
+            className="
+              text-sm
+              font-black
+              uppercase
+              tracking-[0.4em]
+              text-yellow-400
+              sm:text-base
+            "
+            initial={{
+              opacity: 0,
+              scale: 0.7,
+            }}
+            animate={{
+              opacity:
+                showClaim
+                  ? 1
+                  : 0,
+
+              scale:
+                showClaim
+                  ? 1
+                  : 0.7,
+            }}
+            transition={{
+              duration: 0.3,
+            }}
+          >
+            Affirme
+          </motion.p>
+
+          <motion.p
+            className="
+              mt-4
+              max-w-md
+              text-3xl
+              font-black
+              uppercase
+              leading-tight
+              text-white
+              sm:text-4xl
+            "
+            initial={{
+              opacity: 0,
+              y: 20,
+              scale: 0.85,
+            }}
+            animate={{
+              opacity:
+                showClaim &&
+                !leaving
+                  ? 1
+                  : 0,
+
+              y:
+                showClaim
+                  ? 0
+                  : 20,
+
+              scale:
+                showClaim
+                  ? [
+                      0.85,
+                      1.05,
+                      1,
+                    ]
+                  : 0.85,
+            }}
+            transition={{
+              duration: 0.5,
+
+              delay: 0.08,
+
+              ease: [
+                0.34,
+                1.56,
+                0.64,
+                1,
+              ],
+            }}
+          >
+            Avoir la même valeur
+          </motion.p>
         </motion.div>
+
+        <motion.div
+          className="
+            relative
+            mt-5
+            flex
+            h-40
+            w-full
+            items-center
+            justify-center
+          "
+          initial={{
+            opacity: 0,
+            y: 45,
+            scale: 0.75,
+          }}
+          animate={{
+            opacity:
+              showCards &&
+              !leaving
+                ? 1
+                : 0,
+
+            y:
+              showCards
+                ? 0
+                : 45,
+
+            scale:
+              showCards
+                ? [
+                    0.75,
+                    1.08,
+                    1,
+                  ]
+                : 0.75,
+          }}
+          transition={{
+            duration: 0.55,
+
+            ease: [
+              0.34,
+              1.56,
+              0.64,
+              1,
+            ],
+          }}
+        >
+          <motion.div
+            className="
+              absolute
+              -translate-x-9
+              -rotate-12
+              drop-shadow-[0_0_24px_rgba(250,204,21,0.35)]
+            "
+            animate={{
+              y:
+                showCards
+                  ? [
+                      18,
+                      -8,
+                      0,
+                    ]
+                  : 18,
+
+              rotate:
+                showCards
+                  ? [
+                      -22,
+                      -9,
+                      -12,
+                    ]
+                  : -22,
+            }}
+            transition={{
+              duration: 0.58,
+
+              ease: [
+                0.34,
+                1.56,
+                0.64,
+                1,
+              ],
+            }}
+          >
+            <PlayingCard
+              card={
+                HIDDEN_CARD
+              }
+              faceUp={false}
+              size="md"
+            />
+          </motion.div>
+
+          <motion.div
+            className="
+              absolute
+              translate-x-9
+              rotate-12
+              drop-shadow-[0_0_24px_rgba(250,204,21,0.35)]
+            "
+            animate={{
+              y:
+                showCards
+                  ? [
+                      18,
+                      -8,
+                      0,
+                    ]
+                  : 18,
+
+              rotate:
+                showCards
+                  ? [
+                      22,
+                      9,
+                      12,
+                    ]
+                  : 22,
+            }}
+            transition={{
+              duration: 0.58,
+
+              delay: 0.06,
+
+              ease: [
+                0.34,
+                1.56,
+                0.64,
+                1,
+              ],
+            }}
+          >
+            <PlayingCard
+              card={
+                HIDDEN_CARD
+              }
+              faceUp={false}
+              size="md"
+            />
+          </motion.div>
+        </motion.div>
+
+        <motion.p
+          className="
+            mt-3
+            text-xs
+            font-black
+            uppercase
+            tracking-[0.24em]
+            text-zinc-500
+          "
+          initial={{
+            opacity: 0,
+          }}
+          animate={{
+            opacity:
+              showCards &&
+              !leaving
+                ? 1
+                : 0,
+          }}
+          transition={{
+            duration: 0.35,
+            delay: 0.18,
+          }}
+        >
+          À {targetName}
+        </motion.p>
       </div>
     </motion.div>
   );

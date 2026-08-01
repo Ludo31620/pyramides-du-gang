@@ -17,11 +17,14 @@ import {
   obtenirSocket,
 } from "@/lib/socket";
 
-const STORAGE_PARTIE_KEY =
-  "pyramides-partie";
-
-const MIN_PLAYER_COUNT = 2;
-const MAX_PLAYER_COUNT = 9;
+import {
+  enregistrerSessionPartie,
+  lireSessionPartie,
+  MIN_PLAYER_COUNT,
+  supprimerSessionPartie,
+  type StoredGameSession,
+  type StoredRoomPlayer,
+} from "@/lib/gameSession";
 
 interface PublicRoomPlayer {
   id: string;
@@ -31,21 +34,13 @@ interface PublicRoomPlayer {
 
 interface PublicRoom {
   code: string;
+
   status:
     | "LOBBY"
     | "IN_GAME";
+
   maxPlayers: number;
   players: PublicRoomPlayer[];
-}
-
-interface StoredGame {
-  pseudo?: string;
-  joueurs?: number;
-  code?: string;
-  playerId?: string;
-  isHost?: boolean;
-  players?: PublicRoomPlayer[];
-  playerCount?: number;
 }
 
 type GetRoomResult =
@@ -73,92 +68,50 @@ interface GameStartedPayload {
   code: string;
 }
 
-function lirePartieStockee():
-  | StoredGame
-  | null {
-  const storedValue =
-    sessionStorage.getItem(
-      STORAGE_PARTIE_KEY
-    );
+function convertirJoueurs(
+  players: PublicRoomPlayer[]
+): StoredRoomPlayer[] {
+  return players.map(
+    (player) => ({
+      id:
+        player.id,
 
-  if (!storedValue) {
-    return null;
-  }
+      pseudo:
+        player.pseudo,
 
-  try {
-    return JSON.parse(
-      storedValue
-    ) as StoredGame;
-  } catch (error) {
-    console.error(
-      "Impossible de lire la partie stockée :",
-      error
-    );
-
-    return null;
-  }
+      isHost:
+        player.isHost,
+    })
+  );
 }
 
 function creerSalonInitial(
-  storedGame: StoredGame
-): PublicRoom | null {
-  const pseudo =
-    storedGame.pseudo
-      ?.trim();
-
-  const code =
-    storedGame.code
-      ?.trim()
-      .toUpperCase();
-
-  const playerId =
-    storedGame.playerId
-      ?.trim();
-
-  const maxPlayers =
-    storedGame.joueurs;
-
-  if (
-    !pseudo ||
-    !code ||
-    !playerId ||
-    typeof maxPlayers !==
-      "number" ||
-    !Number.isInteger(
-      maxPlayers
-    ) ||
-    maxPlayers <
-      MIN_PLAYER_COUNT ||
-    maxPlayers >
-      MAX_PLAYER_COUNT
-  ) {
-    return null;
-  }
-
-  const storedPlayers =
-    Array.isArray(
-      storedGame.players
-    ) &&
-    storedGame.players.length >
-      0
-      ? storedGame.players
-      : [
-          {
-            id: playerId,
-            pseudo,
-            isHost:
-              storedGame
-                .isHost ===
-              true,
-          },
-        ];
-
+  storedGame:
+    StoredGameSession
+): PublicRoom {
   return {
-    code,
-    status: "LOBBY",
-    maxPlayers,
+    code:
+      storedGame.code,
+
+    status:
+      "LOBBY",
+
+    maxPlayers:
+      storedGame.maxPlayers,
+
     players:
-      storedPlayers,
+      storedGame.players.map(
+        (player) => ({
+          id:
+            player.id,
+
+          pseudo:
+            player.pseudo,
+
+          isHost:
+            player.isHost,
+        })
+      ),
   };
 }
 
@@ -254,6 +207,7 @@ function demanderEtatSalon(
 
             resolve({
               success: false,
+
               error:
                 "Le serveur n'a pas répondu à temps.",
             });
@@ -313,6 +267,7 @@ function demanderDemarrage(
 
             resolve({
               success: false,
+
               error:
                 "Le serveur n'a pas répondu à temps.",
             });
@@ -357,9 +312,9 @@ export default function LobbyPage() {
     storedGame,
     setStoredGame,
   ] =
-    useState<StoredGame | null>(
-      null
-    );
+    useState<
+      StoredGameSession | null
+    >(null);
 
   const [
     room,
@@ -393,246 +348,251 @@ export default function LobbyPage() {
   ] = useState(false);
 
   useEffect(() => {
-  const partieStockee =
-    lirePartieStockee();
+    const partieStockee =
+      lireSessionPartie();
 
-  if (!partieStockee) {
-    setChargement(false);
-    return;
-  }
-
-  /*
-   * Cette constante permet à TypeScript
-   * de conserver le type StoredGame
-   * dans les fonctions imbriquées.
-   */
-  const partieInitiale:
-    StoredGame =
-      partieStockee;
-
-  const salonInitial =
-    creerSalonInitial(
-      partieInitiale
-    );
-
-  if (!salonInitial) {
-    setChargement(false);
-    return;
-  }
-
-  const roomCode =
-    salonInitial.code;
-
-  setStoredGame(
-    partieInitiale
-  );
-
-  setRoom(
-    salonInitial
-  );
-
-  const socket =
-    obtenirSocket();
-
-  function enregistrerSalon(
-    updatedRoom:
-      PublicRoom,
-    playerId:
-      string =
-        partieInitiale
-          .playerId ?? ""
-  ): void {
-    if (
-      updatedRoom.code !==
-      roomCode
-    ) {
+    if (!partieStockee) {
+      setChargement(false);
       return;
     }
 
-    const joueurLocal =
-      updatedRoom.players.find(
-        (player) =>
-          player.id ===
-          playerId
+    const partieInitiale:
+      StoredGameSession =
+        partieStockee;
+
+    const salonInitial =
+      creerSalonInitial(
+        partieInitiale
       );
 
-    const nouvellePartie:
-      StoredGame = {
-        ...partieInitiale,
+    const roomCode =
+      salonInitial.code;
 
-        pseudo:
-          joueurLocal
-            ?.pseudo ??
+    setStoredGame(
+      partieInitiale
+    );
+
+    setRoom(
+      salonInitial
+    );
+
+    const socket =
+      obtenirSocket();
+
+    function enregistrerSalon(
+      updatedRoom:
+        PublicRoom,
+      playerId:
+        string =
           partieInitiale
-            .pseudo,
+            .playerId
+    ): StoredGameSession {
+      const joueurLocal =
+        updatedRoom.players.find(
+          (player) =>
+            player.id ===
+            playerId
+        );
 
+      const nouvellePartie:
+        StoredGameSession = {
         code:
           updatedRoom.code,
 
         playerId,
 
+        pseudo:
+          joueurLocal
+            ?.pseudo ??
+          partieInitiale.pseudo,
+
         isHost:
           joueurLocal
             ?.isHost ??
-          partieInitiale
-            .isHost,
+          partieInitiale.isHost,
 
-        joueurs:
-          updatedRoom
-            .maxPlayers,
+        maxPlayers:
+          updatedRoom.maxPlayers,
 
         players:
-          updatedRoom
-            .players,
+          convertirJoueurs(
+            updatedRoom.players
+          ),
 
         playerCount:
-          updatedRoom
-            .players
-            .length,
+          updatedRoom.players.length,
       };
 
-    setRoom(
-      updatedRoom
-    );
-
-    setStoredGame(
-      nouvellePartie
-    );
-
-    sessionStorage.setItem(
-      STORAGE_PARTIE_KEY,
-      JSON.stringify(
+      enregistrerSessionPartie(
         nouvellePartie
-      )
-    );
-  }
-
-  function gererMiseAJourSalon(
-    updatedRoom:
-      PublicRoom
-  ): void {
-    enregistrerSalon(
-      updatedRoom
-    );
-  }
-
-  function gererDebutPartie(
-    payload:
-      GameStartedPayload
-  ): void {
-    if (
-      payload.code !==
-      roomCode
-    ) {
-      return;
-    }
-
-    router.push(
-      "/jeu"
-    );
-  }
-
-  function gererDeconnexion():
-    void {
-    setMessageErreur(
-      "Connexion au serveur interrompue."
-    );
-  }
-
-  function gererReconnexion():
-    void {
-    setMessageErreur(null);
-  }
-
-  socket.on(
-    "room:updated",
-    gererMiseAJourSalon
-  );
-
-  socket.on(
-    "game:started",
-    gererDebutPartie
-  );
-
-  socket.on(
-    "disconnect",
-    gererDeconnexion
-  );
-
-  socket.on(
-    "connect",
-    gererReconnexion
-  );
-
-  void connecterSocket(
-    socket
-  )
-    .then(async () => {
-      setMessageErreur(
-        null
       );
 
-      const result =
-        await demanderEtatSalon(
-          socket,
-          roomCode
-        );
+      setRoom(
+        updatedRoom
+      );
 
-      if (!result.success) {
-        setMessageErreur(
-          result.error
-        );
+      setStoredGame(
+        nouvellePartie
+      );
 
+      return nouvellePartie;
+    }
+
+    function gererMiseAJourSalon(
+      updatedRoom:
+        PublicRoom
+    ): void {
+      if (
+        updatedRoom.code !==
+        roomCode
+      ) {
         return;
       }
 
       enregistrerSalon(
-        result.room,
-        result.playerId
+        updatedRoom
       );
-    })
-    .catch(
-      (
-        error: unknown
-      ) => {
-        console.error(
-          "Connexion au lobby impossible :",
-          error
-        );
 
-        setMessageErreur(
-          error instanceof Error
-            ? error.message
-            : "Impossible de se connecter au serveur."
+      if (
+        updatedRoom.status ===
+        "IN_GAME"
+      ) {
+        router.replace(
+          "/jeu"
         );
       }
-    )
-    .finally(() => {
-      setChargement(false);
-    });
+    }
 
-  return () => {
-    socket.off(
+    function gererDebutPartie(
+      payload:
+        GameStartedPayload
+    ): void {
+      if (
+        payload.code !==
+        roomCode
+      ) {
+        return;
+      }
+
+      router.replace(
+        "/jeu"
+      );
+    }
+
+    function gererDeconnexion():
+      void {
+      setMessageErreur(
+        "Connexion au serveur interrompue. Reconnexion en cours..."
+      );
+    }
+
+    function gererReconnexion():
+      void {
+      setMessageErreur(null);
+    }
+
+    socket.on(
       "room:updated",
       gererMiseAJourSalon
     );
 
-    socket.off(
+    socket.on(
       "game:started",
       gererDebutPartie
     );
 
-    socket.off(
+    socket.on(
       "disconnect",
       gererDeconnexion
     );
 
-    socket.off(
+    socket.on(
       "connect",
       gererReconnexion
     );
-  };
-}, [router]);
+
+    void connecterSocket(
+      socket
+    )
+      .then(async () => {
+        setMessageErreur(
+          null
+        );
+
+        const result =
+          await demanderEtatSalon(
+            socket,
+            roomCode
+          );
+
+        if (
+          !result.success
+        ) {
+          setMessageErreur(
+            result.error
+          );
+
+          return;
+        }
+
+        enregistrerSalon(
+          result.room,
+          result.playerId
+        );
+
+        if (
+          result.room.status ===
+          "IN_GAME"
+        ) {
+          router.replace(
+            "/jeu"
+          );
+        }
+      })
+      .catch(
+        (
+          error: unknown
+        ) => {
+          console.error(
+            "Connexion au lobby impossible :",
+            error
+          );
+
+          setMessageErreur(
+            error instanceof Error
+              ? error.message
+              : "Impossible de se connecter au serveur."
+          );
+        }
+      )
+      .finally(() => {
+        setChargement(false);
+      });
+
+    return () => {
+      socket.off(
+        "room:updated",
+        gererMiseAJourSalon
+      );
+
+      socket.off(
+        "game:started",
+        gererDebutPartie
+      );
+
+      socket.off(
+        "disconnect",
+        gererDeconnexion
+      );
+
+      socket.off(
+        "connect",
+        gererReconnexion
+      );
+    };
+  }, [
+    router,
+  ]);
 
   async function copierCode():
     Promise<void> {
@@ -673,6 +633,7 @@ export default function LobbyPage() {
     Promise<void> {
     if (
       !room ||
+      !storedGame ||
       demarrageEnCours
     ) {
       return;
@@ -682,7 +643,7 @@ export default function LobbyPage() {
       room.players.find(
         (player) =>
           player.id ===
-          storedGame?.playerId
+          storedGame.playerId
       );
 
     if (
@@ -727,7 +688,9 @@ export default function LobbyPage() {
           room.code
         );
 
-      if (!result.success) {
+      if (
+        !result.success
+      ) {
         setMessageErreur(
           result.error
         );
@@ -735,32 +698,45 @@ export default function LobbyPage() {
         return;
       }
 
+      const joueurApresDemarrage =
+        result.room.players.find(
+          (player) =>
+            player.id ===
+            storedGame.playerId
+        );
+
       const nouvellePartie:
-        StoredGame = {
-          ...storedGame,
+        StoredGameSession = {
+        code:
+          result.room.code,
 
-          code:
-            result.room.code,
+        playerId:
+          storedGame.playerId,
 
-          joueurs:
-            result.room
-              .maxPlayers,
+        pseudo:
+          joueurApresDemarrage
+            ?.pseudo ??
+          storedGame.pseudo,
 
-          players:
-            result.room
-              .players,
+        isHost:
+          joueurApresDemarrage
+            ?.isHost ??
+          storedGame.isHost,
 
-          playerCount:
-            result.room
-              .players
-              .length,
-        };
+        maxPlayers:
+          result.room.maxPlayers,
 
-      sessionStorage.setItem(
-        STORAGE_PARTIE_KEY,
-        JSON.stringify(
-          nouvellePartie
-        )
+        players:
+          convertirJoueurs(
+            result.room.players
+          ),
+
+        playerCount:
+          result.room.players.length,
+      };
+
+      enregistrerSessionPartie(
+        nouvellePartie
       );
 
       setStoredGame(
@@ -769,6 +745,10 @@ export default function LobbyPage() {
 
       setRoom(
         result.room
+      );
+
+      router.replace(
+        "/jeu"
       );
     } catch (
       error: unknown
@@ -792,9 +772,7 @@ export default function LobbyPage() {
 
   function quitterLobby():
     void {
-    sessionStorage.removeItem(
-      STORAGE_PARTIE_KEY
-    );
+    supprimerSessionPartie();
 
     router.replace(
       "/"
@@ -831,8 +809,8 @@ export default function LobbyPage() {
           </h1>
 
           <p className="mt-4 text-sm leading-6 text-zinc-400">
-            Les informations du salon
-            sont absentes ou invalides.
+            Les informations du salon sont
+            absentes ou invalides.
           </p>
 
           <button
@@ -882,9 +860,9 @@ export default function LobbyPage() {
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-zinc-400">
-            Partage le code avec tes
-            amis pour qu&apos;ils rejoignent
-            la partie.
+            Partage le code avec tes amis
+            pour qu&apos;ils rejoignent la
+            partie.
           </p>
         </header>
 
@@ -923,14 +901,9 @@ export default function LobbyPage() {
             </div>
 
             <div className="rounded-full bg-yellow-400 px-4 py-2 text-sm font-black text-zinc-950">
-              {
-                room.players
-                  .length
-              }
+              {room.players.length}
               {" / "}
-              {
-                room.maxPlayers
-              }
+              {room.maxPlayers}
             </div>
           </div>
 
@@ -942,8 +915,7 @@ export default function LobbyPage() {
               ) => {
                 const estJoueurLocal =
                   player.id ===
-                  storedGame
-                    .playerId;
+                  storedGame.playerId;
 
                 return (
                   <article
@@ -958,9 +930,7 @@ export default function LobbyPage() {
 
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-black">
-                        {
-                          player.pseudo
-                        }
+                        {player.pseudo}
 
                         {estJoueurLocal && (
                           <span className="ml-2 text-xs font-bold text-zinc-500">
@@ -992,8 +962,7 @@ export default function LobbyPage() {
                   Math.max(
                     0,
                     room.maxPlayers -
-                      room.players
-                        .length
+                      room.players.length
                   ),
               },
               (
@@ -1035,16 +1004,15 @@ export default function LobbyPage() {
             >
               {demarrageEnCours
                 ? "Démarrage..."
-                : room.players
-                      .length <
+                : room.players.length <
                     MIN_PLAYER_COUNT
                   ? "En attente d'un joueur"
                   : "Démarrer la partie"}
             </button>
           ) : (
             <div className="mt-6 rounded-2xl bg-zinc-800 px-5 py-4 text-center text-sm font-bold text-zinc-400">
-              En attente du démarrage
-              par l&apos;hôte...
+              En attente du démarrage par
+              l&apos;hôte...
             </div>
           )}
         </section>

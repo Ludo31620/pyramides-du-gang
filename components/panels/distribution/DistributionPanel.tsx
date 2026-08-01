@@ -1,14 +1,26 @@
+import PlayerHand from "@/components/players/PlayerHand";
+
+import {
+  getPlayerName,
+} from "@/lib/gameEngine/getPlayerName";
+
 import type {
   GameAction,
 } from "@/lib/gameEngine/actions";
 
 import type {
   DistributionAnswer,
-  GameState,
+  DistributionResult,
 } from "@/lib/gameEngine/types";
 
+import type {
+  PlayerGameState,
+} from "@/lib/gameEngine/publicTypes";
+
 interface DistributionPanelProps {
-  state: GameState;
+  state: PlayerGameState;
+
+  playerNames: string[];
 
   onDispatch?: (
     action: GameAction
@@ -109,11 +121,8 @@ const QUESTION_NUMBERS: Record<
 };
 
 function getCardLabel(
-  state: GameState
+  result: DistributionResult | null
 ): string | null {
-  const result =
-    state.distribution.lastResult;
-
   if (!result) {
     return null;
   }
@@ -123,8 +132,10 @@ function getCardLabel(
 
 export default function DistributionPanel({
   state,
+  playerNames,
   onDispatch,
 }: DistributionPanelProps) {
+
   const {
     currentPlayer,
     question,
@@ -132,37 +143,70 @@ export default function DistributionPanel({
     lastResult,
   } = state.distribution;
 
+  const currentPlayerName =
+  getPlayerName(
+    playerNames,
+    currentPlayer
+  );
+
+  /*
+   * Le moteur conserve le dernier résultat
+   * lorsqu’il passe au joueur suivant.
+   *
+   * On ne l’affiche que s’il appartient
+   * encore au joueur actuellement actif.
+   */
+  const visibleLastResult =
+    lastResult?.player ===
+    currentPlayer
+      ? lastResult
+      : null;
+
   const answers =
     ANSWERS_BY_QUESTION[question];
 
   const cardLabel =
-    getCardLabel(state);
+    getCardLabel(
+      visibleLastResult
+    );
 
   const buttonsDisabled =
-    !onDispatch || awaitingGive;
+    !onDispatch ||
+    awaitingGive;
 
   function answer(
     selectedAnswer: DistributionAnswer
-  ) {
-    if (!onDispatch || awaitingGive) {
+  ): void {
+    if (
+      !onDispatch ||
+      awaitingGive
+    ) {
       return;
     }
 
     onDispatch({
-      type: "ANSWER_DISTRIBUTION",
-      answer: selectedAnswer,
+      type:
+        "ANSWER_DISTRIBUTION",
+
+      answer:
+        selectedAnswer,
     });
   }
 
   function giveDrink(
     target: number
-  ) {
-    if (!onDispatch || !awaitingGive) {
+  ): void {
+    if (
+      !onDispatch ||
+      !awaitingGive
+    ) {
       return;
     }
 
     onDispatch({
-      type: "GIVE_DISTRIBUTION_DRINK",
+      type:
+        "GIVE_DISTRIBUTION_DRINK",
+
       target,
     });
   }
@@ -176,26 +220,36 @@ export default function DistributionPanel({
           </p>
 
           <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
-            Joueur {currentPlayer + 1}
+            {currentPlayerName}
           </h2>
 
           <p className="mt-2 text-sm text-zinc-400">
-            {QUESTION_NUMBERS[question]}
+            {
+              QUESTION_NUMBERS[
+                question
+              ]
+            }
           </p>
         </div>
 
         <div className="flex gap-2">
           {[0, 1, 2, 3].map(
-            (questionIndex) => {
+            (
+              questionIndex
+            ) => {
               const isCurrent =
-                questionIndex === question;
+                questionIndex ===
+                question;
 
               const isCompleted =
-                questionIndex < question;
+                questionIndex <
+                question;
 
               return (
                 <div
-                  key={questionIndex}
+                  key={
+                    questionIndex
+                  }
                   className={[
                     "flex h-9 w-9 items-center justify-center rounded-full border text-sm font-black",
                     isCurrent
@@ -205,7 +259,8 @@ export default function DistributionPanel({
                         : "border-white/10 bg-zinc-950 text-zinc-600",
                   ].join(" ")}
                 >
-                  {questionIndex + 1}
+                  {questionIndex +
+                    1}
                 </div>
               );
             }
@@ -213,11 +268,11 @@ export default function DistributionPanel({
         </div>
       </div>
 
-      {lastResult && (
+      {visibleLastResult && (
         <div
           className={[
             "mt-6 rounded-2xl border p-5",
-            lastResult.correct
+            visibleLastResult.correct
               ? "border-green-400/20 bg-green-400/10"
               : "border-red-400/20 bg-red-400/10",
           ].join(" ")}
@@ -227,12 +282,12 @@ export default function DistributionPanel({
               <p
                 className={[
                   "text-sm font-black uppercase tracking-wider",
-                  lastResult.correct
+                  visibleLastResult.correct
                     ? "text-green-300"
                     : "text-red-300",
                 ].join(" ")}
               >
-                {lastResult.correct
+                {visibleLastResult.correct
                   ? "Bonne réponse"
                   : "Mauvaise réponse"}
               </p>
@@ -250,35 +305,57 @@ export default function DistributionPanel({
           </div>
 
           <p className="mt-4 text-sm text-zinc-300">
-            {lastResult.correct
+            {visibleLastResult.correct
               ? "Tu peux donner une gorgée à un autre joueur."
-              : `Le joueur ${
-                  lastResult.player + 1
-                } boit une gorgée.`}
+              : `${getPlayerName(
+  playerNames,
+  visibleLastResult.player
+)} boit une gorgée.`}
           </p>
         </div>
       )}
 
+<div className="mt-8 rounded-2xl border border-white/10 bg-black/20 p-5">
+  <p className="mb-4 text-sm font-black uppercase tracking-wider text-zinc-500">
+    Tes cartes
+  </p>
+
+  <PlayerHand
+    cards={
+      state.players[
+        state.viewerPlayerIndex
+      ]
+    }
+  />
+</div>
+
       {awaitingGive ? (
         <div className="mt-8">
           <h3 className="text-xl font-black text-white">
-            À qui donnes-tu une gorgée ?
+            À qui donnes-tu une
+            gorgée ?
           </h3>
 
           <p className="mt-2 text-sm text-zinc-400">
-            Choisis un autre membre du gang.
+            Choisis un autre membre
+            du gang.
           </p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {state.players.map(
-              (_, playerIndex) => {
+              (
+                _,
+                playerIndex
+              ) => {
                 const isCurrentPlayer =
                   playerIndex ===
                   currentPlayer;
 
                 return (
                   <button
-                    key={playerIndex}
+                    key={
+                      playerIndex
+                    }
                     type="button"
                     disabled={
                       !onDispatch ||
@@ -301,14 +378,16 @@ export default function DistributionPanel({
                     </span>
 
                     <span className="mt-1 block text-lg font-black">
-                      Joueur{" "}
-                      {playerIndex + 1}
+                      {getPlayerName(
+  playerNames,
+  playerIndex
+)}
                     </span>
 
                     {isCurrentPlayer && (
                       <span className="mt-2 block text-xs text-zinc-600">
-                        Impossible de se
-                        choisir
+                        Impossible de
+                        se choisir
                       </span>
                     )}
                   </button>
@@ -320,31 +399,41 @@ export default function DistributionPanel({
       ) : (
         <div className="mt-8">
           <h3 className="text-xl font-black text-white sm:text-2xl">
-            {QUESTION_TITLES[question]}
+            {
+              QUESTION_TITLES[
+                question
+              ]
+            }
           </h3>
 
           <div
             className={[
               "mt-5 grid gap-4",
-              answers.length === 4
+              answers.length ===
+              4
                 ? "sm:grid-cols-2 lg:grid-cols-4"
                 : "sm:grid-cols-2",
             ].join(" ")}
           >
             {answers.map(
               ({
-                answer: answerValue,
+                answer:
+                  answerValue,
                 label,
                 description,
               }) => (
                 <button
-                  key={answerValue}
+                  key={
+                    answerValue
+                  }
                   type="button"
                   disabled={
                     buttonsDisabled
                   }
                   onClick={() =>
-                    answer(answerValue)
+                    answer(
+                      answerValue
+                    )
                   }
                   className="rounded-2xl border border-white/10 bg-zinc-950 p-5 text-left transition hover:border-yellow-400/50 hover:bg-yellow-400/10 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -354,7 +443,9 @@ export default function DistributionPanel({
 
                   {description && (
                     <span className="mt-2 block text-sm text-zinc-500">
-                      {description}
+                      {
+                        description
+                      }
                     </span>
                   )}
                 </button>
@@ -366,8 +457,8 @@ export default function DistributionPanel({
 
       {!onDispatch && (
         <p className="mt-6 text-center text-xs text-zinc-600">
-          Mode aperçu : les actions sont
-          désactivées.
+          Mode aperçu : les actions
+          sont désactivées.
         </p>
       )}
     </section>

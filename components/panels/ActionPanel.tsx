@@ -1,27 +1,23 @@
+import BluffResultPanel from "@/components/panels/BluffResultPanel";
 import DistributionPanel from "@/components/panels/distribution/DistributionPanel";
 import MemoryPanel from "@/components/panels/MemoryPanel";
 import PlayerTurnPanel from "@/components/panels/PlayerTurnPanel";
-import WaitingPanel from "@/components/panels/WaitingPanel";
 import ResponsePanel from "@/components/panels/ResponsePanel";
-import BluffResultPanel from "@/components/panels/BluffResultPanel";
-
+import WaitingPanel from "@/components/panels/WaitingPanel";
 
 import type {
   GameAction,
 } from "@/lib/gameEngine/actions";
 
 import type {
-  GameState,
-} from "@/lib/gameEngine/types";
+  PlayerGameState,
+} from "@/lib/gameEngine/publicTypes";
 
 interface ActionPanelProps {
-  state: GameState;
+  state: PlayerGameState;
 
-  /**
-   * Facultatif afin que les pages de test
-   * puissent toujours afficher le panneau
-   * sans posséder de GameProvider.
-   */
+  playerNames?: string[];
+
   onDispatch?: (
     action: GameAction
   ) => void;
@@ -57,6 +53,7 @@ function PlaceholderPanel({
 
 export default function ActionPanel({
   state,
+  playerNames = [],
   onDispatch,
 }: ActionPanelProps) {
   switch (state.phase) {
@@ -64,7 +61,12 @@ export default function ActionPanel({
       return (
         <DistributionPanel
           state={state}
-          onDispatch={onDispatch}
+          playerNames={
+            playerNames
+          }
+          onDispatch={
+            onDispatch
+          }
         />
       );
 
@@ -79,7 +81,9 @@ export default function ActionPanel({
       return (
         <WaitingPanel
           state={state}
-          onDispatch={onDispatch}
+          onDispatch={
+            onDispatch
+          }
         />
       );
 
@@ -87,25 +91,40 @@ export default function ActionPanel({
       return (
         <PlayerTurnPanel
           state={state}
-          onDispatch={onDispatch}
+          playerNames={
+            playerNames
+          }
+          onDispatch={
+            onDispatch
+          }
         />
       );
 
     case "PLAYER_RESPONSE":
-  return (
-    <ResponsePanel
-      state={state}
-      onDispatch={onDispatch}
-    />
-  );
+      return (
+        <ResponsePanel
+          state={state}
+          playerNames={
+            playerNames
+          }
+          onDispatch={
+            onDispatch
+          }
+        />
+      );
 
-case "BLUFF_RESULT":
-  return (
-    <BluffResultPanel
-      state={state}
-      onDispatch={onDispatch}
-    />
-  );
+    case "BLUFF_RESULT":
+      return (
+        <BluffResultPanel
+          state={state}
+          playerNames={
+            playerNames
+          }
+          onDispatch={
+            onDispatch
+          }
+        />
+      );
 
     case "GAME_OVER":
       return (
@@ -117,7 +136,8 @@ case "BLUFF_RESULT":
       );
 
     default: {
-      const exhaustiveCheck: never =
+      const exhaustiveCheck:
+        never =
         state.phase;
 
       throw new Error(

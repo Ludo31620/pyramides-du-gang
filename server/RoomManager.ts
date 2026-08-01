@@ -1,9 +1,13 @@
-import { GameRoom } from "./GameRoom";
+import {
+  GameRoom,
+} from "./GameRoom";
 
 import type {
   CreateRoomInput,
+  DisconnectedPlayer,
   JoinRoomInput,
   PublicRoom,
+  ReconnectRoomInput,
   Room,
   RoomPlayer,
   RoomResult,
@@ -29,11 +33,24 @@ export class RoomManager {
         input.pseudo
       );
 
+    const playerToken =
+      this.normalizePlayerToken(
+        input.playerToken
+      );
+
     if (!pseudo) {
       return {
         success: false,
         error:
           "Le pseudo est obligatoire.",
+      };
+    }
+
+    if (!playerToken) {
+      return {
+        success: false,
+        error:
+          "L'identifiant du joueur est invalide.",
       };
     }
 
@@ -53,8 +70,12 @@ export class RoomManager {
       };
     }
 
-    this.removePlayerBySocket(
-      input.socketId
+    /*
+     * Un même navigateur ne peut appartenir
+     * qu'à un seul salon à la fois.
+     */
+    this.removePlayerByToken(
+      playerToken
     );
 
     const code =
@@ -64,17 +85,27 @@ export class RoomManager {
       this.createPlayer({
         socketId:
           input.socketId,
+
+        playerToken,
+
         pseudo,
+
         isHost: true,
       });
 
     const room: Room = {
       code,
       status: "LOBBY",
+
       maxPlayers:
         input.maxPlayers,
-      players: [host],
-      createdAt: Date.now(),
+
+      players: [
+        host,
+      ],
+
+      createdAt:
+        Date.now(),
     };
 
     this.rooms.set(
@@ -84,11 +115,14 @@ export class RoomManager {
 
     return {
       success: true,
+
       room:
         this.toPublicRoom(
           room
         ),
-      playerId: host.id,
+
+      playerId:
+        host.id,
     };
   }
 
@@ -105,6 +139,11 @@ export class RoomManager {
         input.pseudo
       );
 
+    const playerToken =
+      this.normalizePlayerToken(
+        input.playerToken
+      );
+
     if (!pseudo) {
       return {
         success: false,
@@ -113,8 +152,18 @@ export class RoomManager {
       };
     }
 
+    if (!playerToken) {
+      return {
+        success: false,
+        error:
+          "L'identifiant du joueur est invalide.",
+      };
+    }
+
     const room =
-      this.rooms.get(code);
+      this.rooms.get(
+        code
+      );
 
     if (!room) {
       return {
@@ -124,8 +173,42 @@ export class RoomManager {
       };
     }
 
+    /*
+     * Le joueur appartient déjà à ce salon.
+     * Il s'agit donc d'une reconnexion.
+     */
+    const existingTokenPlayer =
+      room.players.find(
+        (player) =>
+          player.playerToken ===
+          playerToken
+      );
+
     if (
-      room.status !== "LOBBY"
+      existingTokenPlayer
+    ) {
+      existingTokenPlayer.socketId =
+        input.socketId;
+
+      existingTokenPlayer.connectedAt =
+        Date.now();
+
+      return {
+        success: true,
+
+        room:
+          this.toPublicRoom(
+            room
+          ),
+
+        playerId:
+          existingTokenPlayer.id,
+      };
+    }
+
+    if (
+      room.status !==
+      "LOBBY"
     ) {
       return {
         success: false,
@@ -146,10 +229,12 @@ export class RoomManager {
     ) {
       return {
         success: true,
+
         room:
           this.toPublicRoom(
             room
           ),
+
         playerId:
           existingSocketPlayer.id,
       };
@@ -184,15 +269,19 @@ export class RoomManager {
       };
     }
 
-    this.removePlayerBySocket(
-      input.socketId
+    this.removePlayerByToken(
+      playerToken
     );
 
     const player =
       this.createPlayer({
         socketId:
           input.socketId,
+
+        playerToken,
+
         pseudo,
+
         isHost: false,
       });
 
@@ -202,11 +291,86 @@ export class RoomManager {
 
     return {
       success: true,
+
       room:
         this.toPublicRoom(
           room
         ),
-      playerId: player.id,
+
+      playerId:
+        player.id,
+    };
+  }
+
+  reconnectPlayer(
+    input: ReconnectRoomInput
+  ): RoomResult {
+    const code =
+      this.normalizeCode(
+        input.code
+      );
+
+    const playerToken =
+      this.normalizePlayerToken(
+        input.playerToken
+      );
+
+    if (!playerToken) {
+      return {
+        success: false,
+        error:
+          "L'identifiant du joueur est invalide.",
+      };
+    }
+
+    const room =
+      this.rooms.get(
+        code
+      );
+
+    if (!room) {
+      return {
+        success: false,
+        error:
+          "Cette partie n'existe pas.",
+      };
+    }
+
+    const player =
+      room.players.find(
+        (roomPlayer) =>
+          roomPlayer.playerToken ===
+          playerToken
+      );
+
+    if (!player) {
+      return {
+        success: false,
+        error:
+          "Ce téléphone n'est pas reconnu dans cette partie.",
+      };
+    }
+
+    /*
+     * L'ancien socket.id est remplacé
+     * par celui de la nouvelle connexion.
+     */
+    player.socketId =
+      input.socketId;
+
+    player.connectedAt =
+      Date.now();
+
+    return {
+      success: true,
+
+      room:
+        this.toPublicRoom(
+          room
+        ),
+
+      playerId:
+        player.id,
     };
   }
 
@@ -219,7 +383,9 @@ export class RoomManager {
       );
 
     const room =
-      this.rooms.get(code);
+      this.rooms.get(
+        code
+      );
 
     if (!room) {
       return {
@@ -230,7 +396,8 @@ export class RoomManager {
     }
 
     if (
-      room.status !== "LOBBY"
+      room.status !==
+      "LOBBY"
     ) {
       return {
         success: false,
@@ -360,13 +527,9 @@ export class RoomManager {
           socketId
       );
 
-    if (
-      playerIndex === -1
-    ) {
-      return null;
-    }
-
-    return playerIndex;
+    return playerIndex === -1
+      ? null
+      : playerIndex;
   }
 
   getGameRoom(
@@ -381,67 +544,159 @@ export class RoomManager {
     );
   }
 
-  removePlayerBySocket(
+  disconnectPlayerBySocket(
     socketId: string
-  ): PublicRoom | null {
-    for (const [
-      code,
-      room,
-    ] of this.rooms.entries()) {
-      const playerIndex =
-        room.players.findIndex(
-          (player) =>
-            player.socketId ===
+  ): DisconnectedPlayer | null {
+    for (
+      const room of
+      this.rooms.values()
+    ) {
+      const player =
+        room.players.find(
+          (roomPlayer) =>
+            roomPlayer.socketId ===
             socketId
         );
 
-      if (
-        playerIndex === -1
-      ) {
+      if (!player) {
         continue;
       }
 
-      const removedPlayer =
-        room.players[
-          playerIndex
-        ];
+      /*
+       * Le joueur reste dans la partie.
+       * Seule sa connexion temporaire
+       * disparaît.
+       */
+      player.socketId =
+        null;
 
-      room.players.splice(
-        playerIndex,
-        1
+      return {
+        code:
+          room.code,
+
+        playerId:
+          player.id,
+
+        status:
+          room.status,
+
+        room:
+          this.toPublicRoom(
+            room
+          ),
+      };
+    }
+
+    return null;
+  }
+
+  removePlayerById(
+    code: string,
+    playerId: string
+  ): PublicRoom | null {
+    const normalizedCode =
+      this.normalizeCode(
+        code
       );
 
-      if (
-        room.players.length ===
-        0
-      ) {
-        this.rooms.delete(
-          code
-        );
+    const room =
+      this.rooms.get(
+        normalizedCode
+      );
 
-        this.gameRooms.delete(
-          code
-        );
+    if (!room) {
+      return null;
+    }
 
-        return null;
-      }
+    const playerIndex =
+      room.players.findIndex(
+        (player) =>
+          player.id ===
+          playerId
+      );
 
-      if (
-        removedPlayer.isHost
-      ) {
-        room.players.forEach(
-          (
-            player,
-            index
-          ) => {
-            player.isHost =
-              index === 0;
-          }
-        );
-      }
-
+    if (
+      playerIndex === -1
+    ) {
       return this.toPublicRoom(
         room
+      );
+    }
+
+    const removedPlayer =
+      room.players[
+        playerIndex
+      ];
+
+    room.players.splice(
+      playerIndex,
+      1
+    );
+
+    if (
+      room.players.length ===
+      0
+    ) {
+      this.rooms.delete(
+        normalizedCode
+      );
+
+      this.gameRooms.delete(
+        normalizedCode
+      );
+
+      return null;
+    }
+
+    if (
+      removedPlayer?.isHost
+    ) {
+      room.players.forEach(
+        (
+          player,
+          index
+        ) => {
+          player.isHost =
+            index === 0;
+        }
+      );
+    }
+
+    return this.toPublicRoom(
+      room
+    );
+  }
+
+  removePlayerByToken(
+    playerToken: string
+  ): PublicRoom | null {
+    const normalizedToken =
+      this.normalizePlayerToken(
+        playerToken
+      );
+
+    if (!normalizedToken) {
+      return null;
+    }
+
+    for (
+      const room of
+      this.rooms.values()
+    ) {
+      const player =
+        room.players.find(
+          (roomPlayer) =>
+            roomPlayer.playerToken ===
+            normalizedToken
+        );
+
+      if (!player) {
+        continue;
+      }
+
+      return this.removePlayerById(
+        room.code,
+        player.id
       );
     }
 
@@ -455,6 +710,7 @@ export class RoomManager {
   private createPlayer(
     input: {
       socketId: string;
+      playerToken: string;
       pseudo: string;
       isHost: boolean;
     }
@@ -462,12 +718,19 @@ export class RoomManager {
     return {
       id:
         this.generatePlayerId(),
+
       socketId:
         input.socketId,
+
+      playerToken:
+        input.playerToken,
+
       pseudo:
         input.pseudo,
+
       isHost:
         input.isHost,
+
       connectedAt:
         Date.now(),
     };
@@ -536,6 +799,14 @@ export class RoomManager {
       .slice(0, 20);
   }
 
+  private normalizePlayerToken(
+    playerToken: string
+  ): string {
+    return playerToken
+      .trim()
+      .slice(0, 200);
+  }
+
   private normalizeCode(
     code: string
   ): string {
@@ -573,8 +844,10 @@ export class RoomManager {
     return {
       code:
         room.code,
+
       status:
         room.status,
+
       maxPlayers:
         room.maxPlayers,
 
@@ -583,8 +856,10 @@ export class RoomManager {
           (player) => ({
             id:
               player.id,
+
             pseudo:
               player.pseudo,
+
             isHost:
               player.isHost,
           })

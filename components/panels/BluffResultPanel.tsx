@@ -1,16 +1,25 @@
 "use client";
 
+import {
+  getPlayerName,
+} from "@/lib/gameEngine/getPlayerName";
+
 import type {
   GameAction,
 } from "@/lib/gameEngine/actions";
 
 import type {
+  PlayerGameState,
+} from "@/lib/gameEngine/publicTypes";
+
+import type {
   BluffOutcome,
-  GameState,
 } from "@/lib/gameEngine/types";
 
 interface BluffResultPanelProps {
-  state: GameState;
+  state: PlayerGameState;
+
+  playerNames: string[];
 
   onDispatch?: (
     action: GameAction
@@ -25,44 +34,59 @@ interface ResultContent {
 
 function getResultContent(
   outcome: BluffOutcome,
-  giver: number,
-  target: number,
-  punishedPlayer: number,
+  giverName: string,
+  targetName: string,
+  punishedPlayerName: string,
   drinks: number
 ): ResultContent {
+  const drinkLabel =
+    drinks > 1
+      ? "gorgées"
+      : "gorgée";
+
   switch (outcome) {
     case "BELIEVED":
       return {
-        eyebrow: "Annonce acceptée",
-        title: `Joueur ${target + 1} boit`,
+        eyebrow:
+          "Annonce acceptée",
+
+        title:
+          `${targetName} boit`,
+
         description:
-          `Le joueur ${target + 1} a cru le joueur ` +
-          `${giver + 1} et reçoit ${drinks} gorgée` +
-          `${drinks > 1 ? "s" : ""}.`,
+          `${targetName} a cru ${giverName} et reçoit ` +
+          `${drinks} ${drinkLabel}.`,
       };
 
     case "TRUTH":
       return {
-        eyebrow: "Annonce vérifiée",
-        title: "Ce n’était pas un bluff",
+        eyebrow:
+          "Annonce vérifiée",
+
+        title:
+          "Il disait vrai",
+
         description:
-          `Le joueur ${giver + 1} possédait bien une carte ` +
-          `de la bonne valeur. Le joueur ${punishedPlayer + 1} ` +
-          `reçoit ${drinks} gorgée${drinks > 1 ? "s" : ""}.`,
+          `${giverName} possédait bien une carte de la bonne valeur. ` +
+          `${punishedPlayerName} reçoit ${drinks} ${drinkLabel}.`,
       };
 
     case "BLUFF":
       return {
-        eyebrow: "Bluff découvert",
-        title: "Menteur !",
+        eyebrow:
+          "Bluff découvert",
+
+        title:
+          "Menteur !",
+
         description:
-          `Le joueur ${giver + 1} ne possédait aucune carte ` +
-          `de la bonne valeur. Le joueur ${punishedPlayer + 1} ` +
-          `reçoit ${drinks} gorgée${drinks > 1 ? "s" : ""}.`,
+          `${giverName} ne possédait aucune carte de la bonne valeur. ` +
+          `${punishedPlayerName} reçoit ${drinks} ${drinkLabel}.`,
       };
 
     default: {
-      const exhaustiveCheck: never =
+      const exhaustiveCheck:
+        never =
         outcome;
 
       throw new Error(
@@ -74,6 +98,7 @@ function getResultContent(
 
 export default function BluffResultPanel({
   state,
+  playerNames,
   onDispatch,
 }: BluffResultPanelProps) {
   const result =
@@ -83,31 +108,52 @@ export default function BluffResultPanel({
     return (
       <section className="rounded-3xl border border-red-500/30 bg-zinc-900 p-6 sm:p-8">
         <p className="text-sm font-bold text-red-400">
-          Aucun résultat de bluff n’est disponible.
+          Aucun résultat de bluff
+          n’est disponible.
         </p>
       </section>
     );
   }
 
+  const giverName =
+    getPlayerName(
+      playerNames,
+      result.giver
+    );
+
+  const targetName =
+    getPlayerName(
+      playerNames,
+      result.target
+    );
+
+  const punishedPlayerName =
+    getPlayerName(
+      playerNames,
+      result.punishedPlayer
+    );
+
   const content =
     getResultContent(
       result.outcome,
-      result.giver,
-      result.target,
-      result.punishedPlayer,
+      giverName,
+      targetName,
+      punishedPlayerName,
       result.drinks
     );
 
   const revealedCard =
     result.revealedCard;
 
-  function handleContinue(): void {
+  function handleContinue():
+    void {
     if (!onDispatch) {
       return;
     }
 
     onDispatch({
-      type: "CONTINUE_AFTER_BLUFF",
+      type:
+        "CONTINUE_AFTER_BLUFF",
     });
   }
 
@@ -144,7 +190,9 @@ export default function BluffResultPanel({
                 }
               >
                 {revealedCard.valeur}
-                {revealedCard.couleur}
+                {
+                  revealedCard.couleur
+                }
               </span>
             </div>
           </div>
@@ -157,7 +205,7 @@ export default function BluffResultPanel({
         </p>
 
         <p className="mt-1 text-xl font-black text-white">
-          Joueur {result.punishedPlayer + 1}
+          {punishedPlayerName}
         </p>
 
         <p className="mt-4 text-sm text-zinc-400">
@@ -171,8 +219,12 @@ export default function BluffResultPanel({
 
       <button
         type="button"
-        onClick={handleContinue}
-        disabled={!onDispatch}
+        onClick={
+          handleContinue
+        }
+        disabled={
+          !onDispatch
+        }
         className="
           mt-8
           w-full
@@ -197,7 +249,8 @@ export default function BluffResultPanel({
 
       {!onDispatch && (
         <p className="mt-3 text-center text-xs text-zinc-600">
-          Action désactivée sur cette page de test.
+          Action désactivée sur
+          cette page de test.
         </p>
       )}
     </section>
