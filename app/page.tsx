@@ -4,8 +4,20 @@ import HomeMenu from "@/components/home/HomeMenu";
 
 export default function HomePage() {
   return (
-    <main className="relative flex min-h-screen overflow-hidden bg-[#0B0E13] px-5 py-6 text-white">
-      {/* Halo supérieur */}
+    <main
+      className="
+        relative
+        flex
+        min-h-screen
+        overflow-hidden
+        bg-[var(--color-background)]
+        px-5
+        py-6
+        text-[var(--color-text)]
+        transition-colors
+        duration-200
+      "
+    >
       <div
         aria-hidden="true"
         className="
@@ -17,12 +29,14 @@ export default function HomePage() {
           w-[24rem]
           -translate-x-1/2
           rounded-full
-          bg-yellow-400/5
-          opacity-70
+          opacity-[0.06]
         "
+        style={{
+          backgroundColor:
+            "var(--color-primary)",
+        }}
       />
 
-      {/* Halo inférieur */}
       <div
         aria-hidden="true"
         className="
@@ -33,14 +47,29 @@ export default function HomePage() {
           h-[20rem]
           w-[20rem]
           rounded-full
-          bg-amber-700/5
-          opacity-60
+          opacity-[0.04]
         "
+        style={{
+          backgroundColor:
+            "var(--color-primary)",
+        }}
       />
 
       <HomeMenu />
 
-      <section className="relative mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-md flex-col items-center justify-center">
+      <section
+        className="
+          relative
+          mx-auto
+          flex
+          min-h-[calc(100vh-3rem)]
+          w-full
+          max-w-md
+          flex-col
+          items-center
+          justify-center
+        "
+      >
         <div
           aria-hidden="true"
           className="
@@ -51,7 +80,7 @@ export default function HomePage() {
             sm:text-4xl
           "
         >
-          <span className="text-zinc-100">
+          <span className="text-[var(--color-text)]">
             ♠
           </span>
 
@@ -63,7 +92,7 @@ export default function HomePage() {
             ♦
           </span>
 
-          <span className="text-zinc-100">
+          <span className="text-[var(--color-text)]">
             ♣
           </span>
         </div>
@@ -80,9 +109,17 @@ export default function HomePage() {
             sm:text-6xl
           "
         >
-          Pyramides
+          Pyramide
 
-          <span className="mt-2 block text-yellow-400">
+          <span
+            className="
+              mt-2
+              block
+              text-[var(--color-primary)]
+              transition-colors
+              duration-200
+            "
+          >
             du Gang
           </span>
         </h1>
@@ -97,16 +134,19 @@ export default function HomePage() {
               items-center
               justify-center
               rounded-2xl
-              bg-yellow-400
+              border
+              border-[var(--color-primary)]
+              bg-[var(--color-primary)]
               px-6
               py-4
               text-center
               text-lg
               font-black
-              text-zinc-950
+              text-[var(--color-primary-text)]
               shadow-lg
               transition
-              hover:bg-yellow-300
+              duration-200
+              hover:bg-[var(--color-primary-hover)]
               active:scale-[0.98]
             "
           >
@@ -123,17 +163,18 @@ export default function HomePage() {
               justify-center
               rounded-2xl
               border
-              border-white/10
-              bg-zinc-900
+              border-[var(--color-border)]
+              bg-[var(--color-surface)]
               px-6
               py-4
               text-center
               text-lg
               font-black
-              text-white
+              text-[var(--color-text)]
               transition
-              hover:border-yellow-400/30
-              hover:bg-zinc-800
+              duration-200
+              hover:border-[var(--color-primary)]
+              hover:bg-[var(--color-surface-elevated)]
               active:scale-[0.98]
             "
           >

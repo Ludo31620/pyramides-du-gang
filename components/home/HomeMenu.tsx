@@ -5,6 +5,8 @@ import {
   useState,
 } from "react";
 
+import ThemeCard from "@/components/ui/ThemeCard";
+
 type MenuPage =
   | "MENU"
   | "RULES"
@@ -33,15 +35,15 @@ function MenuItem({
         gap-4
         rounded-2xl
         border
-        border-white/10
-        bg-zinc-900
+        border-[var(--color-border)]
+        bg-[var(--color-surface-elevated)]
         px-5
         py-4
         text-left
-        text-white
+        text-[var(--color-text)]
         transition
-        hover:border-yellow-400/30
-        hover:bg-yellow-400/10
+        duration-200
+        hover:border-[var(--color-primary)]
         active:scale-[0.98]
       "
     >
@@ -58,7 +60,10 @@ function MenuItem({
 
       <span
         aria-hidden="true"
-        className="ml-auto text-zinc-600"
+        className="
+          ml-auto
+          text-[var(--color-text-muted)]
+        "
       >
         ›
       </span>
@@ -154,13 +159,15 @@ export default function HomeMenu() {
           justify-center
           rounded-full
           border
-          border-white/10
-          bg-zinc-900
+          border-[var(--color-border)]
+          bg-[var(--color-surface)]
           text-xl
+          text-[var(--color-text)]
           shadow-md
           transition
-          hover:border-yellow-400/30
-          hover:bg-zinc-800
+          duration-200
+          hover:border-[var(--color-primary)]
+          hover:bg-[var(--color-surface-elevated)]
           active:scale-95
         "
       >
@@ -183,10 +190,11 @@ export default function HomeMenu() {
             "
           />
 
-          <section
+          <ThemeCard
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
+            variant="default"
             className="
               fixed
               inset-x-3
@@ -198,19 +206,25 @@ export default function HomeMenu() {
               animate-[homeMenuSlideUp_0.22s_ease-out_both]
               overflow-y-auto
               rounded-[2rem]
-              border
-              border-white/10
-              bg-zinc-950
               p-5
               shadow-lg
               sm:bottom-auto
               sm:top-1/2
               sm:-translate-y-1/2
+              sm:p-5
             "
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
+                <p
+                  className="
+                    text-xs
+                    font-black
+                    uppercase
+                    tracking-[0.25em]
+                    text-[var(--color-primary)]
+                  "
+                >
                   Pyramide du Gang
                 </p>
 
@@ -236,15 +250,18 @@ export default function HomeMenu() {
                   flex
                   h-11
                   w-11
+                  shrink-0
                   items-center
                   justify-center
                   rounded-full
                   border
-                  border-white/10
-                  bg-zinc-900
-                  text-zinc-300
+                  border-[var(--color-border)]
+                  bg-[var(--color-surface-elevated)]
+                  text-[var(--color-text-muted)]
                   transition
-                  hover:bg-zinc-800
+                  duration-200
+                  hover:border-[var(--color-primary)]
+                  hover:text-[var(--color-text)]
                   active:scale-95
                 "
               >
@@ -261,7 +278,14 @@ export default function HomeMenu() {
                     "MENU"
                   )
                 }
-                className="mt-5 text-sm font-bold text-yellow-400"
+                className="
+                  mt-5
+                  text-sm
+                  font-bold
+                  text-[var(--color-primary)]
+                  transition
+                  hover:opacity-80
+                "
               >
                 ← Retour
               </button>
@@ -304,7 +328,15 @@ export default function HomeMenu() {
 
             {menuPage ===
               "RULES" && (
-              <div className="mt-6 space-y-5 text-sm leading-7 text-zinc-300">
+              <div
+                className="
+                  mt-6
+                  space-y-5
+                  text-sm
+                  leading-7
+                  text-[var(--color-text-muted)]
+                "
+              >
                 <p>
                   Chaque joueur répond
                   à quatre questions et
@@ -344,21 +376,57 @@ export default function HomeMenu() {
                   Pyramide du Gang
                 </h3>
 
-                <p className="mt-2 text-sm text-zinc-500">
+                <p
+                  className="
+                    mt-2
+                    text-sm
+                    text-[var(--color-text-muted)]
+                  "
+                >
                   Version 1.0.0
                 </p>
 
-                <div className="mt-8 rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-5">
-                  <p className="text-sm text-zinc-400">
+                <ThemeCard
+                  as="div"
+                  variant="elevated"
+                  className="
+                    mt-8
+                    rounded-2xl
+                    p-5
+                    text-center
+                    shadow-none
+                    sm:p-5
+                  "
+                >
+                  <p
+                    className="
+                      text-sm
+                      text-[var(--color-text-muted)]
+                    "
+                  >
                     Développé par
                   </p>
 
-                  <p className="mt-2 text-xl font-black text-yellow-400">
+                  <p
+                    className="
+                      mt-2
+                      text-xl
+                      font-black
+                      text-[var(--color-primary)]
+                    "
+                  >
                     Ludovic Bataille
                   </p>
-                </div>
+                </ThemeCard>
 
-                <p className="mt-6 text-xs text-zinc-600">
+                <p
+                  className="
+                    mt-6
+                    text-xs
+                    text-[var(--color-text-muted)]
+                    opacity-60
+                  "
+                >
                   © 2026
                 </p>
               </div>
@@ -366,12 +434,37 @@ export default function HomeMenu() {
 
             {menuPage ===
               "NEWS" && (
-              <div className="mt-7 rounded-2xl border border-white/10 bg-zinc-900 p-5">
-                <p className="text-xs font-black uppercase tracking-wider text-yellow-400">
+              <ThemeCard
+                as="div"
+                variant="elevated"
+                className="
+                  mt-7
+                  rounded-2xl
+                  p-5
+                  shadow-none
+                  sm:p-5
+                "
+              >
+                <p
+                  className="
+                    text-xs
+                    font-black
+                    uppercase
+                    tracking-wider
+                    text-[var(--color-primary)]
+                  "
+                >
                   Version 1.0.0
                 </p>
 
-                <p className="mt-3 text-sm leading-7 text-zinc-300">
+                <p
+                  className="
+                    mt-3
+                    text-sm
+                    leading-7
+                    text-[var(--color-text-muted)]
+                  "
+                >
                   Première version de
                   Pyramide du Gang :
                   multijoueur en ligne,
@@ -379,9 +472,9 @@ export default function HomeMenu() {
                   bluff et pyramide
                   synchronisés.
                 </p>
-              </div>
+              </ThemeCard>
             )}
-          </section>
+          </ThemeCard>
         </>
       )}
     </>

@@ -42,7 +42,7 @@ describe(
         expect(
           result.memory
             .remainingSeconds
-        ).toBe(60);
+        ).toBe(15);
 
         expect(
           result.memory
@@ -70,7 +70,7 @@ describe(
         expect(
           result.memory
             .remainingSeconds
-        ).toBe(59);
+        ).toBe(14);
       }
     );
 

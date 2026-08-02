@@ -3,6 +3,10 @@ import type {
 } from "next";
 
 import {
+  ThemeProvider,
+} from "@/lib/theme/ThemeContext";
+
+import {
   Geist,
   Geist_Mono,
 } from "next/font/google";
@@ -110,9 +114,11 @@ export default function RootLayout({
         antialiased
       `}
     >
-      <body className="flex min-h-full flex-col">
-        {children}
-      </body>
+     <body className="flex min-h-full flex-col">
+  <ThemeProvider>
+    {children}
+  </ThemeProvider>
+</body>
     </html>
   );
 }
