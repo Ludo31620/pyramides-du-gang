@@ -527,7 +527,7 @@ router.replace(
           </div>
 
           <p className="mt-5 text-xs font-black uppercase tracking-[0.3em] text-[#FFD166]">
-            Pyramides du Gang
+            Pyramide du Gang
           </p>
 
 <h1 className="mt-3 text-3xl font-black uppercase tracking-tight sm:text-4xl">
@@ -683,7 +683,7 @@ router.replace(
         </button>
 
         <footer className="mt-auto pt-8 text-center text-xs text-zinc-600">
-          Pyramides du Gang · by{" "}
+          Pyramide du Gang · by{" "}
           <span className="font-bold text-[#FFD166]">
             Ludo B
           </span>

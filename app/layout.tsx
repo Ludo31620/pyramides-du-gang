@@ -37,14 +37,14 @@ export const metadata:
     ),
 
   title:
-    "Pyramides du Gang",
+    "Pyramide du Gang",
 
   description:
     "Le jeu de soirée multijoueur où le bluff est roi.",
 
   openGraph: {
     title:
-      "Pyramides du Gang",
+      "Pyramide du Gang",
 
     description:
       "Le jeu de soirée multijoueur où le bluff est roi.",
@@ -53,7 +53,7 @@ export const metadata:
       "https://www.pyramidedugang.fr",
 
     siteName:
-      "Pyramides du Gang",
+      "Pyramide du Gang",
 
     locale:
       "fr_FR",
@@ -73,7 +73,7 @@ export const metadata:
           630,
 
         alt:
-          "Pyramides du Gang",
+          "Pyramide du Gang",
       },
     ],
   },
@@ -83,7 +83,7 @@ export const metadata:
       "summary_large_image",
 
     title:
-      "Pyramides du Gang",
+      "Pyramide du Gang",
 
     description:
       "Le jeu de soirée multijoueur où le bluff est roi.",

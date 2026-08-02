@@ -211,7 +211,7 @@ export default function HomeMenu() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
-                  Pyramides du Gang
+                  Pyramide du Gang
                 </p>
 
                 <h2 className="mt-1 text-2xl font-black">
@@ -341,7 +341,7 @@ export default function HomeMenu() {
                 </div>
 
                 <h3 className="mt-6 text-2xl font-black">
-                  Pyramides du Gang
+                  Pyramide du Gang
                 </h3>
 
                 <p className="mt-2 text-sm text-zinc-500">
@@ -373,7 +373,7 @@ export default function HomeMenu() {
 
                 <p className="mt-3 text-sm leading-7 text-zinc-300">
                   Première version de
-                  Pyramides du Gang :
+                  Pyramide du Gang :
                   multijoueur en ligne,
                   reconnexion automatique,
                   bluff et pyramide

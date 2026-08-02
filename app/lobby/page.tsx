@@ -852,7 +852,7 @@ export default function LobbyPage() {
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-lg flex-col">
         <header className="text-center">
           <p className="text-xs font-black uppercase tracking-[0.3em] text-yellow-400">
-            Pyramides du Gang
+            Pyramide du Gang
           </p>
 
           <h1 className="mt-3 text-4xl font-black">
@@ -1028,7 +1028,7 @@ export default function LobbyPage() {
         </button>
 
         <footer className="mt-auto pt-8 text-center text-xs text-zinc-600">
-          Pyramides du Gang · by Ludo B
+          Pyramide du Gang · by Ludo B
         </footer>
       </div>
     </main>

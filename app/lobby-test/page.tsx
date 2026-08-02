@@ -312,7 +312,7 @@ export default function LobbyTestPage() {
         <section className="mx-auto w-full max-w-2xl">
           <div className="text-center">
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-yellow-500">
-              Pyramides du Gang
+              Pyramide du Gang
             </p>
 
             <h1 className="mt-2 text-3xl font-black">
@@ -378,7 +378,7 @@ export default function LobbyTestPage() {
       <section className="mx-auto w-full max-w-md">
         <div className="text-center">
           <p className="text-sm font-bold uppercase tracking-[0.3em] text-yellow-500">
-            Pyramides du Gang
+            Pyramide du Gang
           </p>
 
           <h1 className="mt-2 text-3xl font-black">

@@ -8,7 +8,7 @@ export default function GameHeader() {
           </p>
 
           <h1 className="text-4xl font-black text-white">
-            Pyramides du Gang
+            Pyramide du Gang
           </h1>
         </div>
 

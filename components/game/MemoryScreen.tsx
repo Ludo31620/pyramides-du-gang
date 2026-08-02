@@ -103,7 +103,7 @@ export default function MemoryScreen({
           </div>
 
           <p className="mt-6 text-xs font-black uppercase tracking-[0.35em] text-[#FFD166] sm:text-sm">
-            Pyramides du Gang
+            Pyramide du Gang
           </p>
 
           <h1 className="mt-3 text-3xl font-black sm:text-5xl">

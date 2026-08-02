@@ -262,7 +262,7 @@ export default function DistributionScreen({
       <div className="mx-auto w-full max-w-2xl">
         <header className="text-center">
           <p className="text-xs font-black uppercase tracking-[0.35em] text-[#FFD166]">
-            Pyramides du Gang
+            Pyramide du Gang
           </p>
 
           <h1 className="mt-3 text-4xl font-black">
