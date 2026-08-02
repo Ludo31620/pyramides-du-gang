@@ -415,19 +415,31 @@ export class GameRoom {
         return;
       }
 
-      case "USE_MEMORY_JOKER":
-      case "HIDE_MEMORY_JOKER": {
-        if (
-          action.player !==
-          playerIndex
-        ) {
-          throw new Error(
-            "Tu ne peux utiliser que ton propre joker mémoire."
-          );
-        }
+case "USE_MEMORY_JOKER":
+case "HIDE_MEMORY_JOKER": {
+  if (
+    action.player !==
+    playerIndex
+  ) {
+    throw new Error(
+      "Tu ne peux utiliser que ton propre joker mémoire."
+    );
+  }
 
-        return;
-      }
+  if (
+    state.phase !==
+      "PLAYER_TURN" ||
+    state.turn
+      .currentPlayer !==
+      playerIndex
+  ) {
+    throw new Error(
+      "Le joker mémoire ne peut être utilisé que pendant ton tour."
+    );
+  }
+
+  return;
+}
 
       case "PASS":
       case "GIVE": {

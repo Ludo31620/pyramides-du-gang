@@ -70,12 +70,12 @@ export default function ActionPanel({
         />
       );
 
-    case "MEMORY":
-      return (
-        <MemoryPanel
-          state={state}
-        />
-      );
+case "MEMORY":
+  return (
+    <MemoryPanel
+      state={state}
+    />
+  );
 
     case "WAITING":
       return (

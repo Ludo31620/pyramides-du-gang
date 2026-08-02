@@ -10,7 +10,8 @@ type MemoryPanelProps = {
   state: PlayerGameState;
 };
 
-const MEMORY_DURATION_SECONDS = 60;
+const MEMORY_DURATION_SECONDS =
+  60;
 
 export default function MemoryPanel({
   state,
@@ -18,16 +19,17 @@ export default function MemoryPanel({
   const remainingSeconds =
     state.memory.remainingSeconds;
 
-  const progressPercentage = Math.max(
-    0,
-    Math.min(
-      100,
-      (
-        remainingSeconds /
-        MEMORY_DURATION_SECONDS
-      ) * 100
-    )
-  );
+  const progressPercentage =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        (
+          remainingSeconds /
+          MEMORY_DURATION_SECONDS
+        ) * 100
+      )
+    );
 
   const isUrgent =
     remainingSeconds <= 10;
@@ -49,7 +51,8 @@ export default function MemoryPanel({
         </h2>
 
         <p className="mt-3 text-sm text-zinc-400 sm:text-base">
-          Observe attentivement tes cartes.
+          Observe attentivement tes
+          cartes.
         </p>
       </div>
 
@@ -82,7 +85,8 @@ export default function MemoryPanel({
                 : "h-full rounded-full bg-yellow-400 transition-[width] duration-1000 ease-linear"
             }
             style={{
-              width: `${progressPercentage}%`,
+              width:
+                `${progressPercentage}%`,
             }}
           />
         </div>

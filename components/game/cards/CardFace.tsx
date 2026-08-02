@@ -1,3 +1,4 @@
+
 import Image from "next/image";
 
 import type {
@@ -40,6 +41,9 @@ type CourtValue =
   | "Dame"
   | "Roi";
 
+type FullArtKey =
+  `${CourtValue}-${Carte["couleur"]}`;
+
 const COURT_IMAGES: Record<
   CourtValue,
   string
@@ -54,12 +58,48 @@ const COURT_IMAGES: Record<
     "/images/cards/court/roi-v5.png",
 };
 
-/**
- * Chaque personnage possède son propre
- * cadrage afin d'occuper correctement
- * la carte sans être coupé.
- */
+const FULL_ART_IMAGES: Partial<
+  Record<
+    FullArtKey,
+    string
+  >
+> = {
+  "Roi-♥":
+    "/images/cards/full-art/roi-coeur.png",
 
+  "Roi-♦":
+    "/images/cards/full-art/roi-carreau.png",
+
+  "Roi-♣":
+    "/images/cards/full-art/roi-trefle.png",
+
+  "Roi-♠":
+    "/images/cards/full-art/roi-pique.png",
+
+  "Dame-♥":
+    "/images/cards/full-art/dame-coeur.png",
+
+  "Dame-♦":
+    "/images/cards/full-art/dame-carreau.png",
+
+  "Dame-♣":
+    "/images/cards/full-art/dame-trefle.png",
+
+  "Dame-♠":
+    "/images/cards/full-art/dame-pique.png",
+
+  "Valet-♥":
+    "/images/cards/full-art/valet-coeur.png",
+
+  "Valet-♦":
+    "/images/cards/full-art/valet-carreau.png",
+
+  "Valet-♣":
+    "/images/cards/full-art/valet-trefle.png",
+
+  "Valet-♠":
+    "/images/cards/full-art/valet-pique.png",
+};
 
 const TOP_LEFT: PipPosition = {
   x: 31,
@@ -347,6 +387,43 @@ function CourtFigure({
   );
 }
 
+interface FullArtFigureProps {
+  image: string;
+}
+
+function FullArtFigure({
+  image,
+}: FullArtFigureProps) {
+  return (
+    <div
+      aria-hidden="true"
+      className="
+        pointer-events-none
+        absolute
+        inset-0
+        z-10
+        overflow-hidden
+        rounded-[inherit]
+      "
+    >
+      <Image
+        src={image}
+        alt=""
+        fill
+        unoptimized
+        sizes="280px"
+        draggable={false}
+        className="
+          select-none
+          object-cover
+          object-center
+          scale-[1.03]
+        "
+      />
+    </div>
+  );
+}
+
 export default function CardFace({
   card,
   size = "md",
@@ -372,12 +449,26 @@ export default function CardFace({
       card.valeur
     );
 
-const courtValue =
-  isCourtCard(
-    card.valeur
-  )
-    ? card.valeur
-    : null;
+  const courtValue =
+    isCourtCard(
+      card.valeur
+    )
+      ? card.valeur
+      : null;
+
+  const fullArtKey:
+    | FullArtKey
+    | null =
+    courtValue
+      ? `${courtValue}-${card.couleur}`
+      : null;
+
+  const fullArtImage =
+    fullArtKey
+      ? FULL_ART_IMAGES[
+          fullArtKey
+        ]
+      : undefined;
 
   return (
     <div
@@ -394,24 +485,41 @@ const courtValue =
         className
       )}
     >
-      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-br from-white/95 via-[#FCFAF5] to-[#F2EEE5]" />
+      {!fullArtImage && (
+        <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-br from-white/95 via-[#FCFAF5] to-[#F2EEE5]" />
+      )}
 
-      <div className="pointer-events-none absolute inset-[3%] z-[1] rounded-[inherit] border border-black/[0.06]" />
+      {!fullArtImage && (
+        <div className="pointer-events-none absolute inset-[3%] z-[1] rounded-[inherit] border border-black/[0.06]" />
+      )}
 
-{courtValue && (
-  <CourtFigure
-    value={
-      courtValue
-    }
-  />
-)}
+      {fullArtImage ? (
+        <FullArtFigure
+          image={
+            fullArtImage
+          }
+        />
+      ) : courtValue ? (
+        <CourtFigure
+          value={
+            courtValue
+          }
+        />
+      ) : null}
 
       <div
         className={joinClasses(
-          "absolute left-[9%] top-[6%] z-20 flex flex-col items-center font-black",
-          CARD_VALUE_CLASSES[
-            size
-          ]
+          "absolute left-[8%] top-[5%] z-20 flex flex-col items-center font-black",
+          fullArtImage
+            ? joinClasses(
+                CARD_VALUE_CLASSES[
+                  size
+                ],
+                "scale-[0.72] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]"
+              )
+            : CARD_VALUE_CLASSES[
+                size
+              ]
         )}
       >
         <span>
@@ -445,6 +553,7 @@ const courtValue =
                   }
                   className={joinClasses(
                     "absolute flex items-center justify-center font-black leading-none",
+
                     isAce
                       ? CARD_CENTER_SUIT_CLASSES[
                           size
@@ -454,7 +563,9 @@ const courtValue =
                         ]
                   )}
                 >
-                  {card.couleur}
+                  {
+                    card.couleur
+                  }
                 </span>
               );
             }
@@ -464,10 +575,17 @@ const courtValue =
 
       <div
         className={joinClasses(
-          "absolute bottom-[6%] right-[9%] z-20 flex rotate-180 flex-col items-center font-black",
-          CARD_VALUE_CLASSES[
-            size
-          ]
+          "absolute bottom-[5%] right-[8%] z-20 flex rotate-180 flex-col items-center font-black",
+          fullArtImage
+            ? joinClasses(
+                CARD_VALUE_CLASSES[
+                  size
+                ],
+                "scale-[0.72] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]"
+              )
+            : CARD_VALUE_CLASSES[
+                size
+              ]
         )}
       >
         <span>
