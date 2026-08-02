@@ -9,21 +9,39 @@ import type {
 
 import type {
   GameState,
+  PlayerStats,
 } from "../types";
 
 const MIN_PLAYER_COUNT = 2;
 const MAX_PLAYER_COUNT = 9;
 
-const MEMORY_DURATION_SECONDS = 60;
-const MEMORY_JOKERS_PER_PLAYER = 2;
+const MEMORY_DURATION_SECONDS =
+  60;
+
+const MEMORY_JOKERS_PER_PLAYER =
+  2;
+
+function createPlayerStats():
+  PlayerStats {
+  return {
+    claimsMade: 0,
+    bluffsAttempted: 0,
+    successfulBluffs: 0,
+    caughtBluffs: 0,
+  };
+}
 
 export function createGame(
   playerCount: number
 ): GameState {
   if (
-    !Number.isInteger(playerCount) ||
-    playerCount < MIN_PLAYER_COUNT ||
-    playerCount > MAX_PLAYER_COUNT
+    !Number.isInteger(
+      playerCount
+    ) ||
+    playerCount <
+      MIN_PLAYER_COUNT ||
+    playerCount >
+      MAX_PLAYER_COUNT
   ) {
     throw new Error(
       `Le nombre de joueurs doit être compris entre ` +
@@ -31,14 +49,16 @@ export function createGame(
     );
   }
 
-  const deck = melangerPaquet(
-    creerPaquet()
-  );
+  const deck =
+    melangerPaquet(
+      creerPaquet()
+    );
 
   const players: Carte[][] =
     Array.from(
       {
-        length: playerCount,
+        length:
+          playerCount,
       },
       () => []
     );
@@ -46,18 +66,8 @@ export function createGame(
   return {
     players,
 
-    /**
-     * La pyramide sera créée seulement
-     * après la distribution des quatre cartes
-     * à tous les joueurs.
-     */
     pyramid: [],
 
-    /**
-     * Le paquet complet est conservé ici.
-     * Chaque réponse de distribution retirera
-     * la première carte.
-     */
     deck,
 
     distribution: {
@@ -108,11 +118,30 @@ export function createGame(
 
     bluffResult: null,
 
-    phase: "DISTRIBUTION",
+    gameStats: {
+      claimsMade: 0,
+      bluffsAttempted: 0,
+      successfulBluffs: 0,
+      caughtBluffs: 0,
 
-    drinks: Array(
-      playerCount
-    ).fill(0),
+      players:
+        Array.from(
+          {
+            length:
+              playerCount,
+          },
+          () =>
+            createPlayerStats()
+        ),
+    },
+
+    phase:
+      "DISTRIBUTION",
+
+    drinks:
+      Array(
+        playerCount
+      ).fill(0),
 
     history: [],
   };

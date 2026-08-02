@@ -18,42 +18,35 @@ export function doubt(
     );
   }
 
-  assertPendingAction(state);
+  assertPendingAction(
+    state
+  );
 
   const action =
-    state.turn.pendingAction;
+    state.turn
+      .pendingAction;
 
   const drinks = [
     ...state.drinks,
   ];
 
   const giverCards =
-    state.players[action.giver];
+    state.players[
+      action.giver
+    ];
 
-  /**
-   * Le donneur dit vrai s’il possède
-   * au moins une carte de la même valeur
-   * que la carte révélée dans la pyramide.
-   *
-   * La couleur ne compte pas.
-   */
   const matchingCard =
     giverCards.find(
       (card) =>
         card.valeur ===
-        action.claimedCard.valeur
+        action.claimedCard
+          .valeur
     ) ?? null;
 
   const giverToldTruth =
-    matchingCard !== null;
+    matchingCard !==
+    null;
 
-  /**
-   * La carte affichée dans le résultat
-   * est une copie temporairement révélée.
-   *
-   * La carte originale dans la main
-   * reste secrète et n’est pas modifiée.
-   */
   const revealedCard =
     matchingCard
       ? {
@@ -67,8 +60,9 @@ export function doubt(
       ? action.target
       : action.giver;
 
-  drinks[punishedPlayer] +=
-    action.drinks;
+  drinks[
+    punishedPlayer
+  ] += action.drinks;
 
   const message =
     giverToldTruth
@@ -83,17 +77,64 @@ export function doubt(
           action.drinks
         } gorgée(s).`;
 
+  const playerStats =
+    state.gameStats
+      .players.map(
+        (
+          stats,
+          playerIndex
+        ) => {
+          if (
+            playerIndex !==
+              action.giver ||
+            giverToldTruth
+          ) {
+            return stats;
+          }
+
+          return {
+            ...stats,
+
+            caughtBluffs:
+              stats.caughtBluffs +
+              1,
+          };
+        }
+      );
+
   return {
     ...state,
 
-    phase: "BLUFF_RESULT",
+    phase:
+      "BLUFF_RESULT",
 
     drinks,
 
+    gameStats: {
+      ...state.gameStats,
+
+      caughtBluffs:
+        state.gameStats
+          .caughtBluffs +
+        (
+          giverToldTruth
+            ? 0
+            : 1
+        ),
+
+      players:
+        playerStats,
+    },
+
     bluffResult: {
-      giver: action.giver,
-      target: action.target,
-      drinks: action.drinks,
+      giver:
+        action.giver,
+
+      target:
+        action.target,
+
+      drinks:
+        action.drinks,
 
       outcome:
         giverToldTruth
@@ -107,6 +148,7 @@ export function doubt(
 
     history: [
       ...state.history,
+
       {
         player:
           punishedPlayer,
@@ -120,7 +162,9 @@ export function doubt(
 
     turn: {
       ...state.turn,
-      pendingAction: null,
+
+      pendingAction:
+        null,
     },
   };
 }

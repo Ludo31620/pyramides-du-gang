@@ -45,6 +45,10 @@ type StartRoomPayload = {
   code: string;
 };
 
+type ReturnToLobbyPayload = {
+  code: string;
+};
+
 type GetGamePayload = {
   code: string;
 };
@@ -100,10 +104,9 @@ type RevealAnimationResult =
     };
 
 type RevealAnimationCallback = (
-  result: RevealAnimationResult
+  result:
+    RevealAnimationResult
 ) => void;
-
-
 
 interface RevealAnimationPayload {
   card: Carte;
@@ -125,7 +128,8 @@ type BluffAnimationResult =
     };
 
 type BluffAnimationCallback = (
-  result: BluffAnimationResult
+  result:
+    BluffAnimationResult
 ) => void;
 
 interface BluffAnimationPayload {
@@ -240,7 +244,9 @@ function diffuserSalon(
   io: Server,
   room: PublicRoom
 ): void {
-  io.to(room.code).emit(
+  io.to(
+    room.code
+  ).emit(
     "room:updated",
     room
   );
@@ -256,14 +262,15 @@ function reconnecterJoueur(
     );
 
   const result =
-    roomManager.reconnectPlayer({
-      socketId:
-        socket.id,
+    roomManager
+      .reconnectPlayer({
+        socketId:
+          socket.id,
 
-      playerToken,
+        playerToken,
 
-      code,
-    });
+        code,
+      });
 
   if (
     result.success
@@ -288,9 +295,10 @@ function diffuserEtatJeu(
   roomCode: string
 ): void {
   const gameRoom =
-    roomManagerInstance.getGameRoom(
-      roomCode
-    );
+    roomManagerInstance
+      .getGameRoom(
+        roomCode
+      );
 
   if (!gameRoom) {
     throw new Error(
@@ -298,11 +306,13 @@ function diffuserEtatJeu(
     );
   }
 
-  let sentStateCount = 0;
+  let sentStateCount =
+    0;
 
   for (
     const playerSocket of
-    io.sockets.sockets.values()
+    io.sockets.sockets
+      .values()
   ) {
     if (
       !playerSocket.rooms.has(
@@ -320,22 +330,25 @@ function diffuserEtatJeu(
         );
 
     if (
-      playerIndex === null
+      playerIndex ===
+      null
     ) {
       continue;
     }
 
     const playerState =
-      gameRoom.getStateForPlayer(
-        playerIndex
-      );
+      gameRoom
+        .getStateForPlayer(
+          playerIndex
+        );
 
     playerSocket.emit(
       "game:state",
       playerState
     );
 
-    sentStateCount += 1;
+    sentStateCount +=
+      1;
   }
 
   console.log(
@@ -348,9 +361,10 @@ function creerPayloadAnimationRevelation(
   socketId: string
 ): RevealAnimationPayload {
   const gameRoom =
-    roomManager.getGameRoom(
-      roomCode
-    );
+    roomManager
+      .getGameRoom(
+        roomCode
+      );
 
   if (!gameRoom) {
     throw new Error(
@@ -377,7 +391,8 @@ function creerPayloadAnimationRevelation(
       );
 
   if (
-    playerIndex === null
+    playerIndex ===
+    null
   ) {
     throw new Error(
       "Le serveur n'a pas pu identifier ton joueur."
@@ -413,13 +428,15 @@ function creerPayloadAnimationRevelation(
   const realNextRow =
     state.pyramid.length -
     1 -
-    state.progress.nextRow;
+    state.progress
+      .nextRow;
 
   const nextCard =
     state.pyramid[
       realNextRow
     ]?.[
-      state.progress.nextColumn
+      state.progress
+        .nextColumn
     ];
 
   if (!nextCard) {
@@ -434,7 +451,8 @@ function creerPayloadAnimationRevelation(
     },
 
     drinks:
-      state.progress.nextRow +
+      state.progress
+        .nextRow +
       1,
 
     animationKey:
@@ -448,9 +466,10 @@ function creerPayloadAnimationBluff(
   target: number
 ): BluffAnimationPayload {
   const gameRoom =
-    roomManager.getGameRoom(
-      roomCode
-    );
+    roomManager
+      .getGameRoom(
+        roomCode
+      );
 
   if (!gameRoom) {
     throw new Error(
@@ -466,7 +485,8 @@ function creerPayloadAnimationBluff(
       );
 
   if (
-    playerIndex === null
+    playerIndex ===
+    null
   ) {
     throw new Error(
       "Le serveur n'a pas pu identifier ton joueur."
@@ -486,7 +506,8 @@ function creerPayloadAnimationBluff(
   }
 
   if (
-    state.turn.currentPlayer !==
+    state.turn
+      .currentPlayer !==
     playerIndex
   ) {
     throw new Error(
@@ -573,33 +594,38 @@ async function demarrerServeur():
         (
           payload:
             CreateRoomPayload,
+
           callback:
             RoomCallback
         ) => {
           try {
             const result =
-              roomManager.createRoom({
-                socketId:
-                  socket.id,
+              roomManager
+                .createRoom({
+                  socketId:
+                    socket.id,
 
-                playerToken:
-                  obtenirPlayerToken(
-                    socket
-                  ),
+                  playerToken:
+                    obtenirPlayerToken(
+                      socket
+                    ),
 
-                pseudo:
-                  payload?.pseudo ??
-                  "",
+                  pseudo:
+                    payload?.pseudo ??
+                    "",
 
-                maxPlayers:
-                  payload
-                    ?.maxPlayers,
-              });
+                  maxPlayers:
+                    payload
+                      ?.maxPlayers,
+                });
 
             if (
               !result.success
             ) {
-              callback(result);
+              callback(
+                result
+              );
+
               return;
             }
 
@@ -612,7 +638,9 @@ async function demarrerServeur():
               result.room.code
             );
 
-            callback(result);
+            callback(
+              result
+            );
 
             diffuserSalon(
               io,
@@ -644,33 +672,38 @@ async function demarrerServeur():
         (
           payload:
             JoinRoomPayload,
+
           callback:
             RoomCallback
         ) => {
           try {
             const result =
-              roomManager.joinRoom({
-                socketId:
-                  socket.id,
+              roomManager
+                .joinRoom({
+                  socketId:
+                    socket.id,
 
-                playerToken:
-                  obtenirPlayerToken(
-                    socket
-                  ),
+                  playerToken:
+                    obtenirPlayerToken(
+                      socket
+                    ),
 
-                pseudo:
-                  payload?.pseudo ??
-                  "",
+                  pseudo:
+                    payload?.pseudo ??
+                    "",
 
-                code:
-                  payload?.code ??
-                  "",
-              });
+                  code:
+                    payload?.code ??
+                    "",
+                });
 
             if (
               !result.success
             ) {
-              callback(result);
+              callback(
+                result
+              );
+
               return;
             }
 
@@ -683,7 +716,9 @@ async function demarrerServeur():
               result.room.code
             );
 
-            callback(result);
+            callback(
+              result
+            );
 
             diffuserSalon(
               io,
@@ -715,6 +750,7 @@ async function demarrerServeur():
         (
           payload:
             GetRoomPayload,
+
           callback:
             GetRoomCallback
         ) => {
@@ -729,7 +765,10 @@ async function demarrerServeur():
             if (
               !result.success
             ) {
-              callback(result);
+              callback(
+                result
+              );
+
               return;
             }
 
@@ -773,6 +812,7 @@ async function demarrerServeur():
         (
           payload:
             StartRoomPayload,
+
           callback:
             StartRoomCallback
         ) => {
@@ -785,7 +825,8 @@ async function demarrerServeur():
               );
 
             if (
-              !reconnectResult.success
+              !reconnectResult
+                .success
             ) {
               callback(
                 reconnectResult
@@ -795,23 +836,29 @@ async function demarrerServeur():
             }
 
             const result =
-              roomManager.startRoom({
-                socketId:
-                  socket.id,
+              roomManager
+                .startRoom({
+                  socketId:
+                    socket.id,
 
-                code:
-                  payload?.code ??
-                  "",
-              });
+                  code:
+                    payload?.code ??
+                    "",
+                });
 
             if (
               !result.success
             ) {
-              callback(result);
+              callback(
+                result
+              );
+
               return;
             }
 
-            callback(result);
+            callback(
+              result
+            );
 
             diffuserSalon(
               io,
@@ -854,11 +901,121 @@ async function demarrerServeur():
         }
       );
 
+      /*
+       * Après GAME_OVER, n'importe quel joueur
+       * du salon peut demander le retour collectif
+       * au lobby.
+       *
+       * Le serveur vérifie lui-même que la partie
+       * est réellement terminée.
+       */
+      socket.on(
+        "game:return-to-lobby",
+        (
+          payload:
+            ReturnToLobbyPayload,
+
+          callback:
+            StartRoomCallback
+        ) => {
+          try {
+            const code =
+              payload?.code ??
+              "";
+
+            const reconnectResult =
+              reconnecterJoueur(
+                socket,
+                code
+              );
+
+            if (
+              !reconnectResult
+                .success
+            ) {
+              callback(
+                reconnectResult
+              );
+
+              return;
+            }
+
+            const result =
+              roomManager
+                .returnRoomToLobby({
+                  socketId:
+                    socket.id,
+
+                  code,
+                });
+
+            if (
+              !result.success
+            ) {
+              callback(
+                result
+              );
+
+              return;
+            }
+
+            diffuserSalon(
+              io,
+              result.room
+            );
+
+            /*
+             * Tous les téléphones présents dans
+             * le salon recevront cet événement
+             * et seront redirigés vers /lobby.
+             */
+            io.to(
+              result.room.code
+            ).emit(
+              "game:returned-to-lobby",
+              {
+                code:
+                  result.room.code,
+              }
+            );
+
+            callback({
+              success: true,
+              room:
+                result.room,
+            });
+
+            console.log(
+              `🏠 Retour collectif au lobby : ${result.room.code}`
+            );
+          } catch (
+            error: unknown
+          ) {
+            const message =
+              error instanceof Error
+                ? error.message
+                : "Impossible de retourner au lobby.";
+
+            console.error(
+              "Erreur pendant le retour au lobby :",
+              error
+            );
+
+            callback({
+              success: false,
+              error:
+                message,
+            });
+          }
+        }
+      );
+
       socket.on(
         "game:get",
         (
           payload:
             GetGamePayload,
+
           callback:
             GameCallback
         ) => {
@@ -874,22 +1031,25 @@ async function demarrerServeur():
               );
 
             if (
-              !reconnectResult.success
+              !reconnectResult
+                .success
             ) {
               callback({
                 success: false,
 
                 error:
-                  reconnectResult.error,
+                  reconnectResult
+                    .error,
               });
 
               return;
             }
 
             const gameRoom =
-              roomManager.getGameRoom(
-                code
-              );
+              roomManager
+                .getGameRoom(
+                  code
+                );
 
             if (!gameRoom) {
               callback({
@@ -909,7 +1069,8 @@ async function demarrerServeur():
                 );
 
             if (
-              playerIndex === null
+              playerIndex ===
+              null
             ) {
               callback({
                 success: false,
@@ -1023,81 +1184,83 @@ async function demarrerServeur():
         }
       );
 
-socket.on(
-  "game:request-bluff-animation",
-  (
-    payload:
-      BluffAnimationRequestPayload,
-    callback:
-      BluffAnimationCallback
-  ) => {
-    try {
-      const roomCode =
-        roomManager
-          .getRoomCodeBySocket(
-            socket.id
-          );
+      socket.on(
+        "game:request-bluff-animation",
+        (
+          payload:
+            BluffAnimationRequestPayload,
 
-      if (!roomCode) {
-        callback({
-          success: false,
+          callback:
+            BluffAnimationCallback
+        ) => {
+          try {
+            const roomCode =
+              roomManager
+                .getRoomCodeBySocket(
+                  socket.id
+                );
 
-          error:
-            "Le serveur n'a pas pu retrouver ta partie.",
-        });
+            if (!roomCode) {
+              callback({
+                success: false,
 
-        return;
-      }
+                error:
+                  "Le serveur n'a pas pu retrouver ta partie.",
+              });
 
-      const animationPayload =
-        creerPayloadAnimationBluff(
-          roomCode,
-          socket.id,
-          payload?.target
-        );
+              return;
+            }
 
-      io.to(
-        roomCode
-      ).emit(
-        "game:bluff-animation",
-        animationPayload
+            const animationPayload =
+              creerPayloadAnimationBluff(
+                roomCode,
+                socket.id,
+                payload?.target
+              );
+
+            io.to(
+              roomCode
+            ).emit(
+              "game:bluff-animation",
+              animationPayload
+            );
+
+            callback({
+              success: true,
+            });
+
+            console.log(
+              `🎬 Animation de bluff diffusée dans ${roomCode} : joueur ${animationPayload.giver + 1} vers joueur ${animationPayload.target + 1}`
+            );
+          } catch (
+            error: unknown
+          ) {
+            const message =
+              error instanceof Error
+                ? error.message
+                : "Impossible de lancer l'animation de bluff.";
+
+            console.error(
+              "Animation de bluff refusée :",
+              error
+            );
+
+            callback({
+              success: false,
+
+              error:
+                message,
+            });
+          }
+        }
       );
-
-      callback({
-        success: true,
-      });
-
-      console.log(
-        `🎬 Animation de bluff diffusée dans ${roomCode} : joueur ${animationPayload.giver + 1} vers joueur ${animationPayload.target + 1}`
-      );
-    } catch (
-      error: unknown
-    ) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Impossible de lancer l'animation de bluff.";
-
-      console.error(
-        "Animation de bluff refusée :",
-        error
-      );
-
-      callback({
-        success: false,
-
-        error:
-          message,
-      });
-    }
-  }
-);
 
       socket.on(
         "game:action",
         (
           payload:
             GameActionPayload,
+
           callback:
             GameCallback
         ) => {
@@ -1126,22 +1289,25 @@ socket.on(
               );
 
             if (
-              !reconnectResult.success
+              !reconnectResult
+                .success
             ) {
               callback({
                 success: false,
 
                 error:
-                  reconnectResult.error,
+                  reconnectResult
+                    .error,
               });
 
               return;
             }
 
             const gameRoom =
-              roomManager.getGameRoom(
-                code
-              );
+              roomManager
+                .getGameRoom(
+                  code
+                );
 
             if (!gameRoom) {
               callback({
@@ -1161,7 +1327,8 @@ socket.on(
                 );
 
             if (
-              playerIndex === null
+              playerIndex ===
+              null
             ) {
               callback({
                 success: false,
@@ -1172,10 +1339,11 @@ socket.on(
               return;
             }
 
-            gameRoom.dispatchForPlayer(
-              playerIndex,
-              action
-            );
+            gameRoom
+              .dispatchForPlayer(
+                playerIndex,
+                action
+              );
 
             diffuserEtatJeu(
               io,
@@ -1309,8 +1477,15 @@ socket.on(
         `🚀 Serveur disponible sur http://localhost:${port}`
       );
 
+      /*
+       * Ton serveur affichait auparavant
+       * 192.168.1.97 en dur.
+       *
+       * On retire cette fausse adresse plutôt
+       * que de continuer à mentir aux humains.
+       */
       console.log(
-        `📱 Accès réseau sur http://192.168.1.97:${port}`
+        "📱 Utilise l'adresse IP Wi-Fi actuelle du Mac avec le port 3000"
       );
 
       console.log(

@@ -46,6 +46,8 @@ interface GameContextValue {
   ) => void;
 
   refreshState: () => void;
+
+  returnToLobby: () => void;
 }
 
 interface GameProviderProps {
@@ -71,6 +73,18 @@ type GameGetResult =
 type GameActionResult =
   | {
       success: true;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+type ReturnToLobbyResult =
+  | {
+      success: true;
+      room: {
+        code: string;
+      };
     }
   | {
       success: false;
@@ -209,6 +223,56 @@ export default function GameProvider({
       ]
     );
 
+  const returnToLobby =
+    useCallback((): void => {
+      const socket =
+        obtenirSocket();
+
+      if (
+        !socket.connected
+      ) {
+        setError(
+          "La connexion au serveur est interrompue."
+        );
+
+        return;
+      }
+
+      setError(
+        null
+      );
+
+      socket.emit(
+        "game:return-to-lobby",
+        {
+          code:
+            roomCode,
+        },
+        (
+          result:
+            ReturnToLobbyResult
+        ) => {
+          if (
+            !result.success
+          ) {
+            setError(
+              result.error
+            );
+          }
+
+          /*
+           * En cas de succès, le serveur diffuse
+           * game:returned-to-lobby à tout le salon.
+           *
+           * La redirection sera donc déclenchée
+           * par l'écouteur commun ci-dessous.
+           */
+        }
+      );
+    }, [
+      roomCode,
+    ]);
+
   useEffect(() => {
     const socket =
       obtenirSocket();
@@ -265,6 +329,29 @@ export default function GameProvider({
         payload.error ??
           "Une erreur de jeu est survenue."
       );
+    }
+
+    function handleReturnedToLobby(
+      payload: {
+        code?: string;
+      }
+    ): void {
+      if (
+        payload?.code &&
+        payload.code !==
+          roomCode
+      ) {
+        return;
+      }
+
+      /*
+       * Tous les joueurs quittent ensemble
+       * l'écran de jeu.
+       *
+       * Le salon reste conservé côté serveur.
+       */
+      window.location.href =
+        "/lobby";
     }
 
     function handleBluffAnimation(
@@ -325,6 +412,11 @@ export default function GameProvider({
     );
 
     socket.on(
+      "game:returned-to-lobby",
+      handleReturnedToLobby
+    );
+
+    socket.on(
       "game:bluff-animation",
       handleBluffAnimation
     );
@@ -356,6 +448,11 @@ export default function GameProvider({
       socket.off(
         "game:error",
         handleGameError
+      );
+
+      socket.off(
+        "game:returned-to-lobby",
+        handleReturnedToLobby
       );
 
       socket.off(
@@ -422,6 +519,7 @@ export default function GameProvider({
         error,
         dispatch,
         refreshState,
+        returnToLobby,
       }}
     >
       <AnimatePresence>

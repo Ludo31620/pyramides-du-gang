@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useState,
+} from "react";
 
 import {
   PlayingCard,
@@ -10,31 +12,88 @@ import type {
   Carte,
 } from "@/lib/deck";
 
-const SPADE_CARD: Carte = {
+const ACE_OF_SPADES: Carte = {
   valeur: "As",
   couleur: "♠",
   revelee: true,
 };
 
+const JACK_OF_SPADES: Carte = {
+  valeur: "Valet",
+  couleur: "♠",
+  revelee: true,
+};
+
+const QUEEN_OF_HEARTS: Carte = {
+  valeur: "Dame",
+  couleur: "♥",
+  revelee: true,
+};
+
+const KING_OF_DIAMONDS: Carte = {
+  valeur: "Roi",
+  couleur: "♦",
+  revelee: true,
+};
+
+const TEN_OF_CLUBS: Carte = {
+  valeur: "10",
+  couleur: "♣",
+  revelee: true,
+};
+
 const SUIT_CARDS: Carte[] = [
   {
-    valeur: "As",
+    valeur: "Valet",
     couleur: "♠",
     revelee: true,
   },
   {
-    valeur: "As",
+    valeur: "Dame",
     couleur: "♥",
     revelee: true,
   },
   {
-    valeur: "As",
+    valeur: "Roi",
     couleur: "♦",
     revelee: true,
   },
   {
-    valeur: "As",
+    valeur: "10",
     couleur: "♣",
+    revelee: true,
+  },
+];
+
+const COURT_CARDS: Carte[] = [
+  {
+    valeur: "Valet",
+    couleur: "♠",
+    revelee: true,
+  },
+  {
+    valeur: "Valet",
+    couleur: "♥",
+    revelee: true,
+  },
+  {
+    valeur: "Dame",
+    couleur: "♣",
+    revelee: true,
+  },
+  {
+    valeur: "Dame",
+    couleur: "♦",
+    revelee: true,
+  },
+  {
+    valeur: "Roi",
+    couleur: "♠",
+    revelee: true,
+  },
+  {
+    valeur: "Roi",
+    couleur: "♥",
     revelee: true,
   },
 ];
@@ -92,10 +151,16 @@ function LaboratoryPanel({
 }
 
 export default function CardTestPage() {
-  const [faceUp, setFaceUp] =
+  const [
+    faceUp,
+    setFaceUp,
+  ] =
     useState(false);
 
-  const [touchCount, setTouchCount] =
+  const [
+    touchCount,
+    setTouchCount,
+  ] =
     useState(0);
 
   return (
@@ -121,8 +186,8 @@ export default function CardTestPage() {
           </h1>
 
           <p className="mt-3 max-w-2xl text-sm text-zinc-400 sm:text-base">
-            Test de toutes les variantes,
-            tailles et interactions des
+            Test des tailles, figures,
+            couleurs et interactions des
             cartes du jeu.
           </p>
         </header>
@@ -137,7 +202,9 @@ export default function CardTestPage() {
               <div className="flex min-w-max items-end justify-around gap-6 px-2">
                 <div className="flex flex-col items-center">
                   <PlayingCard
-                    card={SPADE_CARD}
+                    card={
+                      JACK_OF_SPADES
+                    }
                     faceUp
                     size="xs"
                   />
@@ -149,7 +216,9 @@ export default function CardTestPage() {
 
                 <div className="flex flex-col items-center">
                   <PlayingCard
-                    card={SPADE_CARD}
+                    card={
+                      QUEEN_OF_HEARTS
+                    }
                     faceUp
                     size="sm"
                   />
@@ -161,7 +230,9 @@ export default function CardTestPage() {
 
                 <div className="flex flex-col items-center">
                   <PlayingCard
-                    card={SPADE_CARD}
+                    card={
+                      KING_OF_DIAMONDS
+                    }
                     faceUp
                     size="md"
                   />
@@ -173,7 +244,9 @@ export default function CardTestPage() {
 
                 <div className="flex flex-col items-center">
                   <PlayingCard
-                    card={SPADE_CARD}
+                    card={
+                      TEN_OF_CLUBS
+                    }
                     faceUp
                     size="lg"
                   />
@@ -185,7 +258,9 @@ export default function CardTestPage() {
 
                 <div className="flex flex-col items-center">
                   <PlayingCard
-                    card={SPADE_CARD}
+                    card={
+                      ACE_OF_SPADES
+                    }
                     faceUp
                     size="xl"
                   />
@@ -205,12 +280,17 @@ export default function CardTestPage() {
 
             <div className="flex flex-col items-center justify-center gap-7">
               <PlayingCard
-                card={SPADE_CARD}
-                faceUp={faceUp}
+                card={
+                  KING_OF_DIAMONDS
+                }
+                faceUp={
+                  faceUp
+                }
                 size="xl"
                 onClick={() =>
                   setFaceUp(
-                    (previous) => !previous
+                    (previous) =>
+                      !previous
                   )
                 }
               />
@@ -219,7 +299,8 @@ export default function CardTestPage() {
                 type="button"
                 onClick={() =>
                   setFaceUp(
-                    (previous) => !previous
+                    (previous) =>
+                      !previous
                   )
                 }
                 className="min-h-12 w-full max-w-xs touch-manipulation rounded-2xl bg-gradient-to-r from-[#E7B84F] via-[#FFD985] to-[#E7B84F] px-6 py-3 text-sm font-black uppercase tracking-wide text-black shadow-[0_12px_30px_rgba(255,209,102,0.2)] transition active:scale-[0.97]"
@@ -240,7 +321,9 @@ export default function CardTestPage() {
               <div className="flex min-w-max items-end justify-around gap-8 px-2">
                 <div className="flex flex-col items-center">
                   <PlayingCard
-                    card={SPADE_CARD}
+                    card={
+                      QUEEN_OF_HEARTS
+                    }
                     faceUp
                     size="md"
                   />
@@ -252,7 +335,9 @@ export default function CardTestPage() {
 
                 <div className="flex flex-col items-center">
                   <PlayingCard
-                    card={SPADE_CARD}
+                    card={
+                      JACK_OF_SPADES
+                    }
                     faceUp
                     size="md"
                     selected
@@ -265,7 +350,9 @@ export default function CardTestPage() {
 
                 <div className="flex flex-col items-center">
                   <PlayingCard
-                    card={SPADE_CARD}
+                    card={
+                      KING_OF_DIAMONDS
+                    }
                     faceUp
                     size="md"
                     disabled
@@ -278,12 +365,15 @@ export default function CardTestPage() {
 
                 <div className="flex flex-col items-center">
                   <PlayingCard
-                    card={SPADE_CARD}
+                    card={
+                      TEN_OF_CLUBS
+                    }
                     faceUp
                     size="md"
                     onClick={() =>
                       setTouchCount(
-                        (count) => count + 1
+                        (count) =>
+                          count + 1
                       )
                     }
                   />
@@ -298,25 +388,59 @@ export default function CardTestPage() {
 
           <LaboratoryPanel>
             <SectionTitle number={4}>
-              Toutes les couleurs
+              Figures et couleurs
             </SectionTitle>
 
             <div className="grid grid-cols-2 justify-items-center gap-6 sm:grid-cols-4">
-              {SUIT_CARDS.map((card) => (
-                <PlayingCard
-                  key={`${card.valeur}-${card.couleur}`}
-                  card={card}
-                  faceUp
-                  size="md"
-                />
-              ))}
+              {SUIT_CARDS.map(
+                (card) => (
+                  <PlayingCard
+                    key={`${card.valeur}-${card.couleur}`}
+                    card={
+                      card
+                    }
+                    faceUp
+                    size="md"
+                  />
+                )
+              )}
             </div>
           </LaboratoryPanel>
         </div>
 
+        <LaboratoryPanel>
+          <SectionTitle number={5}>
+            Galerie des figures
+          </SectionTitle>
+
+          <div className="grid grid-cols-2 justify-items-center gap-6 sm:grid-cols-3 lg:grid-cols-6">
+            {COURT_CARDS.map(
+              (card) => (
+                <div
+                  key={`${card.valeur}-${card.couleur}`}
+                  className="flex flex-col items-center"
+                >
+                  <PlayingCard
+                    card={
+                      card
+                    }
+                    faceUp
+                    size="lg"
+                  />
+
+                  <span className="mt-4 text-xs font-black uppercase tracking-wide text-zinc-500">
+                    {card.valeur}{" "}
+                    {card.couleur}
+                  </span>
+                </div>
+              )
+            )}
+          </div>
+        </LaboratoryPanel>
+
         <div className="grid gap-5 xl:grid-cols-[2fr_1fr]">
           <LaboratoryPanel>
-            <SectionTitle number={5}>
+            <SectionTitle number={6}>
               Interaction tactile
             </SectionTitle>
 
@@ -329,19 +453,26 @@ export default function CardTestPage() {
                 </p>
 
                 <p className="mt-3 text-sm font-bold text-[#FFD166]">
-                  Pressions : {touchCount}
+                  Pressions :{" "}
+                  {touchCount}
                 </p>
               </div>
 
               <div className="flex items-center gap-6">
                 <PlayingCard
-                  card={SPADE_CARD}
+                  card={
+                    JACK_OF_SPADES
+                  }
                   faceUp
                   size="lg"
-                  selected={touchCount > 0}
+                  selected={
+                    touchCount >
+                    0
+                  }
                   onClick={() =>
                     setTouchCount(
-                      (count) => count + 1
+                      (count) =>
+                        count + 1
                     )
                   }
                 />
@@ -363,14 +494,12 @@ export default function CardTestPage() {
             </div>
 
             <p className="mt-5 text-sm leading-7 text-zinc-400">
-              Cette page est notre terrain de
-              test. Toutes les cartes du jeu
-              utiliseront progressivement le
-              composant{" "}
-              <strong className="text-[#FFD166]">
-                PlayingCard
-              </strong>
-              .
+              Cette page est notre terrain
+              de test. Elle permet de
+              vérifier rapidement les
+              figures, les tailles et les
+              interactions sans lancer une
+              partie entière.
             </p>
           </LaboratoryPanel>
         </div>

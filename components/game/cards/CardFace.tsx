@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import type {
   CSSProperties,
 } from "react";
@@ -32,6 +34,32 @@ interface PipPosition {
   y: number;
   rotate?: boolean;
 }
+
+type CourtValue =
+  | "Valet"
+  | "Dame"
+  | "Roi";
+
+const COURT_IMAGES: Record<
+  CourtValue,
+  string
+> = {
+  Valet:
+    "/images/cards/court/valet-v5.png",
+
+  Dame:
+    "/images/cards/court/dame-v5.png",
+
+  Roi:
+    "/images/cards/court/roi-v5.png",
+};
+
+/**
+ * Chaque personnage possède son propre
+ * cadrage afin d'occuper correctement
+ * la carte sans être coupé.
+ */
+
 
 const TOP_LEFT: PipPosition = {
   x: 31,
@@ -251,6 +279,16 @@ function isNumericCard(
   );
 }
 
+function isCourtCard(
+  value: Valeur
+): value is CourtValue {
+  return (
+    value === "Valet" ||
+    value === "Dame" ||
+    value === "Roi"
+  );
+}
+
 function getPipStyle(
   position: PipPosition
 ): CSSProperties {
@@ -266,6 +304,47 @@ function getPipStyle(
         ? "translate(-50%, -50%) rotate(180deg)"
         : "translate(-50%, -50%)",
   };
+}
+
+interface CourtFigureProps {
+  value: CourtValue;
+}
+
+function CourtFigure({
+  value,
+}: CourtFigureProps) {
+  return (
+    <div
+      aria-hidden="true"
+      className="
+        pointer-events-none
+        absolute
+        inset-x-[10%]
+        bottom-[5%]
+        top-[10%]
+        z-10
+      "
+    >
+      <Image
+        src={
+          COURT_IMAGES[
+            value
+          ]
+        }
+        alt=""
+        fill
+        unoptimized
+        sizes="280px"
+        draggable={false}
+        className="
+          select-none
+          object-contain
+          object-center
+          drop-shadow-[0_4px_3px_rgba(0,0,0,0.12)]
+        "
+      />
+    </div>
+  );
 }
 
 export default function CardFace({
@@ -293,6 +372,13 @@ export default function CardFace({
       card.valeur
     );
 
+const courtValue =
+  isCourtCard(
+    card.valeur
+  )
+    ? card.valeur
+    : null;
+
   return (
     <div
       aria-label={
@@ -308,9 +394,17 @@ export default function CardFace({
         className
       )}
     >
-      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-br from-white/90 via-[#FCFAF5] to-[#EEE9DE]" />
+      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-br from-white/95 via-[#FCFAF5] to-[#F2EEE5]" />
 
-      <div className="pointer-events-none absolute inset-[3%] z-0 rounded-[inherit] border border-black/[0.06]" />
+      <div className="pointer-events-none absolute inset-[3%] z-[1] rounded-[inherit] border border-black/[0.06]" />
+
+{courtValue && (
+  <CourtFigure
+    value={
+      courtValue
+    }
+  />
+)}
 
       <div
         className={joinClasses(
@@ -329,7 +423,7 @@ export default function CardFace({
         </span>
       </div>
 
-      {numericCard ? (
+      {numericCard && (
         <div className="absolute inset-[10%] z-10">
           {pipLayout.map(
             (
@@ -360,30 +454,11 @@ export default function CardFace({
                         ]
                   )}
                 >
-                  {
-                    card.couleur
-                  }
+                  {card.couleur}
                 </span>
               );
             }
           )}
-        </div>
-      ) : (
-        <div
-          className={joinClasses(
-            "absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center",
-            CARD_CENTER_SUIT_CLASSES[
-              size
-            ]
-          )}
-        >
-          <span className="font-black">
-            {shortValue}
-          </span>
-
-          <span className="mt-1 font-black">
-            {card.couleur}
-          </span>
         </div>
       )}
 

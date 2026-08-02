@@ -14,9 +14,10 @@ import {
   AnimatePresence,
 } from "framer-motion";
 
-
 import PyramidBoard from "@/components/board/PyramidBoard";
 import GameAnnouncement from "@/components/game/GameAnnouncement";
+import GameHomeButton from "@/components/game/GameHomeButton";
+import GameOverModal from "@/components/game/GameOverModal";
 import ActionPanel from "@/components/panels/ActionPanel";
 import PlayerDrawer from "@/components/players/PlayerDrawer";
 
@@ -137,6 +138,7 @@ function GameScreen({
     error,
     connected,
     refreshState,
+    returnToLobby,
   } = useGame();
 
   const [
@@ -160,8 +162,6 @@ function GameScreen({
       null
     );
 
-
-
   const previousDrinkRef =
     useRef<string | null>(
       null
@@ -183,10 +183,6 @@ function GameScreen({
         state
       );
 
-    const currentRevealedCards =
-      state.progress
-        .revealedCards;
-
     const lastDrink =
       state.distribution
         .lastDrink;
@@ -203,7 +199,10 @@ function GameScreen({
      * Les valeurs sont mémorisées sans
      * déclencher d’annonce artificielle.
      */
-    if (!initializedRef.current) {
+    if (
+      !initializedRef
+        .current
+    ) {
       initializedRef.current =
         true;
 
@@ -213,8 +212,6 @@ function GameScreen({
       previousActivePlayerRef.current =
         currentActivePlayer;
 
-
-
       previousDrinkRef.current =
         currentDrinkId;
 
@@ -222,26 +219,26 @@ function GameScreen({
     }
 
     const previousPhase =
-      previousPhaseRef.current;
+      previousPhaseRef
+        .current;
 
     const previousActivePlayer =
-      previousActivePlayerRef.current;
-
-
+      previousActivePlayerRef
+        .current;
 
     const phaseChanged =
       previousPhase !==
       currentPhase;
 
-
-
     const viewerPlayerIndex =
       state.viewerPlayerIndex;
 
     const newDrinkNotification =
-      currentDrinkId !== null &&
       currentDrinkId !==
-        previousDrinkRef.current &&
+        null &&
+      currentDrinkId !==
+        previousDrinkRef
+          .current &&
       lastDrink?.target ===
         viewerPlayerIndex;
 
@@ -254,7 +251,9 @@ function GameScreen({
         phaseChanged
       );
 
-    if (newDrinkNotification) {
+    if (
+      newDrinkNotification
+    ) {
       setAnnouncement({
         announcementKey:
           Date.now(),
@@ -304,39 +303,37 @@ function GameScreen({
         icon:
           "❗",
       });
+    } else if (
+      viewerBecameActive &&
+      currentPhase ===
+        "PLAYER_TURN"
+    ) {
+      setAnnouncement({
+        announcementKey:
+          Date.now(),
 
-} else if (
-  viewerBecameActive &&
-  currentPhase ===
-    "PLAYER_TURN"
-) {
-  setAnnouncement({
-    announcementKey:
-      Date.now(),
+        eyebrow:
+          "Tour actif",
 
-    eyebrow:
-      "Tour actif",
+        title:
+          "À toi de jouer",
 
-    title:
-      "À toi de jouer",
+        icon:
+          "🟡",
+      });
+    }
 
-    icon:
-      "🟡",
-  });
-}
+    previousDrinkRef.current =
+      currentDrinkId;
 
-previousDrinkRef.current =
-  currentDrinkId;
+    previousPhaseRef.current =
+      currentPhase;
 
-previousPhaseRef.current =
-  currentPhase;
-
-previousActivePlayerRef.current =
-  currentActivePlayer;
-
-}, [
-  state,
-]);      
+    previousActivePlayerRef.current =
+      currentActivePlayer;
+  }, [
+    state,
+  ]);
 
   if (
     loading ||
@@ -363,11 +360,14 @@ previousActivePlayerRef.current =
       viewerPlayerIndex;
 
   const viewerIsHost =
-    viewerPlayerIndex === 0;
+    viewerPlayerIndex ===
+    0;
 
   const canUseActionPanel =
     (() => {
-      switch (state.phase) {
+      switch (
+        state.phase
+      ) {
         case "DISTRIBUTION":
         case "PLAYER_TURN":
         case "PLAYER_RESPONSE":
@@ -441,12 +441,29 @@ previousActivePlayerRef.current =
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
+      <GameHomeButton />
+
       <PlayerDrawer
         state={state}
         playerNames={
           playerNames
         }
       />
+
+      <AnimatePresence>
+        {state.phase ===
+          "GAME_OVER" && (
+          <GameOverModal
+            state={state}
+            playerNames={
+              playerNames
+            }
+            onReturnToLobby={
+              returnToLobby
+            }
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {announcement && (
@@ -456,13 +473,16 @@ previousActivePlayerRef.current =
                 .announcementKey
             }
             eyebrow={
-              announcement.eyebrow
+              announcement
+                .eyebrow
             }
             title={
-              announcement.title
+              announcement
+                .title
             }
             icon={
-              announcement.icon
+              announcement
+                .icon
             }
             onComplete={() => {
               setAnnouncement(
@@ -510,15 +530,13 @@ previousActivePlayerRef.current =
           <div className="flex flex-1 flex-col gap-4">
             {actionContent}
 
-           <section className="flex min-w-0 flex-1 flex-col">
-  <PyramidBoard
-    state={state}
-  />
-</section>
+            <section className="flex min-w-0 flex-1 flex-col">
+              <PyramidBoard
+                state={state}
+              />
+            </section>
           </div>
         )}
-
-        
       </div>
     </main>
   );
@@ -539,14 +557,17 @@ export default function JeuPage() {
   const [
     storageChecked,
     setStorageChecked,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   useEffect(() => {
     const session =
       lireSessionPartie();
 
     if (!session) {
-      setGameInfo(null);
+      setGameInfo(
+        null
+      );
 
       setStorageChecked(
         true
@@ -568,7 +589,8 @@ export default function JeuPage() {
           const pseudo =
             session.players[
               playerIndex
-            ]?.pseudo?.trim();
+            ]?.pseudo
+              ?.trim();
 
           return (
             pseudo ||
@@ -599,7 +621,9 @@ export default function JeuPage() {
     );
   }
 
-  if (!storageChecked) {
+  if (
+    !storageChecked
+  ) {
     return (
       <GameLoadingScreen />
     );

@@ -18,37 +18,110 @@ export function believe(
     );
   }
 
-  assertPendingAction(state);
+  assertPendingAction(
+    state
+  );
 
   const action =
-    state.turn.pendingAction;
+    state.turn
+      .pendingAction;
 
   const drinks = [
     ...state.drinks,
   ];
 
-  drinks[action.target] +=
-    action.drinks;
+  drinks[
+    action.target
+  ] += action.drinks;
+
+  const giverCards =
+    state.players[
+      action.giver
+    ];
+
+  const giverHasMatchingCard =
+    giverCards.some(
+      (card) =>
+        card.valeur ===
+        action.claimedCard
+          .valeur
+    );
+
+  const bluffSucceeded =
+    !giverHasMatchingCard;
+
+  const playerStats =
+    state.gameStats
+      .players.map(
+        (
+          stats,
+          playerIndex
+        ) => {
+          if (
+            playerIndex !==
+              action.giver ||
+            !bluffSucceeded
+          ) {
+            return stats;
+          }
+
+          return {
+            ...stats,
+
+            successfulBluffs:
+              stats.successfulBluffs +
+              1,
+          };
+        }
+      );
 
   return {
     ...state,
 
-    phase: "BLUFF_RESULT",
+    phase:
+      "BLUFF_RESULT",
 
     drinks,
 
+    gameStats: {
+      ...state.gameStats,
+
+      successfulBluffs:
+        state.gameStats
+          .successfulBluffs +
+        (
+          bluffSucceeded
+            ? 1
+            : 0
+        ),
+
+      players:
+        playerStats,
+    },
+
     bluffResult: {
-      giver: action.giver,
-      target: action.target,
-      drinks: action.drinks,
-      outcome: "BELIEVED",
-      revealedCard: null,
+      giver:
+        action.giver,
+
+      target:
+        action.target,
+
+      drinks:
+        action.drinks,
+
+      outcome:
+        "BELIEVED",
+
+      revealedCard:
+        null,
+
       punishedPlayer:
         action.target,
     },
 
     history: [
       ...state.history,
+
       {
         player:
           action.target,
@@ -66,13 +139,8 @@ export function believe(
     turn: {
       ...state.turn,
 
-      /**
-       * L’action n’attend plus de réponse.
-       * Le donneur reste cependant dans
-       * bluffResult pour permettre au moteur
-       * de reprendre après lui.
-       */
-      pendingAction: null,
+      pendingAction:
+        null,
     },
   };
 }

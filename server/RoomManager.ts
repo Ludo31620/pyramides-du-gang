@@ -95,7 +95,9 @@ export class RoomManager {
 
     const room: Room = {
       code,
-      status: "LOBBY",
+
+      status:
+        "LOBBY",
 
       maxPlayers:
         input.maxPlayers,
@@ -464,6 +466,117 @@ export class RoomManager {
     };
   }
 
+  /**
+   * Replace le salon dans l'état LOBBY
+   * après la fin complète d'une partie.
+   *
+   * Le code du salon, les joueurs,
+   * les pseudos et l'hôte sont conservés.
+   * Seul l'ancien moteur de jeu est supprimé.
+   */
+  returnRoomToLobby(
+    input: StartRoomInput
+  ): StartRoomResult {
+    const code =
+      this.normalizeCode(
+        input.code
+      );
+
+    const room =
+      this.rooms.get(
+        code
+      );
+
+    if (!room) {
+      return {
+        success: false,
+        error:
+          "Cette partie n'existe pas.",
+      };
+    }
+
+    const player =
+      room.players.find(
+        (roomPlayer) =>
+          roomPlayer.socketId ===
+          input.socketId
+      );
+
+    if (!player) {
+      return {
+        success: false,
+        error:
+          "Tu ne fais pas partie de cette partie.",
+      };
+    }
+
+    if (
+      room.status !==
+      "IN_GAME"
+    ) {
+      return {
+        success: false,
+        error:
+          "Le salon est déjà dans le lobby.",
+      };
+    }
+
+    const gameRoom =
+      this.gameRooms.get(
+        code
+      );
+
+    if (!gameRoom) {
+      return {
+        success: false,
+        error:
+          "La partie en cours est introuvable.",
+      };
+    }
+
+    const gameState =
+      gameRoom.getState();
+
+    /*
+     * Ce retour collectif est uniquement
+     * autorisé après la fin de la partie.
+     *
+     * Le bouton Home permet déjà à un joueur
+     * de quitter individuellement en cours
+     * de partie.
+     */
+    if (
+      gameState.phase !==
+      "GAME_OVER"
+    ) {
+      return {
+        success: false,
+        error:
+          "La partie n'est pas encore terminée.",
+      };
+    }
+
+    room.status =
+      "LOBBY";
+
+    /*
+     * Le prochain clic sur « Lancer la partie »
+     * créera un GameRoom entièrement neuf.
+     */
+    this.gameRooms.delete(
+      code
+    );
+
+    return {
+      success: true,
+
+      room:
+        this.toPublicRoom(
+          room
+        ),
+    };
+  }
+
   getRoom(
     code: string
   ): PublicRoom | null {
@@ -736,9 +849,12 @@ export class RoomManager {
     };
   }
 
-  private generatePlayerId(): string {
+  private generatePlayerId():
+    string {
     const timestamp =
-      Date.now().toString(36);
+      Date.now().toString(
+        36
+      );
 
     const randomPart =
       Math.random()
@@ -758,7 +874,8 @@ export class RoomManager {
     ].join("-");
   }
 
-  private generateUniqueCode(): string {
+  private generateUniqueCode():
+    string {
     for (
       let attempt = 0;
       attempt < 100;

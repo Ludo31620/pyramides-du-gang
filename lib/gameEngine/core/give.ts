@@ -27,7 +27,10 @@ export function giveDrinks(
     );
   }
 
-  assertCurrentCard(state);
+  assertCurrentCard(
+    state
+  );
+
   assertPlayerIndex(
     state,
     target
@@ -37,9 +40,11 @@ export function giveDrinks(
     state.turn.currentPlayer;
 
   if (
-    !state.turn.remainingPlayers.includes(
-      giver
-    )
+    !state.turn
+      .remainingPlayers
+      .includes(
+        giver
+      )
   ) {
     throw new Error(
       `Player ${giver} has already played on the current card.`
@@ -47,7 +52,9 @@ export function giveDrinks(
   }
 
   if (
-    state.turn.pendingAction !== null
+    state.turn
+      .pendingAction !==
+    null
   ) {
     throw new Error(
       "An action is already awaiting a response."
@@ -55,12 +62,61 @@ export function giveDrinks(
   }
 
   if (
-    target === giver
+    target ===
+    giver
   ) {
     throw new Error(
       "A player cannot target themselves."
     );
   }
+
+  const giverCards =
+    state.players[
+      giver
+    ];
+
+  const giverHasMatchingCard =
+    giverCards.some(
+      (card) =>
+        card.valeur ===
+        state.current
+          .card.valeur
+    );
+
+  const isRealBluff =
+    !giverHasMatchingCard;
+
+  const playerStats =
+    state.gameStats
+      .players.map(
+        (
+          stats,
+          playerIndex
+        ) => {
+          if (
+            playerIndex !==
+            giver
+          ) {
+            return stats;
+          }
+
+          return {
+            ...stats,
+
+            claimsMade:
+              stats.claimsMade +
+              1,
+
+            bluffsAttempted:
+              stats.bluffsAttempted +
+              (
+                isRealBluff
+                  ? 1
+                  : 0
+              ),
+          };
+        }
+      );
 
   return {
     ...state,
@@ -68,24 +124,34 @@ export function giveDrinks(
     phase:
       "PLAYER_RESPONSE",
 
+    gameStats: {
+      ...state.gameStats,
+
+      claimsMade:
+        state.gameStats
+          .claimsMade +
+        1,
+
+      bluffsAttempted:
+        state.gameStats
+          .bluffsAttempted +
+        (
+          isRealBluff
+            ? 1
+            : 0
+        ),
+
+      players:
+        playerStats,
+    },
+
     turn: {
-      /**
-       * Pendant la réponse, le joueur courant
-       * devient la cible. Seule cette cible
-       * pourra croire ou contester l'annonce.
-       */
       currentPlayer:
         target,
 
-      /**
-       * Le donneur reste dans la liste jusqu'à
-       * la fin de la réponse et du résultat.
-       *
-       * Il sera retiré par advancePlayer()
-       * après CONTINUE_AFTER_BLUFF.
-       */
       remainingPlayers:
-        state.turn.remainingPlayers,
+        state.turn
+          .remainingPlayers,
 
       pendingAction: {
         giver,
@@ -93,11 +159,13 @@ export function giveDrinks(
 
         drinks:
           getDrinksForRow(
-            state.current.row
+            state.current
+              .row
           ),
 
         claimedCard:
-          state.current.card,
+          state.current
+            .card,
       },
     },
   };

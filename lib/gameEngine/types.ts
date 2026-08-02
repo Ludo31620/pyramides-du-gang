@@ -46,43 +46,20 @@ export interface DistributionState {
   currentPlayer: number;
   question: DistributionQuestion;
 
-  /**
-   * Devient true après une bonne réponse.
-   * Le joueur doit alors désigner quelqu’un
-   * à qui donner une gorgée.
-   */
   awaitingGive: boolean;
 
-  /**
-   * Résultat de la dernière question.
-   */
-  lastResult: DistributionResult | null;
+  lastResult:
+    | DistributionResult
+    | null;
 
-  /**
-   * Dernière gorgée donnée pendant
-   * la distribution.
-   */
-  lastDrink?: DistributionDrink | null;
+  lastDrink?:
+    | DistributionDrink
+    | null;
 }
 
 export interface MemoryState {
-  /**
-   * Durée restante de la phase
-   * de mémorisation.
-   */
   remainingSeconds: number;
-
-  /**
-   * Nombre de jokers mémoire
-   * disponibles pour chaque joueur.
-   */
   jokers: number[];
-
-  /**
-   * Joueurs dont les cartes sont
-   * temporairement visibles grâce
-   * à un joker mémoire.
-   */
   revealedPlayers: number[];
 }
 
@@ -98,51 +75,22 @@ export type BluffOutcome =
   | "TRUTH"
   | "BLUFF";
 
-/**
- * Résultat d’une réponse à une annonce.
- *
- * Il reste stocké pendant BLUFF_RESULT
- * afin que l’interface affiche le verdict
- * avant de poursuivre la partie.
- */
 export interface BluffResult {
   giver: number;
   target: number;
   drinks: number;
-
-  /**
-   * BELIEVED :
-   * la cible accepte de boire sans contester.
-   *
-   * TRUTH :
-   * la cible conteste, mais le donneur
-   * possède bien une carte de la bonne valeur.
-   *
-   * BLUFF :
-   * la cible conteste et le donneur
-   * ne possède aucune carte correspondante.
-   */
   outcome: BluffOutcome;
-
-  /**
-   * Carte montrée pour prouver l’annonce.
-   *
-   * Elle reste null lorsque la cible
-   * accepte simplement de boire ou
-   * lorsqu’aucune carte valide n’existe.
-   */
   revealedCard: Carte | null;
-
-  /**
-   * Joueur qui reçoit les gorgées.
-   */
   punishedPlayer: number;
 }
 
 export interface TurnState {
   currentPlayer: number;
   remainingPlayers: number[];
-  pendingAction: PendingAction | null;
+
+  pendingAction:
+    | PendingAction
+    | null;
 }
 
 export interface CurrentCardState {
@@ -164,21 +112,74 @@ export interface HistoryEvent {
   timestamp: number;
 }
 
+/**
+ * Statistiques individuelles d’un joueur.
+ *
+ * claimsMade :
+ * toutes les annonces effectuées,
+ * vraies ou fausses.
+ *
+ * bluffsAttempted :
+ * annonces mensongères effectuées.
+ *
+ * successfulBluffs :
+ * mensonges acceptés par la cible.
+ *
+ * caughtBluffs :
+ * mensonges découverts après contestation.
+ */
+export interface PlayerStats {
+  claimsMade: number;
+  bluffsAttempted: number;
+  successfulBluffs: number;
+  caughtBluffs: number;
+}
+
+/**
+ * Statistiques générales de la partie.
+ */
+export interface GameStats {
+  claimsMade: number;
+  bluffsAttempted: number;
+  successfulBluffs: number;
+  caughtBluffs: number;
+
+  players: PlayerStats[];
+}
+
 export interface GameState {
   players: Carte[][];
   pyramid: Carte[][];
   deck: Carte[];
 
-  distribution: DistributionState;
-  memory: MemoryState;
+  distribution:
+    DistributionState;
 
-  current: CurrentCardState;
-  progress: ProgressState;
-  turn: TurnState;
+  memory:
+    MemoryState;
 
-  bluffResult: BluffResult | null;
+  current:
+    CurrentCardState;
 
-  phase: Phase;
-  drinks: number[];
-  history: HistoryEvent[];
+  progress:
+    ProgressState;
+
+  turn:
+    TurnState;
+
+  bluffResult:
+    | BluffResult
+    | null;
+
+  gameStats:
+    GameStats;
+
+  phase:
+    Phase;
+
+  drinks:
+    number[];
+
+  history:
+    HistoryEvent[];
 }
