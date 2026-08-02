@@ -2,7 +2,8 @@ import type {
   GameState,
 } from "../types";
 
-const MEMORY_DURATION_SECONDS = 60;
+const MEMORY_DURATION_SECONDS =
+  15;
 
 export function startMemory(
   state: GameState

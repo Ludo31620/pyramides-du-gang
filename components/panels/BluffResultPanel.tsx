@@ -30,6 +30,11 @@ interface ResultContent {
   eyebrow: string;
   title: string;
   description: string;
+  icon: string;
+  resultLabel: string;
+  panelClasses: string;
+  bannerClasses: string;
+  accentTextClasses: string;
 }
 
 function getResultContent(
@@ -51,11 +56,26 @@ function getResultContent(
           "Annonce acceptée",
 
         title:
-          `${targetName} boit`,
+          `${targetName} a cru ${giverName}`,
 
         description:
-          `${targetName} a cru ${giverName} et reçoit ` +
+          `${targetName} accepte l’annonce et doit boire ` +
           `${drinks} ${drinkLabel}.`,
+
+        icon:
+          "🤝",
+
+        resultLabel:
+          `${targetName} doit boire`,
+
+        panelClasses:
+          "border-yellow-400/35 bg-zinc-900",
+
+        bannerClasses:
+          "border-yellow-400/30 bg-yellow-400/10",
+
+        accentTextClasses:
+          "text-yellow-400",
       };
 
     case "TRUTH":
@@ -64,11 +84,26 @@ function getResultContent(
           "Annonce vérifiée",
 
         title:
-          "Il disait vrai",
+          `${giverName} disait vrai !`,
 
         description:
           `${giverName} possédait bien une carte de la bonne valeur. ` +
-          `${punishedPlayerName} reçoit ${drinks} ${drinkLabel}.`,
+          `${punishedPlayerName} doit boire ${drinks} ${drinkLabel}.`,
+
+        icon:
+          "✅",
+
+        resultLabel:
+          `${punishedPlayerName} doit boire`,
+
+        panelClasses:
+          "border-emerald-500/35 bg-zinc-900",
+
+        bannerClasses:
+          "border-emerald-500/30 bg-emerald-500/10",
+
+        accentTextClasses:
+          "text-emerald-400",
       };
 
     case "BLUFF":
@@ -77,11 +112,26 @@ function getResultContent(
           "Bluff découvert",
 
         title:
-          "Menteur !",
+          `${giverName} bluffait !`,
 
         description:
-          `${giverName} ne possédait aucune carte de la bonne valeur. ` +
-          `${punishedPlayerName} reçoit ${drinks} ${drinkLabel}.`,
+          `${giverName} a été démasqué : il ne possédait aucune carte ` +
+          `de la bonne valeur.`,
+
+        icon:
+          "🚨",
+
+        resultLabel:
+          `${punishedPlayerName} doit boire`,
+
+        panelClasses:
+          "border-red-500/60 bg-[#211315]",
+
+        bannerClasses:
+          "border-red-500/50 bg-red-600/15",
+
+        accentTextClasses:
+          "text-red-400",
       };
 
     default: {
@@ -145,6 +195,11 @@ export default function BluffResultPanel({
   const revealedCard =
     result.revealedCard;
 
+  const drinkLabel =
+    result.drinks > 1
+      ? "gorgées"
+      : "gorgée";
+
   function handleContinue():
     void {
     if (!onDispatch) {
@@ -158,27 +213,66 @@ export default function BluffResultPanel({
   }
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-zinc-900 p-6 sm:p-8">
-      <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
-        {content.eyebrow}
-      </p>
+    <section
+      className={`
+        overflow-hidden
+        rounded-3xl
+        border-2
+        p-5
+        text-white
+        sm:p-8
+        ${content.panelClasses}
+      `}
+    >
+      <header className="text-center">
+        <div
+          aria-hidden="true"
+          className="text-5xl"
+        >
+          {content.icon}
+        </div>
 
-      <h2 className="mt-2 text-3xl font-black text-white">
-        {content.title}
-      </h2>
+        <p
+          className={`
+            mt-4
+            text-xs
+            font-black
+            uppercase
+            tracking-[0.25em]
+            ${content.accentTextClasses}
+          `}
+        >
+          {content.eyebrow}
+        </p>
 
-      <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300">
-        {content.description}
-      </p>
+        <h2
+          className={`
+            mt-3
+            text-4xl
+            font-black
+            uppercase
+            leading-tight
+            tracking-tight
+            sm:text-5xl
+            ${content.accentTextClasses}
+          `}
+        >
+          {content.title}
+        </h2>
+
+        <p className="mx-auto mt-4 max-w-2xl text-base font-bold leading-7 text-zinc-200">
+          {content.description}
+        </p>
+      </header>
 
       {revealedCard && (
-        <div className="mt-6">
-          <p className="text-center text-xs font-black uppercase tracking-[0.2em] text-zinc-500">
+        <div className="mt-7">
+          <p className="text-center text-xs font-black uppercase tracking-[0.2em] text-zinc-400">
             Carte révélée
           </p>
 
           <div className="mt-4 flex justify-center">
-            <div className="flex h-36 w-28 items-center justify-center rounded-2xl border-2 border-zinc-300 bg-white shadow-xl">
+            <div className="flex h-36 w-28 flex-col items-center justify-center rounded-2xl border-2 border-zinc-300 bg-white text-center shadow-md">
               <span
                 className={
                   revealedCard.couleur ===
@@ -189,7 +283,21 @@ export default function BluffResultPanel({
                     : "text-3xl font-black text-black"
                 }
               >
-                {revealedCard.valeur}
+                {
+                  revealedCard.valeur
+                }
+              </span>
+
+              <span
+                className={
+                  revealedCard.couleur ===
+                    "♥" ||
+                  revealedCard.couleur ===
+                    "♦"
+                    ? "mt-2 text-4xl text-red-600"
+                    : "mt-2 text-4xl text-black"
+                }
+              >
                 {
                   revealedCard.couleur
                 }
@@ -199,21 +307,43 @@ export default function BluffResultPanel({
         </div>
       )}
 
-      <div className="mt-6 rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-6 text-center">
-        <p className="text-sm text-zinc-400">
-          Joueur sanctionné
+      <div
+        className={`
+          mt-7
+          rounded-3xl
+          border-2
+          px-5
+          py-7
+          text-center
+          ${content.bannerClasses}
+        `}
+      >
+        <p className="text-lg font-black uppercase text-white">
+          {content.resultLabel}
         </p>
 
-        <p className="mt-1 text-xl font-black text-white">
-          {punishedPlayerName}
-        </p>
-
-        <p className="mt-4 text-sm text-zinc-400">
-          Gorgées
-        </p>
-
-        <p className="mt-1 text-5xl font-black text-yellow-400">
+        <p
+          className={`
+            mt-3
+            text-7xl
+            font-black
+            leading-none
+            ${content.accentTextClasses}
+          `}
+        >
           {result.drinks}
+        </p>
+
+        <p
+          className={`
+            mt-2
+            text-xl
+            font-black
+            uppercase
+            ${content.accentTextClasses}
+          `}
+        >
+          {drinkLabel}
         </p>
       </div>
 
@@ -227,6 +357,7 @@ export default function BluffResultPanel({
         }
         className="
           mt-8
+          min-h-16
           w-full
           rounded-2xl
           bg-yellow-400

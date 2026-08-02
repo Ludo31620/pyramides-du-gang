@@ -11,7 +11,7 @@ type MemoryPanelProps = {
 };
 
 const MEMORY_DURATION_SECONDS =
-  60;
+  15;
 
 export default function MemoryPanel({
   state,
@@ -32,7 +32,7 @@ export default function MemoryPanel({
     );
 
   const isUrgent =
-    remainingSeconds <= 10;
+    remainingSeconds <= 5;
 
   const cards =
     state.players[
@@ -40,7 +40,7 @@ export default function MemoryPanel({
     ] ?? [];
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900 p-5 shadow-2xl sm:p-8">
+    <section className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-900 p-5 shadow-lg sm:p-8">
       <div className="text-center">
         <p className="text-xs font-black uppercase tracking-[0.3em] text-yellow-400">
           Phase de préparation

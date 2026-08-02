@@ -15,7 +15,7 @@ const MIN_PLAYER_COUNT = 2;
 const MAX_PLAYER_COUNT = 9;
 
 const MEMORY_DURATION_SECONDS =
-  60;
+  15;
 
 const MEMORY_JOKERS_PER_PLAYER =
   2;
