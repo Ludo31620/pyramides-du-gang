@@ -25,7 +25,19 @@ export default function PlayerHand({
   hidden = false,
 }: PlayerHandProps) {
   return (
-    <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+    <div
+      className="
+        flex
+        flex-nowrap
+        justify-center
+        gap-2
+        overflow-x-auto
+        px-2
+        sm:flex-wrap
+        sm:gap-4
+        sm:overflow-visible
+      "
+    >
       {cards.map(
         (
           card,
@@ -36,22 +48,30 @@ export default function PlayerHand({
             card === null;
 
           return (
-            <PlayingCard
+            <div
               key={
                 card
                   ? `${card.valeur}-${card.couleur}-${index}`
                   : `hidden-card-${index}`
               }
-              card={
-                cardIsHidden
-                  ? HIDDEN_CARD
-                  : card
-              }
-              faceUp={
-                !cardIsHidden
-              }
-              size="lg"
-            />
+              className="
+                shrink-0
+                scale-[0.82]
+                sm:scale-100
+              "
+            >
+              <PlayingCard
+                card={
+                  cardIsHidden
+                    ? HIDDEN_CARD
+                    : card
+                }
+                faceUp={
+                  !cardIsHidden
+                }
+                size="lg"
+              />
+            </div>
           );
         }
       )}
