@@ -4,6 +4,8 @@ import {
   useState,
 } from "react";
 
+import PyramidCard from "@/components/board/PyramidCard";
+
 import {
   getPlayerName,
 } from "@/lib/gameEngine/getPlayerName";
@@ -126,13 +128,6 @@ export default function PlayerTurnPanel({
           BluffAnimationRequestResult
       ) => {
         if (result.success) {
-          /*
-           * Le GameProvider reçoit ensuite
-           * l'animation synchronisée.
-           *
-           * À la fin de cette animation,
-           * il envoie l'action GIVE.
-           */
           return;
         }
 
@@ -182,27 +177,18 @@ export default function PlayerTurnPanel({
           Carte révélée
         </p>
 
-        <div className="flex h-36 w-28 flex-col items-center justify-center rounded-2xl border-2 border-zinc-300 bg-white shadow-xl">
-          {currentCard ? (
-            <span
-              className={
-                currentCard.couleur ===
-                  "♥" ||
-                currentCard.couleur ===
-                  "♦"
-                  ? "text-3xl font-black text-red-600"
-                  : "text-3xl font-black text-black"
-              }
-            >
-              {currentCard.valeur}
-              {currentCard.couleur}
-            </span>
-          ) : (
-            <span className="px-2 text-center text-sm font-bold text-zinc-500">
-              Aucune carte
-            </span>
-          )}
-        </div>
+        {currentCard ? (
+          <PyramidCard
+            card={currentCard}
+            hidden={false}
+            size="large"
+            active
+          />
+        ) : (
+          <div className="flex h-40 w-28 items-center justify-center rounded-2xl border border-dashed border-zinc-700 bg-zinc-950 px-3 text-center text-sm font-bold text-zinc-500">
+            Aucune carte
+          </div>
+        )}
       </div>
 
       <div className="mt-6 rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-4 text-center">

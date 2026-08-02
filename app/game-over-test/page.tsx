@@ -27,13 +27,14 @@ const TEST_STATE: PlayerGameState = {
 
   deck: [],
 
-  distribution: {
-    currentPlayer: 0,
-    question: 3,
-    awaitingGive: false,
-    lastResult: null,
-    lastDrink: null,
-  },
+distribution: {
+  currentPlayer: 0,
+  question: 3,
+  awaitingGive: false,
+  awaitingContinue: false,
+  lastResult: null,
+  lastDrink: null,
+},
 
   memory: {
     remainingSeconds: 0,

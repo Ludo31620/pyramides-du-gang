@@ -30,6 +30,9 @@ export type GameAction =
       target: number;
     }
   | {
+      type: "CONTINUE_DISTRIBUTION";
+    }
+  | {
       type: "REVEAL_CARD";
     }
   | {

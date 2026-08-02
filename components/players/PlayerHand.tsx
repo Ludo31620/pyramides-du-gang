@@ -25,42 +25,65 @@ export default function PlayerHand({
   hidden = false,
 }: PlayerHandProps) {
   return (
-    <div
-      className="
-        flex
-        flex-nowrap
-        justify-center
-        gap-2
-        overflow-x-auto
-        px-2
-        sm:flex-wrap
-        sm:gap-4
-        sm:overflow-visible
-      "
-    >
-      {cards.map(
-        (
-          card,
-          index
-        ) => {
-          const cardIsHidden =
-            hidden ||
-            card === null;
+    <div className="w-full">
+      {/*
+       * Version téléphone :
+       * les cartes utilisent une vraie taille
+       * plus petite, sans scale artificiel.
+       */}
+      <div className="grid w-full grid-cols-4 place-items-center gap-1 px-1 sm:hidden">
+        {cards.map(
+          (
+            card,
+            index
+          ) => {
+            const cardIsHidden =
+              hidden ||
+              card === null;
 
-          return (
-            <div
-              key={
-                card
-                  ? `${card.valeur}-${card.couleur}-${index}`
-                  : `hidden-card-${index}`
-              }
-              className="
-                shrink-0
-                scale-[0.82]
-                sm:scale-100
-              "
-            >
+            return (
               <PlayingCard
+                key={
+                  card
+                    ? `mobile-${card.valeur}-${card.couleur}-${index}`
+                    : `mobile-hidden-${index}`
+                }
+                card={
+                  cardIsHidden
+                    ? HIDDEN_CARD
+                    : card
+                }
+                faceUp={
+                  !cardIsHidden
+                }
+                size="md"
+              />
+            );
+          }
+        )}
+      </div>
+
+      {/*
+       * Version tablette et ordinateur :
+       * on conserve la taille actuelle.
+       */}
+      <div className="hidden flex-wrap justify-center gap-4 sm:flex">
+        {cards.map(
+          (
+            card,
+            index
+          ) => {
+            const cardIsHidden =
+              hidden ||
+              card === null;
+
+            return (
+              <PlayingCard
+                key={
+                  card
+                    ? `desktop-${card.valeur}-${card.couleur}-${index}`
+                    : `desktop-hidden-${index}`
+                }
                 card={
                   cardIsHidden
                     ? HIDDEN_CARD
@@ -71,10 +94,10 @@ export default function PlayerHand({
                 }
                 size="lg"
               />
-            </div>
-          );
-        }
-      )}
+            );
+          }
+        )}
+      </div>
     </div>
   );
 }

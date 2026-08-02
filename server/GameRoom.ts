@@ -24,7 +24,6 @@ import type {
 
 export class GameRoom {
   public readonly code: string;
-
   public readonly room: PublicRoom;
 
   private readonly engine:
@@ -97,14 +96,6 @@ export class GameRoom {
     const viewerIsHost =
       viewer?.isHost === true;
 
-    /*
-     * progress.nextRow utilise un index
-     * logique qui commence par la ligne
-     * du bas.
-     *
-     * state.pyramid utilise l'ordre
-     * visuel : sommet vers bas.
-     */
     const realNextRow =
       state.pyramid.length -
       1 -
@@ -191,10 +182,6 @@ export class GameRoom {
       pyramid:
         publicPyramid,
 
-      /*
-       * Le paquet restant ne doit jamais
-       * être envoyé aux clients.
-       */
       deck: [],
 
       current: {
@@ -365,7 +352,9 @@ export class GameRoom {
             .currentPlayer !==
             playerIndex ||
           state.distribution
-            .awaitingGive
+            .awaitingGive ||
+          state.distribution
+            .awaitingContinue
         ) {
           throw new Error(
             "Ce n'est pas à toi de répondre."
@@ -383,10 +372,30 @@ export class GameRoom {
             .currentPlayer !==
             playerIndex ||
           !state.distribution
-            .awaitingGive
+            .awaitingGive ||
+          state.distribution
+            .awaitingContinue
         ) {
           throw new Error(
             "Tu ne peux pas donner cette gorgée."
+          );
+        }
+
+        return;
+      }
+
+      case "CONTINUE_DISTRIBUTION": {
+        if (
+          state.phase !==
+            "DISTRIBUTION" ||
+          state.distribution
+            .currentPlayer !==
+            playerIndex ||
+          !state.distribution
+            .awaitingContinue
+        ) {
+          throw new Error(
+            "Tu ne peux pas continuer cette distribution."
           );
         }
 

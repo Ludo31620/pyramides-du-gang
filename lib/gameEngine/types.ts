@@ -46,7 +46,18 @@ export interface DistributionState {
   currentPlayer: number;
   question: DistributionQuestion;
 
+  /**
+   * Une bonne réponse attend le choix
+   * du joueur qui recevra la gorgée.
+   */
   awaitingGive: boolean;
+
+  /**
+   * Une mauvaise réponse attend que
+   * le joueur lise le résultat et appuie
+   * sur Continuer.
+   */
+  awaitingContinue: boolean;
 
   lastResult:
     | DistributionResult
@@ -112,22 +123,6 @@ export interface HistoryEvent {
   timestamp: number;
 }
 
-/**
- * Statistiques individuelles d’un joueur.
- *
- * claimsMade :
- * toutes les annonces effectuées,
- * vraies ou fausses.
- *
- * bluffsAttempted :
- * annonces mensongères effectuées.
- *
- * successfulBluffs :
- * mensonges acceptés par la cible.
- *
- * caughtBluffs :
- * mensonges découverts après contestation.
- */
 export interface PlayerStats {
   claimsMade: number;
   bluffsAttempted: number;
@@ -135,9 +130,6 @@ export interface PlayerStats {
   caughtBluffs: number;
 }
 
-/**
- * Statistiques générales de la partie.
- */
 export interface GameStats {
   claimsMade: number;
   bluffsAttempted: number;

@@ -88,10 +88,6 @@ export default function WaitingPanel({
     state.progress.revealedCards ===
     0;
 
-  const remainingCards =
-    state.progress.totalCards -
-    state.progress.revealedCards;
-
   useEffect(() => {
     const socket =
       obtenirSocket();
@@ -204,13 +200,6 @@ export default function WaitingPanel({
 
   const completeReveal =
     useCallback((): void => {
-      /*
-       * Seul l’hôte possède onDispatch
-       * pendant la phase WAITING.
-       *
-       * Les autres joueurs ferment simplement
-       * leur animation sans envoyer d’action.
-       */
       if (onDispatch) {
         onDispatch({
           type: "REVEAL_CARD",
@@ -249,58 +238,53 @@ export default function WaitingPanel({
         )}
       </AnimatePresence>
 
-      <section className="rounded-3xl border border-white/10 bg-zinc-900 p-6 sm:p-8">
-        <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
-          Pyramide
-        </p>
-
-        <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
-          {firstCard
-            ? "La pyramide commence"
-            : "Prêt pour la prochaine carte"}
-        </h2>
-
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
-          {firstCard
-            ? "Les cartes ont été mémorisées. Révèle maintenant la première carte de la pyramide."
-            : "Tous les joueurs ont terminé leur action. La prochaine carte peut maintenant être révélée."}
-        </p>
-
-        <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
-          <p className="text-sm text-zinc-400">
-            Progression
-          </p>
-
-          <p className="mt-1 text-lg font-black text-white">
-            {
-              state.progress
-                .revealedCards
-            }
-            {" / "}
-            {
-              state.progress
-                .totalCards
-            }
-            {" cartes révélées"}
-          </p>
-
-          <p className="mt-1 text-sm text-zinc-500">
-            {remainingCards}
-            {" carte"}
-            {remainingCards > 1
-              ? "s"
-              : ""}
-            {" restante"}
-            {remainingCards > 1
-              ? "s"
-              : ""}
-          </p>
+      <section
+        className="
+          relative
+          rounded-3xl
+          border
+          border-white/10
+          bg-zinc-900
+          p-4
+          sm:p-5
+        "
+      >
+        <div
+          className="
+            absolute
+            right-4
+            top-4
+            z-20
+            rounded-full
+            border
+            border-yellow-400/40
+            bg-black/70
+            px-4
+            py-2
+            text-sm
+            font-black
+            tabular-nums
+            text-white
+            shadow-lg
+            backdrop-blur-sm
+          "
+        >
+          🃏{" "}
+          {
+            state.progress
+              .revealedCards
+          }
+          {" / "}
+          {
+            state.progress
+              .totalCards
+          }
         </div>
 
         {revealError && (
           <div
             role="alert"
-            className="mt-5 rounded-2xl border border-red-900 bg-red-950/60 p-4 text-sm font-semibold text-red-300"
+            className="mt-16 rounded-2xl border border-red-900 bg-red-950/60 p-4 text-sm font-semibold text-red-300"
           >
             {revealError}
           </div>
@@ -319,7 +303,7 @@ export default function WaitingPanel({
             !state.nextCardForReveal
           }
           className="
-            mt-6
+            mt-16
             w-full
             rounded-2xl
             bg-yellow-400

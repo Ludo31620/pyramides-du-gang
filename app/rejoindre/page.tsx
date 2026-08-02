@@ -530,31 +530,22 @@ router.replace(
             Pyramides du Gang
           </p>
 
-          <h1 className="mt-3 text-3xl font-black uppercase tracking-tight sm:text-4xl">
-            Rejoindre le gang
-          </h1>
+<h1 className="mt-3 text-3xl font-black uppercase tracking-tight sm:text-4xl">
+  Prêt à jouer ?
+</h1>
 
-          <p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-zinc-400">
-            Entre ton pseudo et le code envoyé par l&apos;hôte de la partie.
-          </p>
+<p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-zinc-400">
+  Entrez le code de la partie pour rejoindre vos amis.
+</p>
+
         </header>
 
         <section className="mt-8 rounded-[2rem] border border-white/10 bg-[#15181F] p-5 shadow-2xl shadow-black/30 sm:p-7">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#FFD166]">
-                Accès sécurisé
-              </p>
-
-              <h2 className="mt-2 text-xl font-black">
-                Dossier confidentiel
-              </h2>
-            </div>
-
-            <div className="rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-red-400">
-              Privé
-            </div>
-          </div>
+<div className="mb-6">
+  <h2 className="text-xl font-black text-white">
+    Rejoindre une partie
+  </h2>
+</div>
 
           <form
             onSubmit={

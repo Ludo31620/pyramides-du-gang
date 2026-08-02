@@ -12,6 +12,7 @@ import {
 
 import {
   answerDistribution,
+  continueDistribution,
   giveDistributionDrink,
 } from "./core/distribution";
 
@@ -59,20 +60,10 @@ export class GameEngine {
     | GameState
     | null = null;
 
-  /**
-   * Retourne l’état courant de la partie.
-   *
-   * Une erreur est déclenchée si aucune
-   * partie n’a encore été créée.
-   */
   public getState(): GameState {
     return this.requireState();
   }
 
-  /**
-   * Exécute une action puis retourne
-   * le nouvel état de la partie.
-   */
   public dispatch(
     action: GameAction
   ): GameState {
@@ -100,6 +91,15 @@ export class GameEngine {
           giveDistributionDrink(
             this.requireState(),
             action.target
+          );
+
+        break;
+      }
+
+      case "CONTINUE_DISTRIBUTION": {
+        this.state =
+          continueDistribution(
+            this.requireState()
           );
 
         break;
@@ -237,10 +237,6 @@ export class GameEngine {
     return this.requireState();
   }
 
-  /**
-   * Garantit qu’une partie a été créée
-   * avant l’exécution d’une action.
-   */
   private requireState(): GameState {
     if (!this.state) {
       throw new Error(

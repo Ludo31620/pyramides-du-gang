@@ -9,7 +9,6 @@ import type {
 
 import type {
   GameState,
-  PlayerStats,
 } from "../types";
 
 const MIN_PLAYER_COUNT = 2;
@@ -20,16 +19,6 @@ const MEMORY_DURATION_SECONDS =
 
 const MEMORY_JOKERS_PER_PLAYER =
   2;
-
-function createPlayerStats():
-  PlayerStats {
-  return {
-    claimsMade: 0,
-    bluffsAttempted: 0,
-    successfulBluffs: 0,
-    caughtBluffs: 0,
-  };
-}
 
 export function createGame(
   playerCount: number
@@ -63,6 +52,20 @@ export function createGame(
       () => []
     );
 
+  const emptyPlayerStats =
+    Array.from(
+      {
+        length:
+          playerCount,
+      },
+      () => ({
+        claimsMade: 0,
+        bluffsAttempted: 0,
+        successfulBluffs: 0,
+        caughtBluffs: 0,
+      })
+    );
+
   return {
     players,
 
@@ -74,6 +77,7 @@ export function createGame(
       currentPlayer: 0,
       question: 0,
       awaitingGive: false,
+      awaitingContinue: false,
       lastResult: null,
       lastDrink: null,
     },
@@ -123,25 +127,16 @@ export function createGame(
       bluffsAttempted: 0,
       successfulBluffs: 0,
       caughtBluffs: 0,
-
       players:
-        Array.from(
-          {
-            length:
-              playerCount,
-          },
-          () =>
-            createPlayerStats()
-        ),
+        emptyPlayerStats,
     },
 
     phase:
       "DISTRIBUTION",
 
-    drinks:
-      Array(
-        playerCount
-      ).fill(0),
+    drinks: Array(
+      playerCount
+    ).fill(0),
 
     history: [],
   };

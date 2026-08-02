@@ -1,3 +1,5 @@
+"use client";
+
 import PlayerHand from "@/components/players/PlayerHand";
 
 import {
@@ -19,7 +21,6 @@ import type {
 
 interface DistributionPanelProps {
   state: PlayerGameState;
-
   playerNames: string[];
 
   onDispatch?: (
@@ -121,13 +122,18 @@ const QUESTION_NUMBERS: Record<
 };
 
 function getCardLabel(
-  result: DistributionResult | null
+  result:
+    | DistributionResult
+    | null
 ): string | null {
   if (!result) {
     return null;
   }
 
-  return `${result.card.valeur} ${result.card.couleur}`;
+  return (
+    `${result.card.valeur} ` +
+    `${result.card.couleur}`
+  );
 }
 
 export default function DistributionPanel({
@@ -135,51 +141,43 @@ export default function DistributionPanel({
   playerNames,
   onDispatch,
 }: DistributionPanelProps) {
-
   const {
     currentPlayer,
     question,
     awaitingGive,
+    awaitingContinue,
     lastResult,
   } = state.distribution;
 
   const currentPlayerName =
-  getPlayerName(
-    playerNames,
-    currentPlayer
-  );
-
-  /*
-   * Le moteur conserve le dernier résultat
-   * lorsqu’il passe au joueur suivant.
-   *
-   * On ne l’affiche que s’il appartient
-   * encore au joueur actuellement actif.
-   */
-  const visibleLastResult =
-    lastResult?.player ===
-    currentPlayer
-      ? lastResult
-      : null;
+    getPlayerName(
+      playerNames,
+      currentPlayer
+    );
 
   const answers =
-    ANSWERS_BY_QUESTION[question];
+    ANSWERS_BY_QUESTION[
+      question
+    ];
 
   const cardLabel =
     getCardLabel(
-      visibleLastResult
+      lastResult
     );
 
   const buttonsDisabled =
     !onDispatch ||
-    awaitingGive;
+    awaitingGive ||
+    awaitingContinue;
 
   function answer(
-    selectedAnswer: DistributionAnswer
+    selectedAnswer:
+      DistributionAnswer
   ): void {
     if (
       !onDispatch ||
-      awaitingGive
+      awaitingGive ||
+      awaitingContinue
     ) {
       return;
     }
@@ -211,6 +209,21 @@ export default function DistributionPanel({
     });
   }
 
+  function continueAfterWrongAnswer():
+    void {
+    if (
+      !onDispatch ||
+      !awaitingContinue
+    ) {
+      return;
+    }
+
+    onDispatch({
+      type:
+        "CONTINUE_DISTRIBUTION",
+    });
+  }
+
   return (
     <section className="rounded-3xl border border-white/10 bg-zinc-900 p-6 sm:p-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -220,7 +233,9 @@ export default function DistributionPanel({
           </p>
 
           <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
-            {currentPlayerName}
+            {
+              currentPlayerName
+            }
           </h2>
 
           <p className="mt-2 text-sm text-zinc-400">
@@ -257,10 +272,14 @@ export default function DistributionPanel({
                       : isCompleted
                         ? "border-green-400/30 bg-green-400/10 text-green-300"
                         : "border-white/10 bg-zinc-950 text-zinc-600",
-                  ].join(" ")}
+                  ].join(
+                    " "
+                  )}
                 >
-                  {questionIndex +
-                    1}
+                  {
+                    questionIndex +
+                    1
+                  }
                 </div>
               );
             }
@@ -268,66 +287,82 @@ export default function DistributionPanel({
         </div>
       </div>
 
-      {visibleLastResult && (
+      {lastResult && (
         <div
           className={[
             "mt-6 rounded-2xl border p-5",
-            visibleLastResult.correct
-              ? "border-green-400/20 bg-green-400/10"
-              : "border-red-400/20 bg-red-400/10",
-          ].join(" ")}
+            lastResult.correct
+              ? "border-green-400/30 bg-green-400/10"
+              : "border-red-400/40 bg-red-500/10",
+          ].join(
+            " "
+          )}
         >
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p
                 className={[
-                  "text-sm font-black uppercase tracking-wider",
-                  visibleLastResult.correct
+                  "text-lg font-black",
+                  lastResult.correct
                     ? "text-green-300"
                     : "text-red-300",
-                ].join(" ")}
+                ].join(
+                  " "
+                )}
               >
-                {visibleLastResult.correct
-                  ? "Bonne réponse"
-                  : "Mauvaise réponse"}
+                {lastResult.correct
+                  ? "Bonne réponse !"
+                  : "Trompé, tu bois !"}
               </p>
 
               <p className="mt-1 text-sm text-zinc-300">
-                La carte était :
+                Tu as reçu :
               </p>
             </div>
 
             {cardLabel && (
               <div className="rounded-xl border border-white/10 bg-zinc-950 px-5 py-3 text-xl font-black text-white">
-                {cardLabel}
+                {
+                  cardLabel
+                }
               </div>
             )}
           </div>
 
-          <p className="mt-4 text-sm text-zinc-300">
-            {visibleLastResult.correct
-              ? "Tu peux donner une gorgée à un autre joueur."
+          <p
+            className={[
+              "mt-4 font-bold",
+              lastResult.correct
+                ? "text-green-200"
+                : "text-red-200",
+            ].join(
+              " "
+            )}
+          >
+            {lastResult.correct
+              ? "Tu peux donner 1 gorgée à un autre joueur."
               : `${getPlayerName(
-  playerNames,
-  visibleLastResult.player
-)} boit une gorgée.`}
+                  playerNames,
+                  lastResult.player
+                )} boit 1 gorgée.`}
           </p>
         </div>
       )}
 
-<div className="mt-8 rounded-2xl border border-white/10 bg-black/20 p-5">
-  <p className="mb-4 text-sm font-black uppercase tracking-wider text-zinc-500">
-    Tes cartes
-  </p>
+      <div className="mt-8 rounded-2xl border border-white/10 bg-black/20 p-5">
+        <p className="mb-4 text-sm font-black uppercase tracking-wider text-zinc-500">
+          Tes cartes
+        </p>
 
-  <PlayerHand
-    cards={
-      state.players[
-        state.viewerPlayerIndex
-      ]
-    }
-  />
-</div>
+        <PlayerHand
+          cards={
+            state.players[
+              state
+                .viewerPlayerIndex
+            ]
+          }
+        />
+      </div>
 
       {awaitingGive ? (
         <div className="mt-8">
@@ -371,7 +406,9 @@ export default function DistributionPanel({
                       isCurrentPlayer
                         ? "cursor-not-allowed border-white/5 bg-zinc-950/50 text-zinc-700"
                         : "border-white/10 bg-zinc-950 text-white hover:border-yellow-400/50 hover:bg-yellow-400/10",
-                    ].join(" ")}
+                    ].join(
+                      " "
+                    )}
                   >
                     <span className="block text-xs font-bold uppercase tracking-wider text-zinc-500">
                       Cible
@@ -379,9 +416,9 @@ export default function DistributionPanel({
 
                     <span className="mt-1 block text-lg font-black">
                       {getPlayerName(
-  playerNames,
-  playerIndex
-)}
+                        playerNames,
+                        playerIndex
+                      )}
                     </span>
 
                     {isCurrentPlayer && (
@@ -395,6 +432,21 @@ export default function DistributionPanel({
               }
             )}
           </div>
+        </div>
+      ) : awaitingContinue ? (
+        <div className="mt-8">
+          <button
+            type="button"
+            disabled={
+              !onDispatch
+            }
+            onClick={
+              continueAfterWrongAnswer
+            }
+            className="flex min-h-14 w-full items-center justify-center rounded-2xl bg-red-500 px-5 py-4 text-lg font-black text-white transition hover:bg-red-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Continuer
+          </button>
         </div>
       ) : (
         <div className="mt-8">
@@ -413,7 +465,9 @@ export default function DistributionPanel({
               4
                 ? "sm:grid-cols-2 lg:grid-cols-4"
                 : "sm:grid-cols-2",
-            ].join(" ")}
+            ].join(
+              " "
+            )}
           >
             {answers.map(
               ({
@@ -438,7 +492,9 @@ export default function DistributionPanel({
                   className="rounded-2xl border border-white/10 bg-zinc-950 p-5 text-left transition hover:border-yellow-400/50 hover:bg-yellow-400/10 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <span className="block text-lg font-black text-white">
-                    {label}
+                    {
+                      label
+                    }
                   </span>
 
                   {description && (

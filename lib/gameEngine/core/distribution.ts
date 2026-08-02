@@ -282,15 +282,6 @@ function finishDistributionStep(
     question,
   } = state.distribution;
 
-  /*
-   * Tant qu’il reste un joueur dans
-   * le tour de table actuel, on garde
-   * la même question et on passe au
-   * joueur suivant.
-   *
-   * Exemple :
-   * J1 Q1 → J2 Q1 → J3 Q1.
-   */
   if (
     currentPlayer <
     state.players.length - 1
@@ -309,19 +300,12 @@ function finishDistributionStep(
         awaitingGive:
           false,
 
-        /*
-         * Le résultat du joueur précédent
-         * ne doit pas apparaître sur
-         * l’écran du joueur suivant.
-         */
+        awaitingContinue:
+          false,
+
         lastResult:
           null,
 
-        /*
-         * La notification de gorgée reste
-         * disponible afin que la cible
-         * puisse recevoir son animation.
-         */
         lastDrink:
           state.distribution
             .lastDrink,
@@ -329,17 +313,6 @@ function finishDistributionStep(
     };
   }
 
-  /*
-   * Le dernier joueur vient de répondre
-   * à la question actuelle.
-   *
-   * S’il reste une question, on revient
-   * au premier joueur et on avance
-   * d’une question.
-   *
-   * Exemple :
-   * J3 Q1 → J1 Q2.
-   */
   if (
     question < 3
   ) {
@@ -358,6 +331,9 @@ function finishDistributionStep(
         awaitingGive:
           false,
 
+        awaitingContinue:
+          false,
+
         lastResult:
           null,
 
@@ -368,14 +344,6 @@ function finishDistributionStep(
     };
   }
 
-  /*
-   * Le dernier joueur vient de terminer
-   * la quatrième question.
-   *
-   * La distribution est terminée :
-   * on crée la pyramide et on démarre
-   * la phase de mémorisation.
-   */
   const pyramid =
     creerPyramide(
       state.deck
@@ -413,15 +381,12 @@ function finishDistributionStep(
       awaitingGive:
         false,
 
+      awaitingContinue:
+        false,
+
       lastResult:
         null,
 
-      /*
-       * On conserve la dernière gorgée
-       * pendant le passage à MEMORY afin
-       * que la cible reçoive bien
-       * sa notification.
-       */
       lastDrink:
         state.distribution
           .lastDrink,
@@ -453,10 +418,6 @@ function finishDistributionStep(
     ],
   };
 
-  /*
-   * Initialise le compte à rebours
-   * et les jokers de mémorisation.
-   */
   return startMemory(
     memoryState
   );
@@ -481,6 +442,15 @@ export function answerDistribution(
   ) {
     throw new Error(
       "Le joueur doit d’abord donner sa gorgée."
+    );
+  }
+
+  if (
+    state.distribution
+      .awaitingContinue
+  ) {
+    throw new Error(
+      "Le joueur doit d’abord continuer."
     );
   }
 
@@ -511,15 +481,6 @@ export function answerDistribution(
     );
   }
 
-  /*
-   * Avec la distribution par tours
-   * de table :
-   *
-   * question 0 → aucune carte ;
-   * question 1 → une carte ;
-   * question 2 → deux cartes ;
-   * question 3 → trois cartes.
-   */
   if (
     playerCards.length !==
     question
@@ -582,8 +543,17 @@ export function answerDistribution(
     correct,
   };
 
-  const baseState:
-    GameState = {
+  const drinks = [
+    ...state.drinks,
+  ];
+
+  if (!correct) {
+    drinks[
+      currentPlayer
+    ] += 1;
+  }
+
+  return {
     ...state,
 
     players,
@@ -591,19 +561,20 @@ export function answerDistribution(
     deck:
       remainingDeck,
 
+    drinks,
+
     distribution: {
       ...state.distribution,
 
       awaitingGive:
         correct,
 
+      awaitingContinue:
+        !correct,
+
       lastResult:
         result,
 
-      /*
-       * Une nouvelle réponse efface
-       * l’ancienne notification.
-       */
       lastDrink:
         null,
     },
@@ -624,28 +595,6 @@ export function answerDistribution(
       ),
     ],
   };
-
-  /*
-   * Après une bonne réponse, le joueur
-   * doit choisir une cible avant que
-   * la distribution continue.
-   */
-  if (correct) {
-    return baseState;
-  }
-
-  const drinks = [
-    ...baseState.drinks,
-  ];
-
-  drinks[
-    currentPlayer
-  ] += 1;
-
-  return finishDistributionStep({
-    ...baseState,
-    drinks,
-  });
 }
 
 export function giveDistributionDrink(
@@ -664,6 +613,8 @@ export function giveDistributionDrink(
   if (
     !state.distribution
       .awaitingGive ||
+    state.distribution
+      .awaitingContinue ||
     !state.distribution
       .lastResult
       ?.correct
@@ -717,6 +668,9 @@ export function giveDistributionDrink(
       awaitingGive:
         false,
 
+      awaitingContinue:
+        false,
+
       lastDrink: {
         giver,
         target,
@@ -741,4 +695,48 @@ export function giveDistributionDrink(
   return finishDistributionStep(
     updatedState
   );
+}
+
+export function continueDistribution(
+  state: GameState
+): GameState {
+  if (
+    state.phase !==
+    "DISTRIBUTION"
+  ) {
+    throw new Error(
+      "La partie n’est pas dans la phase de distribution."
+    );
+  }
+
+  if (
+    !state.distribution
+      .awaitingContinue
+  ) {
+    throw new Error(
+      "Aucun résultat de distribution n’attend de continuation."
+    );
+  }
+
+  if (
+    !state.distribution
+      .lastResult ||
+    state.distribution
+      .lastResult.correct
+  ) {
+    throw new Error(
+      "Seule une mauvaise réponse peut être continuée."
+    );
+  }
+
+  return finishDistributionStep({
+    ...state,
+
+    distribution: {
+      ...state.distribution,
+
+      awaitingContinue:
+        false,
+    },
+  });
 }
