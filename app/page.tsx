@@ -2,12 +2,91 @@ import Link from "next/link";
 
 import HomeMenu from "@/components/home/HomeMenu";
 
+interface HubLinkProps {
+  href: string;
+  icon: string;
+  title: string;
+  description: string;
+}
+
+function HubLink({
+  href,
+  icon,
+  title,
+  description,
+}: HubLinkProps) {
+  return (
+    <Link
+      href={href}
+      className="
+        group
+        flex
+        min-h-28
+        flex-col
+        rounded-2xl
+        border
+        border-[var(--color-border)]
+        bg-[var(--color-surface)]
+        p-4
+        text-left
+        transition
+        duration-200
+        hover:border-[var(--color-primary)]
+        hover:bg-[var(--color-surface-elevated)]
+        active:scale-[0.98]
+      "
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span
+          aria-hidden="true"
+          className="text-2xl"
+        >
+          {icon}
+        </span>
+
+        <span
+          aria-hidden="true"
+          className="
+            text-xl
+            text-[var(--color-text-muted)]
+            transition
+            group-hover:translate-x-0.5
+            group-hover:text-[var(--color-primary)]
+          "
+        >
+          ›
+        </span>
+      </div>
+
+      <p
+        className="
+          mt-4
+          font-black
+          text-[var(--color-text)]
+        "
+      >
+        {title}
+      </p>
+
+      <p
+        className="
+          mt-1
+          text-xs
+          leading-5
+          text-[var(--color-text-muted)]
+        "
+      >
+        {description}
+      </p>
+    </Link>
+  );
+}
+
 export default function HomePage() {
   return (
     <main
       className="
         relative
-        flex
         min-h-screen
         overflow-hidden
         bg-[var(--color-background)]
@@ -68,6 +147,7 @@ export default function HomePage() {
           flex-col
           items-center
           justify-center
+          py-12
         "
       >
         <div
@@ -124,7 +204,21 @@ export default function HomePage() {
           </span>
         </h1>
 
-        <div className="mt-16 w-full space-y-4">
+        <p
+          className="
+            mt-5
+            max-w-xs
+            text-center
+            text-sm
+            leading-6
+            text-[var(--color-text-muted)]
+          "
+        >
+          Bluffe, accuse et fais boire
+          le Gang.
+        </p>
+
+        <div className="mt-12 w-full space-y-4">
           <Link
             href="/creer"
             className="
@@ -133,6 +227,7 @@ export default function HomePage() {
               w-full
               items-center
               justify-center
+              gap-3
               rounded-2xl
               border
               border-[var(--color-primary)]
@@ -150,6 +245,10 @@ export default function HomePage() {
               active:scale-[0.98]
             "
           >
+            <span aria-hidden="true">
+              🎮
+            </span>
+
             Créer une partie
           </Link>
 
@@ -161,6 +260,7 @@ export default function HomePage() {
               w-full
               items-center
               justify-center
+              gap-3
               rounded-2xl
               border
               border-[var(--color-border)]
@@ -178,9 +278,101 @@ export default function HomePage() {
               active:scale-[0.98]
             "
           >
+            <span aria-hidden="true">
+              👥
+            </span>
+
             Rejoindre une partie
           </Link>
         </div>
+
+        <div
+          className="
+            my-8
+            flex
+            w-full
+            items-center
+            gap-4
+          "
+        >
+          <div
+            className="
+              h-px
+              flex-1
+              bg-[var(--color-border)]
+            "
+          />
+
+          <p
+            className="
+              text-[10px]
+              font-black
+              uppercase
+              tracking-[0.25em]
+              text-[var(--color-text-muted)]
+            "
+          >
+            Mon espace
+          </p>
+
+          <div
+            className="
+              h-px
+              flex-1
+              bg-[var(--color-border)]
+            "
+          />
+        </div>
+
+        <div
+          className="
+            grid
+            w-full
+            grid-cols-2
+            gap-3
+          "
+        >
+          <HubLink
+            href="/statistiques"
+            icon="📊"
+            title="Statistiques"
+            description="Consulte tes performances."
+          />
+
+          <HubLink
+            href="/succes"
+            icon="🏆"
+            title="Succès"
+            description="Découvre tes défis débloqués."
+          />
+
+          <HubLink
+            href="/premium"
+            icon="🎨"
+            title="Thèmes"
+            description="Personnalise l’ambiance du jeu."
+          />
+
+          <HubLink
+            href="/premium"
+            icon="💎"
+            title="Premium"
+            description="Découvre tous les avantages."
+          />
+        </div>
+
+        <p
+          className="
+            mt-8
+            text-center
+            text-xs
+            text-[var(--color-text-muted)]
+            opacity-70
+          "
+        >
+          Chaque joueur utilise son
+          propre téléphone.
+        </p>
       </section>
     </main>
   );
