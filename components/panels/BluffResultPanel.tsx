@@ -1,6 +1,18 @@
 "use client";
 
 import {
+  useEffect,
+  useState,
+} from "react";
+
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
+
+import {
+  lireSessionPartie,
+  type StoredRoomPlayer,
+} from "@/lib/gameSession";
+
+import {
   getPlayerName,
 } from "@/lib/gameEngine/getPlayerName";
 
@@ -151,6 +163,24 @@ export default function BluffResultPanel({
   playerNames,
   onDispatch,
 }: BluffResultPanelProps) {
+  const [
+    roomPlayers,
+    setRoomPlayers,
+  ] =
+    useState<StoredRoomPlayer[]>(
+      []
+    );
+
+  useEffect(() => {
+    const session =
+      lireSessionPartie();
+
+    setRoomPlayers(
+      session?.players ??
+        []
+    );
+  }, []);
+
   const result =
     state.bluffResult;
 
@@ -182,6 +212,21 @@ export default function BluffResultPanel({
       playerNames,
       result.punishedPlayer
     );
+
+  const giverPlayer =
+    roomPlayers[
+      result.giver
+    ];
+
+  const targetPlayer =
+    roomPlayers[
+      result.target
+    ];
+
+  const punishedPlayer =
+    roomPlayers[
+      result.punishedPlayer
+    ];
 
   const content =
     getResultContent(
@@ -248,7 +293,7 @@ export default function BluffResultPanel({
         <h2
           className={`
             mt-3
-            text-4xl
+            text-3xl
             font-black
             uppercase
             leading-tight
@@ -264,6 +309,138 @@ export default function BluffResultPanel({
           {content.description}
         </p>
       </header>
+
+      <div
+        className="
+          mt-7
+          grid
+          gap-4
+          sm:grid-cols-[1fr_auto_1fr]
+          sm:items-center
+        "
+      >
+        <div
+          className="
+            rounded-2xl
+            border
+            border-white/10
+            bg-black/20
+            p-4
+            text-center
+          "
+        >
+          <ProfileAvatar
+            size="medium"
+            avatarType={
+              giverPlayer
+                ?.avatarType ??
+              "DEFAULT"
+            }
+            avatarId={
+              giverPlayer
+                ?.avatarId ??
+              "fox"
+            }
+            avatarPhoto={
+              giverPlayer
+                ?.avatarPhoto ??
+              null
+            }
+          />
+
+          <p
+            className="
+              mt-3
+              truncate
+              text-lg
+              font-black
+              text-white
+            "
+          >
+            {giverName}
+          </p>
+
+          <p
+            className="
+              mt-1
+              text-xs
+              font-bold
+              uppercase
+              tracking-wider
+              text-zinc-500
+            "
+          >
+            Annonceur
+          </p>
+        </div>
+
+        <div
+          aria-hidden="true"
+          className={`
+            text-center
+            text-2xl
+            font-black
+            sm:text-3xl
+            ${content.accentTextClasses}
+          `}
+        >
+          →
+        </div>
+
+        <div
+          className={`
+            rounded-2xl
+            border
+            p-4
+            text-center
+            ${content.bannerClasses}
+          `}
+        >
+          <ProfileAvatar
+            size="medium"
+            avatarType={
+              targetPlayer
+                ?.avatarType ??
+              "DEFAULT"
+            }
+            avatarId={
+              targetPlayer
+                ?.avatarId ??
+              "fox"
+            }
+            avatarPhoto={
+              targetPlayer
+                ?.avatarPhoto ??
+              null
+            }
+          />
+
+          <p
+            className="
+              mt-3
+              truncate
+              text-lg
+              font-black
+              text-white
+            "
+          >
+            {targetName}
+          </p>
+
+          <p
+            className={`
+              mt-1
+              text-xs
+              font-bold
+              uppercase
+              tracking-wider
+              ${content.accentTextClasses}
+            `}
+          >
+            Cible
+          </p>
+        </div>
+      </div>
 
       {revealedCard && (
         <div className="mt-7">
@@ -318,13 +495,45 @@ export default function BluffResultPanel({
           ${content.bannerClasses}
         `}
       >
-        <p className="text-lg font-black uppercase text-white">
-          {content.resultLabel}
+        <ProfileAvatar
+          size="large"
+          avatarType={
+            punishedPlayer
+              ?.avatarType ??
+            "DEFAULT"
+          }
+          avatarId={
+            punishedPlayer
+              ?.avatarId ??
+            "fox"
+          }
+          avatarPhoto={
+            punishedPlayer
+              ?.avatarPhoto ??
+            null
+          }
+        />
+
+        <p className="mt-4 text-xl font-black text-white">
+          {punishedPlayerName}
         </p>
 
         <p
           className={`
-            mt-3
+            mt-1
+            text-sm
+            font-black
+            uppercase
+            tracking-wider
+            ${content.accentTextClasses}
+          `}
+        >
+          doit boire
+        </p>
+
+        <p
+          className={`
+            mt-4
             text-7xl
             font-black
             leading-none

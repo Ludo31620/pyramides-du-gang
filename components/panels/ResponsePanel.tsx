@@ -1,6 +1,18 @@
 "use client";
 
 import {
+  useEffect,
+  useState,
+} from "react";
+
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
+
+import {
+  lireSessionPartie,
+  type StoredRoomPlayer,
+} from "@/lib/gameSession";
+
+import {
   getPlayerName,
 } from "@/lib/gameEngine/getPlayerName";
 
@@ -27,6 +39,24 @@ export default function ResponsePanel({
   playerNames,
   onDispatch,
 }: ResponsePanelProps) {
+  const [
+    roomPlayers,
+    setRoomPlayers,
+  ] =
+    useState<StoredRoomPlayer[]>(
+      []
+    );
+
+  useEffect(() => {
+    const session =
+      lireSessionPartie();
+
+    setRoomPlayers(
+      session?.players ??
+        []
+    );
+  }, []);
+
   const action =
     state.turn.pendingAction;
 
@@ -45,6 +75,16 @@ export default function ResponsePanel({
       playerNames,
       action.target
     );
+
+  const giverPlayer =
+    roomPlayers[
+      action.giver
+    ];
+
+  const targetPlayer =
+    roomPlayers[
+      action.target
+    ];
 
   function believe(): void {
     if (!onDispatch) {
@@ -72,11 +112,80 @@ export default function ResponsePanel({
         Me crois-tu ?
       </p>
 
-      <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">
-        {targetName}
-      </h2>
+      <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+        <div className="rounded-2xl border border-white/10 bg-zinc-950 p-4 text-center">
+          <ProfileAvatar
+            size="medium"
+            avatarType={
+              giverPlayer
+                ?.avatarType ??
+              "DEFAULT"
+            }
+            avatarId={
+              giverPlayer
+                ?.avatarId ??
+              "fox"
+            }
+            avatarPhoto={
+              giverPlayer
+                ?.avatarPhoto ??
+              null
+            }
+          />
 
-      <p className="mt-4 leading-7 text-zinc-300">
+          <p className="mt-3 truncate text-lg font-black text-white">
+            {giverName}
+          </p>
+
+          <p className="mt-1 text-xs font-bold uppercase tracking-wider text-zinc-500">
+            Annonce
+          </p>
+        </div>
+
+        <div
+          aria-hidden="true"
+          className="
+            text-center
+            text-2xl
+            font-black
+            text-yellow-400
+            sm:text-3xl
+          "
+        >
+          →
+        </div>
+
+        <div className="rounded-2xl border border-yellow-400/30 bg-yellow-400/5 p-4 text-center">
+          <ProfileAvatar
+            size="medium"
+            avatarType={
+              targetPlayer
+                ?.avatarType ??
+              "DEFAULT"
+            }
+            avatarId={
+              targetPlayer
+                ?.avatarId ??
+              "fox"
+            }
+            avatarPhoto={
+              targetPlayer
+                ?.avatarPhoto ??
+              null
+            }
+          />
+
+          <p className="mt-3 truncate text-lg font-black text-white">
+            {targetName}
+          </p>
+
+          <p className="mt-1 text-xs font-bold uppercase tracking-wider text-yellow-400">
+            Doit répondre
+          </p>
+        </div>
+      </div>
+
+      <p className="mt-6 text-center leading-7 text-zinc-300">
         <span className="font-black text-white">
           {giverName}
         </span>{" "}
@@ -85,8 +194,8 @@ export default function ResponsePanel({
         la pyramide.
       </p>
 
-      <p className="mt-4 text-lg font-black text-yellow-400">
-        Le crois-tu ?
+      <p className="mt-4 text-center text-lg font-black text-yellow-400">
+        {targetName}, le crois-tu ?
       </p>
 
       <div className="mt-6 rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-6 text-center">

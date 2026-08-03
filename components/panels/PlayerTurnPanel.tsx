@@ -1,5 +1,12 @@
 "use client";
 
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
+
+import {
+  lireSessionPartie,
+  type StoredRoomPlayer,
+} from "@/lib/gameSession";
+
 import {
   useEffect,
   useState,
@@ -76,6 +83,23 @@ export default function PlayerTurnPanel({
   ] = useState(
     JOKER_DISPLAY_SECONDS
   );
+
+const [
+  roomPlayers,
+  setRoomPlayers,
+] =
+  useState<StoredRoomPlayer[]>(
+    []
+  );
+
+useEffect(() => {
+  const session =
+    lireSessionPartie();
+
+  setRoomPlayers(
+    session?.players ?? []
+  );
+}, []);
 
   const currentPlayer =
     state.turn.currentPlayer;
@@ -469,6 +493,9 @@ export default function PlayerTurnPanel({
                         target
                       );
 
+const targetPlayer =
+  roomPlayers[target];
+
                     return (
                       <button
                         key={target}
@@ -500,15 +527,56 @@ export default function PlayerTurnPanel({
                           disabled:opacity-40
                         "
                       >
-                        <span className="block text-xs font-bold uppercase tracking-wider text-zinc-500">
-                          Donner à
-                        </span>
+<div className="flex items-center gap-4">
+  <ProfileAvatar
+    size="small"
+    avatarType={
+      targetPlayer
+        ?.avatarType ??
+      "DEFAULT"
+    }
+    avatarId={
+      targetPlayer
+        ?.avatarId ??
+      "fox"
+    }
+    avatarPhoto={
+      targetPlayer
+        ?.avatarPhoto ??
+      null
+    }
+  />
 
-                        <span className="mt-1 block text-lg font-black text-yellow-400">
-                          {requestPending
-                            ? "Synchronisation..."
-                            : targetName}
-                        </span>
+  <div className="min-w-0">
+    <span
+      className="
+        block
+        text-xs
+        font-bold
+        uppercase
+        tracking-wider
+        text-zinc-500
+      "
+    >
+      Donner à
+    </span>
+
+    <span
+      className="
+        mt-1
+        block
+        truncate
+        text-lg
+        font-black
+        text-yellow-400
+      "
+    >
+      {requestPending
+        ? "Synchronisation..."
+        : targetName}
+    </span>
+  </div>
+</div>
                       </button>
                     );
                   }
