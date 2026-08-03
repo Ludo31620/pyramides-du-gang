@@ -172,13 +172,20 @@ function GameScreen({
     );
 
 const [
+  achievementQueue,
+  setAchievementQueue,
+] =
+  useState<
+    AchievementDefinition[]
+  >([]);
+
+const [
   achievementToast,
   setAchievementToast,
 ] =
   useState<AchievementDefinition | null>(
     null
   );
-
   const initializedRef =
     useRef(false);
 
@@ -428,17 +435,27 @@ const achievementResult =
     updatedStats
   );
 
-const firstUnlockedAchievement =
-  achievementResult
-    .unlocked[0];
+const unlockedAchievements =
+  achievementResult.unlocked.map(
+    (
+      achievement
+    ) =>
+      getAchievement(
+        achievement.id
+      )
+  );
 
 if (
-  firstUnlockedAchievement
+  unlockedAchievements.length >
+  0
 ) {
-  setAchievementToast(
-    getAchievement(
-      firstUnlockedAchievement.id
-    )
+  setAchievementQueue(
+    (
+      currentQueue
+    ) => [
+      ...currentQueue,
+      ...unlockedAchievements,
+    ]
   );
 }
 
@@ -448,6 +465,37 @@ recordedGameRef.current =
 }, [
   state,
   roomCode,
+]);
+
+useEffect(() => {
+  if (
+    achievementToast ||
+    achievementQueue.length ===
+      0
+  ) {
+    return;
+  }
+
+  const nextAchievement =
+    achievementQueue[0];
+
+  if (!nextAchievement) {
+    return;
+  }
+
+  setAchievementToast(
+    nextAchievement
+  );
+
+  setAchievementQueue(
+    (
+      currentQueue
+    ) =>
+      currentQueue.slice(1)
+  );
+}, [
+  achievementToast,
+  achievementQueue,
 ]);
 
 useEffect(() => {
