@@ -692,6 +692,28 @@ export function giveDistributionDrink(
     ],
   };
 
+const playerStats =
+  state.gameStats.players.map(
+    (
+      stats,
+      playerIndex
+    ) => {
+      if (
+        playerIndex !==
+        giver
+      ) {
+        return stats;
+      }
+
+      return {
+        ...stats,
+
+        drinksGiven:
+          stats.drinksGiven + 1,
+      };
+    }
+  );
+
   return finishDistributionStep(
     updatedState
   );

@@ -58,12 +58,17 @@ export function createGame(
         length:
           playerCount,
       },
-      () => ({
-        claimsMade: 0,
-        bluffsAttempted: 0,
-        successfulBluffs: 0,
-        caughtBluffs: 0,
-      })
+() => ({
+  claimsMade: 0,
+
+  drinksGiven: 0,
+
+  bluffsAttempted: 0,
+
+  successfulBluffs: 0,
+
+  caughtBluffs: 0,
+})
     );
 
   return {
@@ -122,14 +127,19 @@ export function createGame(
 
     bluffResult: null,
 
-    gameStats: {
-      claimsMade: 0,
-      bluffsAttempted: 0,
-      successfulBluffs: 0,
-      caughtBluffs: 0,
-      players:
-        emptyPlayerStats,
-    },
+gameStats: {
+  claimsMade: 0,
+
+  drinksGiven: 0,
+
+  bluffsAttempted: 0,
+
+  successfulBluffs: 0,
+
+  caughtBluffs: 0,
+
+  players: emptyPlayerStats,
+},
 
     phase:
       "DISTRIBUTION",

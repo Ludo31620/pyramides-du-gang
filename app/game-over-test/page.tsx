@@ -70,6 +70,7 @@ distribution: {
 
   gameStats: {
     claimsMade: 18,
+    drinksGiven: 0,
     bluffsAttempted: 12,
     successfulBluffs: 8,
     caughtBluffs: 4,
@@ -77,24 +78,28 @@ distribution: {
     players: [
       {
         claimsMade: 6,
+        drinksGiven: 0,
         bluffsAttempted: 5,
         successfulBluffs: 4,
         caughtBluffs: 1,
       },
       {
         claimsMade: 5,
+        drinksGiven: 0,
         bluffsAttempted: 3,
         successfulBluffs: 2,
         caughtBluffs: 1,
       },
       {
         claimsMade: 4,
+        drinksGiven: 0,
         bluffsAttempted: 3,
         successfulBluffs: 2,
         caughtBluffs: 1,
       },
       {
         claimsMade: 3,
+        drinksGiven: 0,
         bluffsAttempted: 1,
         successfulBluffs: 0,
         caughtBluffs: 1,

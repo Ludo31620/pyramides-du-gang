@@ -59,8 +59,7 @@ export function believe(
         ) => {
           if (
             playerIndex !==
-              action.giver ||
-            !bluffSucceeded
+            action.giver
           ) {
             return stats;
           }
@@ -68,9 +67,17 @@ export function believe(
           return {
             ...stats,
 
+            drinksGiven:
+              stats.drinksGiven +
+              action.drinks,
+
             successfulBluffs:
               stats.successfulBluffs +
-              1,
+              (
+                bluffSucceeded
+                  ? 1
+                  : 0
+              ),
           };
         }
       );
@@ -85,6 +92,11 @@ export function believe(
 
     gameStats: {
       ...state.gameStats,
+
+      drinksGiven:
+        state.gameStats
+          .drinksGiven +
+        action.drinks,
 
       successfulBluffs:
         state.gameStats

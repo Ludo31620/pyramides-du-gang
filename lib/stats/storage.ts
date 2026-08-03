@@ -6,6 +6,111 @@ import {
 const PLAYER_STATS_STORAGE_KEY =
   "pyramide-du-gang-player-stats";
 
+const RECORDED_GAMES_STORAGE_KEY =
+  "pyramide-du-gang-recorded-games";
+
+export interface CompletedGameStats {
+  gameId: string;
+
+  drinksGiven: number;
+
+  drinksReceived: number;
+
+  claimsMade: number;
+
+  bluffsAttempted: number;
+
+  successfulBluffs: number;
+
+  caughtBluffs: number;
+}
+
+function normalizeStat(
+  value: unknown
+): number {
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value) ||
+    value < 0
+  ) {
+    return 0;
+  }
+
+  return Math.floor(value);
+}
+
+function getRecordedGameIds():
+  string[] {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return [];
+  }
+
+  const storedValue =
+    window.localStorage.getItem(
+      RECORDED_GAMES_STORAGE_KEY
+    );
+
+  if (!storedValue) {
+    return [];
+  }
+
+  try {
+    const parsedValue =
+      JSON.parse(
+        storedValue
+      ) as unknown;
+
+    if (
+      !Array.isArray(
+        parsedValue
+      )
+    ) {
+      return [];
+    }
+
+    return parsedValue.filter(
+      (
+        value
+      ): value is string =>
+        typeof value ===
+          "string" &&
+        value.trim().length > 0
+    );
+  } catch {
+    return [];
+  }
+}
+
+function saveRecordedGameIds(
+  gameIds: string[]
+): void {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return;
+  }
+
+  /*
+   * On conserve uniquement les
+   * 100 dernières parties afin
+   * d'éviter une croissance infinie
+   * du localStorage.
+   */
+  const recentGameIds =
+    gameIds.slice(-100);
+
+  window.localStorage.setItem(
+    RECORDED_GAMES_STORAGE_KEY,
+    JSON.stringify(
+      recentGameIds
+    )
+  );
+}
+
 export function getPlayerLifetimeStats():
   PlayerLifetimeStats {
   if (
@@ -36,53 +141,39 @@ export function getPlayerLifetimeStats():
 
     return {
       gamesPlayed:
-        Number.isFinite(
+        normalizeStat(
           parsedValue.gamesPlayed
-        )
-          ? parsedValue.gamesPlayed ?? 0
-          : 0,
+        ),
 
       drinksGiven:
-        Number.isFinite(
+        normalizeStat(
           parsedValue.drinksGiven
-        )
-          ? parsedValue.drinksGiven ?? 0
-          : 0,
+        ),
 
       drinksReceived:
-        Number.isFinite(
+        normalizeStat(
           parsedValue.drinksReceived
-        )
-          ? parsedValue.drinksReceived ?? 0
-          : 0,
+        ),
 
       claimsMade:
-        Number.isFinite(
+        normalizeStat(
           parsedValue.claimsMade
-        )
-          ? parsedValue.claimsMade ?? 0
-          : 0,
+        ),
 
       bluffsAttempted:
-        Number.isFinite(
+        normalizeStat(
           parsedValue.bluffsAttempted
-        )
-          ? parsedValue.bluffsAttempted ?? 0
-          : 0,
+        ),
 
       successfulBluffs:
-        Number.isFinite(
+        normalizeStat(
           parsedValue.successfulBluffs
-        )
-          ? parsedValue.successfulBluffs ?? 0
-          : 0,
+        ),
 
       caughtBluffs:
-        Number.isFinite(
+        normalizeStat(
           parsedValue.caughtBluffs
-        )
-          ? parsedValue.caughtBluffs ?? 0
-          : 0,
+        ),
     };
   } catch {
     return {
@@ -109,6 +200,105 @@ export function savePlayerLifetimeStats(
   );
 }
 
+export function recordCompletedGame(
+  completedGame:
+    CompletedGameStats
+): PlayerLifetimeStats {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return {
+      ...DEFAULT_PLAYER_LIFETIME_STATS,
+    };
+  }
+
+  const normalizedGameId =
+    completedGame.gameId
+      .trim()
+      .slice(0, 200);
+
+  if (!normalizedGameId) {
+    throw new Error(
+      "L’identifiant de la partie est invalide."
+    );
+  }
+
+  const recordedGameIds =
+    getRecordedGameIds();
+
+  /*
+   * La partie a déjà été enregistrée
+   * sur cet appareil.
+   */
+  if (
+    recordedGameIds.includes(
+      normalizedGameId
+    )
+  ) {
+    return (
+      getPlayerLifetimeStats()
+    );
+  }
+
+  const currentStats =
+    getPlayerLifetimeStats();
+
+  const updatedStats:
+    PlayerLifetimeStats = {
+    gamesPlayed:
+      currentStats.gamesPlayed +
+      1,
+
+    drinksGiven:
+      currentStats.drinksGiven +
+      normalizeStat(
+        completedGame.drinksGiven
+      ),
+
+    drinksReceived:
+      currentStats.drinksReceived +
+      normalizeStat(
+        completedGame.drinksReceived
+      ),
+
+    claimsMade:
+      currentStats.claimsMade +
+      normalizeStat(
+        completedGame.claimsMade
+      ),
+
+    bluffsAttempted:
+      currentStats.bluffsAttempted +
+      normalizeStat(
+        completedGame.bluffsAttempted
+      ),
+
+    successfulBluffs:
+      currentStats.successfulBluffs +
+      normalizeStat(
+        completedGame.successfulBluffs
+      ),
+
+    caughtBluffs:
+      currentStats.caughtBluffs +
+      normalizeStat(
+        completedGame.caughtBluffs
+      ),
+  };
+
+  savePlayerLifetimeStats(
+    updatedStats
+  );
+
+  saveRecordedGameIds([
+    ...recordedGameIds,
+    normalizedGameId,
+  ]);
+
+  return updatedStats;
+}
+
 export function resetPlayerLifetimeStats():
   PlayerLifetimeStats {
   const stats = {
@@ -118,6 +308,15 @@ export function resetPlayerLifetimeStats():
   savePlayerLifetimeStats(
     stats
   );
+
+  if (
+    typeof window !==
+    "undefined"
+  ) {
+    window.localStorage.removeItem(
+      RECORDED_GAMES_STORAGE_KEY
+    );
+  }
 
   return stats;
 }

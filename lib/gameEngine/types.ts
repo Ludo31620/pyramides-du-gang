@@ -125,15 +125,25 @@ export interface HistoryEvent {
 
 export interface PlayerStats {
   claimsMade: number;
+
+  drinksGiven: number;
+
   bluffsAttempted: number;
+
   successfulBluffs: number;
+
   caughtBluffs: number;
 }
 
 export interface GameStats {
   claimsMade: number;
+
+  drinksGiven: number;
+
   bluffsAttempted: number;
+
   successfulBluffs: number;
+
   caughtBluffs: number;
 
   players: PlayerStats[];

@@ -86,8 +86,7 @@ export function doubt(
         ) => {
           if (
             playerIndex !==
-              action.giver ||
-            giverToldTruth
+            action.giver
           ) {
             return stats;
           }
@@ -95,9 +94,21 @@ export function doubt(
           return {
             ...stats,
 
+            drinksGiven:
+              stats.drinksGiven +
+              (
+                giverToldTruth
+                  ? action.drinks
+                  : 0
+              ),
+
             caughtBluffs:
               stats.caughtBluffs +
-              1,
+              (
+                giverToldTruth
+                  ? 0
+                  : 1
+              ),
           };
         }
       );
@@ -112,6 +123,15 @@ export function doubt(
 
     gameStats: {
       ...state.gameStats,
+
+      drinksGiven:
+        state.gameStats
+          .drinksGiven +
+        (
+          giverToldTruth
+            ? action.drinks
+            : 0
+        ),
 
       caughtBluffs:
         state.gameStats
