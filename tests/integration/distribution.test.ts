@@ -29,37 +29,50 @@ describe(
     it(
       "joue toute la distribution puis passe à la mémoire",
       () => {
-        const playerCount = 4;
+        const playerCount =
+          4;
+
         const engine =
           new GameEngine();
 
         let state =
           engine.dispatch({
-            type: "START_GAME",
+            type:
+              "START_GAME",
+
             playerCount,
           });
 
-        expect(state.phase).toBe(
+        expect(
+          state.phase
+        ).toBe(
           "DISTRIBUTION"
         );
 
         expect(
           state.players
-        ).toHaveLength(playerCount);
+        ).toHaveLength(
+          playerCount
+        );
 
         /*
          * Au lancement de la partie,
-         * les cartes n'ont pas encore été
-         * distribuées aux joueurs.
+         * les cartes n'ont pas encore
+         * été distribuées.
          */
         state.players.forEach(
           (hand) => {
-            expect(hand).toHaveLength(0);
+            expect(
+              hand
+            ).toHaveLength(0);
           }
         );
 
-        let answeredQuestions = 0;
-        let safetyCounter = 0;
+        let answeredQuestions =
+          0;
+
+        let safetyCounter =
+          0;
 
         while (
           state.phase ===
@@ -68,19 +81,22 @@ describe(
           safetyCounter += 1;
 
           /*
-           * Une réponse peut éventuellement
-           * être suivie d'une action pour
-           * donner une gorgée.
+           * Il doit y avoir exactement
+           * quatre réponses par joueur.
            *
-           * Cette sécurité évite une boucle
-           * infinie en cas de régression.
+           * Cette sécurité empêche une
+           * boucle infinie en cas de
+           * régression du moteur.
            */
           expect(
             safetyCounter
-          ).toBeLessThanOrEqual(20);
+          ).toBeLessThanOrEqual(
+            playerCount * 4
+          );
 
           const question =
-            state.distribution.question;
+            state.distribution
+              .question;
 
           const answer =
             ANSWER_BY_QUESTION[
@@ -91,14 +107,16 @@ describe(
             engine.dispatch({
               type:
                 "ANSWER_DISTRIBUTION",
+
               answer,
             });
 
-          answeredQuestions += 1;
+          answeredQuestions +=
+            1;
 
           /*
            * Après une bonne réponse,
-           * le joueur doit choisir une cible.
+           * le joueur donne une gorgée.
            */
           if (
             state.phase ===
@@ -116,7 +134,9 @@ describe(
                 playerCount
               );
 
-            expect(target).not.toBe(
+            expect(
+              target
+            ).not.toBe(
               giver
             );
 
@@ -124,32 +144,57 @@ describe(
               engine.dispatch({
                 type:
                   "GIVE_DISTRIBUTION_DRINK",
+
                 target,
+              });
+
+            continue;
+          }
+
+          /*
+           * Après une mauvaise réponse,
+           * le résultat reste affiché
+           * jusqu'à la continuation.
+           */
+          if (
+            state.phase ===
+              "DISTRIBUTION" &&
+            state.distribution
+              .awaitingContinue
+          ) {
+            state =
+              engine.dispatch({
+                type:
+                  "CONTINUE_DISTRIBUTION",
               });
           }
         }
 
         /*
-         * Chaque joueur répond
-         * aux quatre questions.
+         * Chaque joueur répond aux
+         * quatre questions.
          */
         expect(
           answeredQuestions
-        ).toBe(playerCount * 4);
+        ).toBe(
+          playerCount * 4
+        );
 
         /*
-         * Une fois la distribution terminée,
-         * chaque joueur possède quatre cartes.
+         * Chaque joueur possède alors
+         * quatre cartes.
          */
         state.players.forEach(
           (hand) => {
-            expect(hand).toHaveLength(4);
+            expect(
+              hand
+            ).toHaveLength(4);
           }
         );
 
         /*
-         * Chaque question provoque exactement
-         * une gorgée :
+         * Chaque réponse provoque
+         * exactement une gorgée :
          *
          * - mauvaise réponse :
          *   le joueur boit ;
@@ -159,33 +204,51 @@ describe(
          */
         const totalDrinks =
           state.drinks.reduce(
-            (total, drinks) =>
-              total + drinks,
+            (
+              total,
+              drinks
+            ) =>
+              total +
+              drinks,
             0
           );
 
-        expect(totalDrinks).toBe(
+        expect(
+          totalDrinks
+        ).toBe(
           playerCount * 4
         );
 
-        expect(state.phase).toBe(
+        expect(
+          state.phase
+        ).toBe(
           "MEMORY"
         );
 
         expect(
-          state.memory.remainingSeconds
-        ).toBeGreaterThan(0);
+          state.memory
+            .remainingSeconds
+        ).toBe(15);
 
         expect(
           state.memory.jokers
-        ).toHaveLength(playerCount);
+        ).toHaveLength(
+          playerCount
+        );
 
         expect(
-          state.memory.revealedPlayers
+          state.memory
+            .revealedPlayers
         ).toEqual([]);
 
         expect(
-          state.distribution.awaitingGive
+          state.distribution
+            .awaitingGive
+        ).toBe(false);
+
+        expect(
+          state.distribution
+            .awaitingContinue
         ).toBe(false);
       }
     );

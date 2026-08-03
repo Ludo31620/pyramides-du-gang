@@ -12,6 +12,7 @@ import type {
 
 import {
   answerDistribution,
+  continueDistribution,
   giveDistributionDrink,
 } from "@/lib/gameEngine/core/distribution";
 
@@ -64,12 +65,22 @@ describe(
         ).toBe(true);
 
         expect(
+          result.distribution
+            .awaitingContinue
+        ).toBe(false);
+
+        expect(
           result.players[0]
         ).toHaveLength(1);
 
         expect(
           result.deck
         ).toHaveLength(51);
+
+        expect(
+          result.distribution
+            .currentPlayer
+        ).toBe(0);
 
         expect(
           result.distribution
@@ -92,30 +103,70 @@ describe(
           ...game.deck.slice(1),
         ];
 
-        const result =
+        const answeredState =
           answerDistribution(
             game,
             "RED"
           );
 
         expect(
-          result.distribution
+          answeredState
+            .distribution
             .lastResult?.correct
         ).toBe(false);
 
         expect(
-          result.drinks[0]
+          answeredState.drinks[0]
+        ).toBe(1);
+
+        expect(
+          answeredState
+            .distribution
+            .currentPlayer
+        ).toBe(0);
+
+        expect(
+          answeredState
+            .distribution
+            .question
+        ).toBe(0);
+
+        expect(
+          answeredState
+            .distribution
+            .awaitingGive
+        ).toBe(false);
+
+        expect(
+          answeredState
+            .distribution
+            .awaitingContinue
+        ).toBe(true);
+
+        const result =
+          continueDistribution(
+            answeredState
+          );
+
+        expect(
+          result.distribution
+            .currentPlayer
         ).toBe(1);
 
         expect(
           result.distribution
             .question
-        ).toBe(1);
+        ).toBe(0);
 
         expect(
           result.distribution
-            .awaitingGive
+            .awaitingContinue
         ).toBe(false);
+
+        expect(
+          result.distribution
+            .lastResult
+        ).toBeNull();
       }
     );
 
@@ -160,8 +211,23 @@ describe(
         ).toBe(true);
 
         expect(
+          result.distribution
+            .awaitingContinue
+        ).toBe(false);
+
+        expect(
           result.players[0]
         ).toHaveLength(2);
+
+        expect(
+          result.distribution
+            .currentPlayer
+        ).toBe(0);
+
+        expect(
+          result.distribution
+            .question
+        ).toBe(1);
       }
     );
 
@@ -189,25 +255,59 @@ describe(
           ...game.deck.slice(1),
         ];
 
-        const result =
+        const answeredState =
           answerDistribution(
             game,
             "HIGHER"
           );
 
         expect(
-          result.distribution
+          answeredState
+            .distribution
             .lastResult?.correct
         ).toBe(false);
 
         expect(
-          result.drinks[0]
+          answeredState.drinks[0]
+        ).toBe(1);
+
+        expect(
+          answeredState
+            .distribution
+            .currentPlayer
+        ).toBe(0);
+
+        expect(
+          answeredState
+            .distribution
+            .question
+        ).toBe(1);
+
+        expect(
+          answeredState
+            .distribution
+            .awaitingContinue
+        ).toBe(true);
+
+        const result =
+          continueDistribution(
+            answeredState
+          );
+
+        expect(
+          result.distribution
+            .currentPlayer
         ).toBe(1);
 
         expect(
           result.distribution
             .question
-        ).toBe(2);
+        ).toBe(1);
+
+        expect(
+          result.distribution
+            .awaitingContinue
+        ).toBe(false);
       }
     );
 
@@ -254,6 +354,16 @@ describe(
           result.distribution
             .awaitingGive
         ).toBe(true);
+
+        expect(
+          result.distribution
+            .awaitingContinue
+        ).toBe(false);
+
+        expect(
+          result.distribution
+            .question
+        ).toBe(2);
       }
     );
 
@@ -299,6 +409,21 @@ describe(
         expect(
           result.drinks[0]
         ).toBe(1);
+
+        expect(
+          result.distribution
+            .awaitingContinue
+        ).toBe(true);
+
+        expect(
+          result.distribution
+            .currentPlayer
+        ).toBe(0);
+
+        expect(
+          result.distribution
+            .question
+        ).toBe(2);
       }
     );
 
@@ -351,13 +476,28 @@ describe(
         ).toBe(true);
 
         expect(
+          result.distribution
+            .awaitingContinue
+        ).toBe(false);
+
+        expect(
           result.players[0]
         ).toHaveLength(4);
+
+        expect(
+          result.distribution
+            .currentPlayer
+        ).toBe(0);
+
+        expect(
+          result.distribution
+            .question
+        ).toBe(3);
       }
     );
 
     it(
-      "gives one drink after a correct answer and advances the question",
+      "gives one drink after a correct answer and moves to the next player",
       () => {
         const game =
           createTestGame();
@@ -388,13 +528,28 @@ describe(
 
         expect(
           result.distribution
-            .question
+            .currentPlayer
         ).toBe(1);
+
+        expect(
+          result.distribution
+            .question
+        ).toBe(0);
 
         expect(
           result.distribution
             .awaitingGive
         ).toBe(false);
+
+        expect(
+          result.distribution
+            .awaitingContinue
+        ).toBe(false);
+
+        expect(
+          result.distribution
+            .lastResult
+        ).toBeNull();
 
         expect(
           result.distribution
@@ -438,10 +593,43 @@ describe(
           ...game.deck.slice(1),
         ];
 
-        const result =
+        const answeredState =
           answerDistribution(
             game,
             "SPADES"
+          );
+
+        expect(
+          answeredState
+            .distribution
+            .lastResult?.correct
+        ).toBe(false);
+
+        expect(
+          answeredState.drinks[0]
+        ).toBe(1);
+
+        expect(
+          answeredState
+            .distribution
+            .currentPlayer
+        ).toBe(0);
+
+        expect(
+          answeredState
+            .distribution
+            .question
+        ).toBe(3);
+
+        expect(
+          answeredState
+            .distribution
+            .awaitingContinue
+        ).toBe(true);
+
+        const result =
+          continueDistribution(
+            answeredState
           );
 
         expect(
@@ -452,11 +640,12 @@ describe(
         expect(
           result.distribution
             .question
-        ).toBe(0);
+        ).toBe(3);
 
         expect(
-          result.drinks[0]
-        ).toBe(1);
+          result.distribution
+            .awaitingContinue
+        ).toBe(false);
       }
     );
 
@@ -527,30 +716,41 @@ describe(
             )
         );
 
-        const result =
+        const answeredState =
           answerDistribution(
             game,
             "CLUBS"
           );
 
         expect(
-          result.phase
-        ).toBe("DISTRIBUTION");
+          answeredState.phase
+        ).toBe(
+          "DISTRIBUTION"
+        );
 
         expect(
-          result.distribution
+          answeredState
+            .distribution
             .awaitingGive
         ).toBe(true);
 
+        expect(
+          answeredState
+            .distribution
+            .awaitingContinue
+        ).toBe(false);
+
         const finishedState =
           giveDistributionDrink(
-            result,
+            answeredState,
             0
           );
 
         expect(
           finishedState.phase
-        ).toBe("MEMORY");
+        ).toBe(
+          "MEMORY"
+        );
 
         expect(
           finishedState.players[3]
@@ -561,7 +761,8 @@ describe(
         ).toEqual([]);
 
         expect(
-          finishedState.pyramid.length
+          finishedState.pyramid
+            .length
         ).toBeGreaterThan(0);
 
         expect(
@@ -578,6 +779,11 @@ describe(
           2,
           3,
         ]);
+
+        expect(
+          finishedState.memory
+            .remainingSeconds
+        ).toBe(15);
       }
     );
 
@@ -625,6 +831,37 @@ describe(
           )
         ).toThrow(
           "Le joueur doit d’abord donner sa gorgée."
+        );
+      }
+    );
+
+    it(
+      "refuses another answer while an incorrect result awaits continuation",
+      () => {
+        const game =
+          createTestGame();
+
+        game.deck = [
+          createCard(
+            "As",
+            "♠"
+          ),
+          ...game.deck.slice(1),
+        ];
+
+        const answeredState =
+          answerDistribution(
+            game,
+            "RED"
+          );
+
+        expect(() =>
+          answerDistribution(
+            answeredState,
+            "BLACK"
+          )
+        ).toThrow(
+          "Le joueur doit d’abord continuer."
         );
       }
     );
