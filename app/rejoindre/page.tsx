@@ -5,10 +5,19 @@ import {
 } from "@/lib/gameSession";
 
 import {
+  getPlayerProfile,
+} from "@/lib/profile/storage";
+
+import type {
+  PlayerProfile,
+} from "@/lib/profile/types";
+
+import {
   obtenirSocket,
 } from "@/lib/socket";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -35,6 +44,16 @@ const MAX_PSEUDO_LENGTH = 20;
 interface PublicRoomPlayer {
   id: string;
   pseudo: string;
+
+  avatarType:
+    PlayerProfile["avatarType"];
+
+  avatarId:
+    string | null;
+
+  avatarPhoto:
+    string | null;
+
   isHost: boolean;
 }
 
@@ -196,7 +215,8 @@ function connecterSocket(
 function rejoindreSalon(
   socket: Socket,
   pseudo: string,
-  code: string
+  code: string,
+  profile: PlayerProfile
 ): Promise<JoinRoomResult> {
   return new Promise(
     (
@@ -230,6 +250,16 @@ function rejoindreSalon(
         "room:join",
         {
           pseudo,
+
+          avatarType:
+            profile.avatarType,
+
+          avatarId:
+            profile.avatarId,
+
+          avatarPhoto:
+            profile.avatarPhoto,
+
           code,
         },
         (
@@ -282,6 +312,21 @@ export default function RejoindrePage() {
     useState<string | null>(
       null
     );
+
+  useEffect(() => {
+    const profile =
+      getPlayerProfile();
+
+    if (
+      profile.pseudo &&
+      profile.pseudo !==
+        "Joueur"
+    ) {
+      setPseudo(
+        profile.pseudo
+      );
+    }
+  }, []);
 
   const formulaireValide =
     useMemo(() => {
@@ -389,6 +434,9 @@ export default function RejoindrePage() {
     setMessageErreur(null);
 
     try {
+      const profile =
+        getPlayerProfile();
+
       const socket =
         obtenirSocket();
 
@@ -405,7 +453,8 @@ const result =
   await rejoindreSalon(
     socket,
     pseudoNettoye,
-    codeNettoye
+    codeNettoye,
+    profile
   );
 
 console.log("=== APRÈS JOIN ===");
@@ -456,19 +505,28 @@ const session: StoredGameSession = {
   maxPlayers:
     result.room.maxPlayers,
 
-  players:
-    result.room.players.map(
-      (player) => ({
-        id:
-          player.id,
+players:
+  result.room.players.map(
+    (player) => ({
+      id:
+        player.id,
 
-        pseudo:
-          player.pseudo,
+      pseudo:
+        player.pseudo,
 
-        isHost:
-          player.isHost,
-      })
-    ),
+      avatarType:
+        player.avatarType,
+
+      avatarId:
+        player.avatarId,
+
+      avatarPhoto:
+        player.avatarPhoto,
+
+      isHost:
+        player.isHost,
+    })
+  ),
 
   playerCount:
     result.room.players.length,

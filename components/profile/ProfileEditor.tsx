@@ -3,7 +3,6 @@
 import ThemeButton from "@/components/ui/ThemeButton";
 
 import AvatarPicker from "./AvatarPicker";
-import PhotoPicker from "./PhotoPicker";
 
 interface ProfileEditorProps {
   pseudo: string;
@@ -16,10 +15,6 @@ interface ProfileEditorProps {
 
   onAvatarSelect: (
     avatarId: string
-  ) => void;
-
-  onPhotoSelected: (
-    file: File
   ) => void;
 
   onSave: () => void;
@@ -36,7 +31,6 @@ export default function ProfileEditor({
   onPseudoChange,
   selectedAvatarId,
   onAvatarSelect,
-  onPhotoSelected,
   onSave,
   onReset,
   savedMessage,
@@ -99,8 +93,10 @@ export default function ProfileEditor({
           px-4
           py-3
           font-bold
+          text-[var(--color-text)]
           outline-none
           transition
+          placeholder:text-[var(--color-text-muted)]
           focus:border-[var(--color-primary)]
         "
       />
@@ -116,16 +112,24 @@ export default function ProfileEditor({
         />
       </div>
 
-      <div className="mt-7">
-        <PhotoPicker
-          onPick={
-            onPhotoSelected
-          }
-        />
-      </div>
+      <p
+        className="
+          mt-4
+          text-center
+          text-xs
+          leading-5
+          text-[var(--color-text-muted)]
+        "
+      >
+        Pour utiliser une photo,
+        appuie directement sur le
+        petit bouton caméra de
+        l’avatar.
+      </p>
 
       <div className="mt-7 space-y-3">
         <ThemeButton
+          type="button"
           variant="primary"
           onClick={onSave}
         >
@@ -133,6 +137,7 @@ export default function ProfileEditor({
         </ThemeButton>
 
         <ThemeButton
+          type="button"
           variant="secondary"
           onClick={onReset}
         >
@@ -141,6 +146,7 @@ export default function ProfileEditor({
 
         {savedMessage && (
           <p
+            role="status"
             className="
               text-center
               text-sm

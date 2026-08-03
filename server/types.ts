@@ -1,3 +1,7 @@
+import type {
+  PlayerAvatarType,
+} from "@/lib/profile/types";
+
 export type RoomStatus =
   | "LOBBY"
   | "IN_GAME";
@@ -24,80 +28,155 @@ export type RoomPlayer = {
   playerToken: string;
 
   pseudo: string;
+
+  avatarType:
+    PlayerAvatarType;
+
+  avatarId:
+    string | null;
+
+  avatarPhoto:
+    string | null;
+
   isHost: boolean;
+
   connectedAt: number;
 };
 
 export type Room = {
   code: string;
-  status: RoomStatus;
+
+  status:
+    RoomStatus;
+
   maxPlayers: number;
-  players: RoomPlayer[];
+
+  players:
+    RoomPlayer[];
+
   createdAt: number;
 };
 
 export type PublicRoomPlayer = {
   id: string;
+
   pseudo: string;
+
+  avatarType:
+    PlayerAvatarType;
+
+  avatarId:
+    string | null;
+
+  avatarPhoto:
+    string | null;
+
   isHost: boolean;
 };
 
 export type PublicRoom = {
   code: string;
-  status: RoomStatus;
+
+  status:
+    RoomStatus;
+
   maxPlayers: number;
-  players: PublicRoomPlayer[];
+
+  players:
+    PublicRoomPlayer[];
 };
 
 export type CreateRoomInput = {
   socketId: string;
+
   playerToken: string;
+
   pseudo: string;
+
+  avatarType:
+    PlayerAvatarType;
+
+  avatarId:
+    string | null;
+
+  avatarPhoto:
+    string | null;
+
   maxPlayers: number;
 };
 
 export type JoinRoomInput = {
   socketId: string;
+
   playerToken: string;
+
   pseudo: string;
+
+  avatarType:
+    PlayerAvatarType;
+
+  avatarId:
+    string | null;
+
+  avatarPhoto:
+    string | null;
+
   code: string;
 };
 
 export type ReconnectRoomInput = {
   socketId: string;
+
   playerToken: string;
+
   code: string;
 };
 
 export type StartRoomInput = {
   socketId: string;
+
   code: string;
 };
 
 export type RoomResult =
   | {
       success: true;
-      room: PublicRoom;
-      playerId: string;
+
+      room:
+        PublicRoom;
+
+      playerId:
+        string;
     }
   | {
       success: false;
-      error: string;
+
+      error:
+        string;
     };
 
 export type StartRoomResult =
   | {
       success: true;
-      room: PublicRoom;
+
+      room:
+        PublicRoom;
     }
   | {
       success: false;
-      error: string;
+
+      error:
+        string;
     };
 
 export type DisconnectedPlayer = {
   code: string;
+
   playerId: string;
-  status: RoomStatus;
-  room: PublicRoom;
+
+  status:
+    RoomStatus;
+
+  room:
+    PublicRoom;
 };

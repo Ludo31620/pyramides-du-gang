@@ -27,13 +27,37 @@ import type {
   StartRoomResult,
 } from "./server/types";
 
+import type {
+  PlayerAvatarType,
+} from "./lib/profile/types";
+
 type CreateRoomPayload = {
   pseudo: string;
+
+  avatarType:
+    PlayerAvatarType;
+
+  avatarId:
+    string | null;
+
+  avatarPhoto:
+    string | null;
+
   maxPlayers: number;
 };
 
 type JoinRoomPayload = {
   pseudo: string;
+
+  avatarType:
+    PlayerAvatarType;
+
+  avatarId:
+    string | null;
+
+  avatarPhoto:
+    string | null;
+
   code: string;
 };
 
@@ -600,25 +624,37 @@ async function demarrerServeur():
             RoomCallback
         ) => {
           try {
-            const result =
-              roomManager
-                .createRoom({
-                  socketId:
-                    socket.id,
+const result =
+  roomManager
+    .createRoom({
+      socketId:
+        socket.id,
 
-                  playerToken:
-                    obtenirPlayerToken(
-                      socket
-                    ),
+      playerToken:
+        obtenirPlayerToken(
+          socket
+        ),
 
-                  pseudo:
-                    payload?.pseudo ??
-                    "",
+      pseudo:
+        payload?.pseudo ??
+        "",
 
-                  maxPlayers:
-                    payload
-                      ?.maxPlayers,
-                });
+      avatarType:
+        payload?.avatarType ??
+        "DEFAULT",
+
+      avatarId:
+        payload?.avatarId ??
+        "fox",
+
+      avatarPhoto:
+        payload?.avatarPhoto ??
+        null,
+
+      maxPlayers:
+        payload
+          ?.maxPlayers,
+    });
 
             if (
               !result.success
@@ -678,25 +714,37 @@ async function demarrerServeur():
             RoomCallback
         ) => {
           try {
-            const result =
-              roomManager
-                .joinRoom({
-                  socketId:
-                    socket.id,
+const result =
+  roomManager
+    .joinRoom({
+      socketId:
+        socket.id,
 
-                  playerToken:
-                    obtenirPlayerToken(
-                      socket
-                    ),
+      playerToken:
+        obtenirPlayerToken(
+          socket
+        ),
 
-                  pseudo:
-                    payload?.pseudo ??
-                    "",
+      pseudo:
+        payload?.pseudo ??
+        "",
 
-                  code:
-                    payload?.code ??
-                    "",
-                });
+      avatarType:
+        payload?.avatarType ??
+        "DEFAULT",
+
+      avatarId:
+        payload?.avatarId ??
+        "fox",
+
+      avatarPhoto:
+        payload?.avatarPhoto ??
+        null,
+
+      code:
+        payload?.code ??
+        "",
+    });
 
             if (
               !result.success

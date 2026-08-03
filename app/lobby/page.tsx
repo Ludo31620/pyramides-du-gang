@@ -1,5 +1,7 @@
 "use client";
 
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
+
 import {
   useEffect,
   useState,
@@ -26,9 +28,24 @@ import {
   type StoredRoomPlayer,
 } from "@/lib/gameSession";
 
+import type {
+  PlayerAvatarType,
+} from "@/lib/profile/types";
+
 interface PublicRoomPlayer {
   id: string;
+
   pseudo: string;
+
+  avatarType:
+    PlayerAvatarType;
+
+  avatarId:
+    string | null;
+
+  avatarPhoto:
+    string | null;
+
   isHost: boolean;
 }
 
@@ -79,6 +96,15 @@ function convertirJoueurs(
       pseudo:
         player.pseudo,
 
+      avatarType:
+        player.avatarType,
+
+      avatarId:
+        player.avatarId,
+
+      avatarPhoto:
+        player.avatarPhoto,
+
       isHost:
         player.isHost,
     })
@@ -100,18 +126,27 @@ function creerSalonInitial(
       storedGame.maxPlayers,
 
     players:
-      storedGame.players.map(
-        (player) => ({
-          id:
-            player.id,
+  storedGame.players.map(
+    (player) => ({
+      id:
+        player.id,
 
-          pseudo:
-            player.pseudo,
+      pseudo:
+        player.pseudo,
 
-          isHost:
-            player.isHost,
-        })
-      ),
+      avatarType:
+        player.avatarType,
+
+      avatarId:
+        player.avatarId,
+
+      avatarPhoto:
+        player.avatarPhoto,
+
+      isHost:
+        player.isHost,
+    })
+  ),
   };
 }
 
@@ -924,9 +959,20 @@ export default function LobbyPage() {
                     }
                     className="flex min-h-16 items-center gap-4 rounded-2xl border border-white/5 bg-black/25 px-4 py-3"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-sm font-black text-yellow-400">
-                      {index + 1}
-                    </div>
+                    <div className="shrink-0">
+  <ProfileAvatar
+    size="small"
+    avatarType={
+      player.avatarType
+    }
+    avatarId={
+      player.avatarId
+    }
+    avatarPhoto={
+      player.avatarPhoto
+    }
+  />
+</div>
 
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-black">
@@ -939,11 +985,19 @@ export default function LobbyPage() {
                         )}
                       </p>
 
-                      <p className="mt-1 text-xs font-semibold text-zinc-500">
-                        {player.isHost
-                          ? "Hôte de la partie"
-                          : "Joueur connecté"}
-                      </p>
+<div className="mt-1 flex items-center gap-2 text-xs">
+  {player.isHost && (
+    <span className="font-bold text-yellow-400">
+      👑 Hôte
+    </span>
+  )}
+
+  {!player.isHost && (
+    <span className="text-zinc-500">
+      Joueur connecté
+    </span>
+  )}
+</div>
                     </div>
 
                     {player.isHost && (

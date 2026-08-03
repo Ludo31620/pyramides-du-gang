@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -22,12 +23,30 @@ import {
 } from "@/lib/gameSession";
 
 import {
+  getPlayerProfile,
+} from "@/lib/profile/storage";
+
+import type {
+  PlayerProfile,
+} from "@/lib/profile/types";
+
+import {
   obtenirSocket,
 } from "@/lib/socket";
 
 interface PublicRoomPlayer {
   id: string;
   pseudo: string;
+
+  avatarType:
+    PlayerProfile["avatarType"];
+
+  avatarId:
+    string | null;
+
+  avatarPhoto:
+    string | null;
+
   isHost: boolean;
 }
 
@@ -63,6 +82,15 @@ function convertirJoueurs(
 
       pseudo:
         player.pseudo,
+
+      avatarType:
+        player.avatarType,
+
+      avatarId:
+        player.avatarId,
+
+      avatarPhoto:
+        player.avatarPhoto,
 
       isHost:
         player.isHost,
@@ -142,7 +170,8 @@ function connecterSocket(
 function demanderCreationPartie(
   socket: Socket,
   pseudo: string,
-  maxPlayers: number
+  maxPlayers: number,
+  profile: PlayerProfile
 ): Promise<CreateRoomResult> {
   return new Promise(
     (resolve) => {
@@ -175,6 +204,16 @@ function demanderCreationPartie(
         "room:create",
         {
           pseudo,
+
+          avatarType:
+            profile.avatarType,
+
+          avatarId:
+            profile.avatarId,
+
+          avatarPhoto:
+            profile.avatarPhoto,
+
           maxPlayers,
         },
         (
@@ -227,6 +266,21 @@ export default function CreerPartie() {
     useState<string | null>(
       null
     );
+
+  useEffect(() => {
+    const profile =
+      getPlayerProfile();
+
+    if (
+      profile.pseudo &&
+      profile.pseudo !==
+        "Joueur"
+    ) {
+      setPseudo(
+        profile.pseudo
+      );
+    }
+  }, []);
 
   async function creerPartie():
     Promise<void> {
@@ -282,6 +336,10 @@ export default function CreerPartie() {
 
     try {
       supprimerSessionPartie();
+
+      const profile =
+        getPlayerProfile();
+
       const socket =
         obtenirSocket();
 
@@ -293,7 +351,8 @@ export default function CreerPartie() {
         await demanderCreationPartie(
           socket,
           pseudoNettoye,
-          joueurs
+          joueurs,
+          profile
         );
 
       if (

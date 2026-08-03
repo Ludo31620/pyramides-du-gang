@@ -1,3 +1,17 @@
+"use client";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
+
+import {
+  lireSessionPartie,
+  type StoredRoomPlayer,
+} from "@/lib/gameSession";
+
 import type {
   PlayerGameState,
 } from "@/lib/gameEngine/publicTypes";
@@ -9,6 +23,26 @@ interface PlayerListProps {
 export default function PlayerList({
   state,
 }: PlayerListProps) {
+  const [
+    roomPlayers,
+    setRoomPlayers,
+  ] =
+    useState<StoredRoomPlayer[]>(
+      []
+    );
+
+  useEffect(() => {
+    const session =
+      lireSessionPartie();
+
+    setRoomPlayers(
+      session?.players ??
+        []
+    );
+  }, [
+    state.players.length,
+  ]);
+
   return (
     <section className="rounded-3xl border border-white/10 bg-zinc-900 p-6 sm:p-8">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -36,6 +70,15 @@ export default function PlayerList({
             hand,
             playerIndex
           ) => {
+            const player =
+              roomPlayers[
+                playerIndex
+              ];
+
+            const pseudo =
+              player?.pseudo ??
+              `Joueur ${playerIndex + 1}`;
+
             const isCurrentPlayer =
               state.turn
                 .currentPlayer ===
@@ -62,6 +105,7 @@ export default function PlayerList({
             return (
               <article
                 key={
+                  player?.id ??
                   playerIndex
                 }
                 className={[
@@ -75,25 +119,49 @@ export default function PlayerList({
                   <div className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.9)]" />
                 )}
 
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-zinc-800 text-lg font-black text-yellow-400">
-                  J
-                  {playerIndex +
-                    1}
+                <div className="flex items-center gap-4">
+                  <ProfileAvatar
+                    size="medium"
+                    avatarType={
+                      player?.avatarType ??
+                      "DEFAULT"
+                    }
+                    avatarId={
+                      player?.avatarId ??
+                      "fox"
+                    }
+                    avatarPhoto={
+                      player?.avatarPhoto ??
+                      null
+                    }
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="truncate text-lg font-black text-white">
+                        {pseudo}
+                      </h3>
+
+                      {player?.isHost && (
+                        <span
+                          title="Hôte de la partie"
+                          aria-label="Hôte de la partie"
+                          className="text-sm"
+                        >
+                          👑
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="mt-1 text-sm text-zinc-500">
+                      {hand.length} carte
+                      {hand.length > 1
+                        ? "s"
+                        : ""}{" "}
+                      en main
+                    </p>
+                  </div>
                 </div>
-
-                <h3 className="mt-4 text-lg font-black text-white">
-                  Joueur{" "}
-                  {playerIndex +
-                    1}
-                </h3>
-
-                <p className="mt-1 text-sm text-zinc-500">
-                  {hand.length} carte
-                  {hand.length > 1
-                    ? "s"
-                    : ""}{" "}
-                  en main
-                </p>
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
                   <div className="rounded-xl border border-white/10 bg-zinc-900 p-3">

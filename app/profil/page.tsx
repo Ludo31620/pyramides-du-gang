@@ -343,6 +343,30 @@ export default function ProfilePage() {
     }
   }
 
+  function handlePhotoRemoved():
+    void {
+    setProfile(
+      (
+        currentProfile
+      ) => ({
+        ...currentProfile,
+
+        avatarType:
+          "DEFAULT",
+
+        avatarId:
+          selectedAvatarId,
+
+        avatarPhoto:
+          null,
+      })
+    );
+
+    setSavedMessage(
+      "Photo supprimée"
+    );
+  }
+
   function handleAvatarSelect(
     avatarId: string
   ): void {
@@ -486,6 +510,12 @@ export default function ProfilePage() {
               avatarPhoto={
                 profile.avatarPhoto
               }
+              onPhotoSelected={
+                handlePhotoSelected
+              }
+              onPhotoRemoved={
+                handlePhotoRemoved
+              }
             />
 
             <p
@@ -548,9 +578,6 @@ export default function ProfilePage() {
             }
             onAvatarSelect={
               handleAvatarSelect
-            }
-            onPhotoSelected={
-              handlePhotoSelected
             }
             onSave={
               handleSaveProfile

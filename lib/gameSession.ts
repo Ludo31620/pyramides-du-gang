@@ -1,3 +1,7 @@
+import type {
+  PlayerAvatarType,
+} from "@/lib/profile/types";
+
 const GAME_SESSION_STORAGE_KEY =
   "pyramides-partie";
 
@@ -7,6 +11,16 @@ export const MAX_PLAYER_COUNT = 9;
 export interface StoredRoomPlayer {
   id: string;
   pseudo: string;
+
+  avatarType:
+    PlayerAvatarType;
+
+  avatarId:
+    string | null;
+
+  avatarPhoto:
+    string | null;
+
   isHost: boolean;
 }
 
@@ -79,6 +93,37 @@ function normalizeText(
       0,
       maxLength
     );
+}
+
+function normalizeNullableText(
+  value: unknown,
+  maxLength: number
+): string | null {
+  const normalized =
+    normalizeText(
+      value,
+      maxLength
+    );
+
+  return normalized ||
+    null;
+}
+
+function normalizeAvatarType(
+  value: unknown
+): PlayerAvatarType {
+  if (
+    value ===
+      "DEFAULT" ||
+    value ===
+      "PHOTO" ||
+    value ===
+      "NONE"
+  ) {
+    return value;
+  }
+
+  return "DEFAULT";
 }
 
 function normalizeRoomCode(
@@ -185,9 +230,41 @@ function normalizePlayers(
       continue;
     }
 
+    const avatarType =
+      normalizeAvatarType(
+        player.avatarType
+      );
+
+    const avatarId =
+      normalizeNullableText(
+        player.avatarId,
+        100
+      );
+
+    const avatarPhoto =
+      normalizeNullableText(
+        player.avatarPhoto,
+        1_000_000
+      );
+
     normalizedPlayers.push({
       id,
       pseudo,
+
+      avatarType,
+
+      avatarId:
+        avatarType ===
+          "DEFAULT"
+          ? avatarId ??
+            "fox"
+          : avatarId,
+
+      avatarPhoto:
+        avatarType ===
+          "PHOTO"
+          ? avatarPhoto
+          : null,
 
       isHost:
         player.isHost ===
@@ -278,19 +355,29 @@ function normalizeStoredGame(
         true
     );
 
-  const normalizedPlayers =
-    players.length > 0
-      ? players
-      : [
-          {
-            id:
-              playerId,
+const normalizedPlayers:
+  StoredRoomPlayer[] =
+  players.length > 0
+    ? players
+    : [
+        {
+          id:
+            playerId,
 
-            pseudo,
+          pseudo,
 
-            isHost,
-          },
-        ];
+          avatarType:
+            "DEFAULT",
+
+          avatarId:
+            "fox",
+
+          avatarPhoto:
+            null,
+
+          isHost,
+        },
+      ];
 
   return {
     code,
@@ -468,7 +555,7 @@ export function mettreAJourSessionPartie(
  *
  * Le playerToken reste volontairement dans
  * localStorage afin que le navigateur garde
- * son identité persistante.
+ * son identité persistant.
  */
 export function supprimerSessionPartie():
   void {

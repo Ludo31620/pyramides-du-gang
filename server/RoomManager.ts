@@ -81,17 +81,26 @@ export class RoomManager {
     const code =
       this.generateUniqueCode();
 
-    const host =
-      this.createPlayer({
-        socketId:
-          input.socketId,
+const host =
+  this.createPlayer({
+    socketId:
+      input.socketId,
 
-        playerToken,
+    playerToken,
 
-        pseudo,
+    pseudo,
 
-        isHost: true,
-      });
+    avatarType:
+      input.avatarType,
+
+    avatarId:
+      input.avatarId,
+
+    avatarPhoto:
+      input.avatarPhoto,
+
+    isHost: true,
+  });
 
     const room: Room = {
       code,
@@ -275,17 +284,26 @@ export class RoomManager {
       playerToken
     );
 
-    const player =
-      this.createPlayer({
-        socketId:
-          input.socketId,
+const player =
+  this.createPlayer({
+    socketId:
+      input.socketId,
 
-        playerToken,
+    playerToken,
 
-        pseudo,
+    pseudo,
 
-        isHost: false,
-      });
+    avatarType:
+      input.avatarType,
+
+    avatarId:
+      input.avatarId,
+
+    avatarPhoto:
+      input.avatarPhoto,
+
+    isHost: false,
+  });
 
     room.players.push(
       player
@@ -821,33 +839,52 @@ export class RoomManager {
   }
 
   private createPlayer(
-    input: {
-      socketId: string;
-      playerToken: string;
-      pseudo: string;
-      isHost: boolean;
-    }
-  ): RoomPlayer {
-    return {
-      id:
-        this.generatePlayerId(),
+  input: {
+    socketId: string;
+    playerToken: string;
+    pseudo: string;
 
-      socketId:
-        input.socketId,
+    avatarType:
+      RoomPlayer["avatarType"];
 
-      playerToken:
-        input.playerToken,
+    avatarId:
+      string | null;
 
-      pseudo:
-        input.pseudo,
+    avatarPhoto:
+      string | null;
 
-      isHost:
-        input.isHost,
-
-      connectedAt:
-        Date.now(),
-    };
+    isHost: boolean;
   }
+): RoomPlayer {
+  return {
+    id:
+      this.generatePlayerId(),
+
+    socketId:
+      input.socketId,
+
+    playerToken:
+      input.playerToken,
+
+    pseudo:
+      input.pseudo,
+
+    avatarType:
+      input.avatarType,
+
+    avatarId:
+      input.avatarId,
+
+    avatarPhoto:
+      input.avatarPhoto,
+
+    isHost:
+      input.isHost,
+
+    connectedAt:
+      Date.now(),
+  };
+}
 
   private generatePlayerId():
     string {
@@ -968,19 +1005,28 @@ export class RoomManager {
       maxPlayers:
         room.maxPlayers,
 
-      players:
-        room.players.map(
-          (player) => ({
-            id:
-              player.id,
+     players:
+  room.players.map(
+    (player) => ({
+      id:
+        player.id,
 
-            pseudo:
-              player.pseudo,
+      pseudo:
+        player.pseudo,
 
-            isHost:
-              player.isHost,
-          })
-        ),
+      avatarType:
+        player.avatarType,
+
+      avatarId:
+        player.avatarId,
+
+      avatarPhoto:
+        player.avatarPhoto,
+
+      isHost:
+        player.isHost,
+    })
+  ),
     };
   }
 }
