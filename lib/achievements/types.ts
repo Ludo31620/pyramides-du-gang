@@ -12,6 +12,12 @@ export type AchievementId =
   | "hundred-drinks-given"
   | "hundred-drinks-received";
 
+export type AchievementRarity =
+  | "COMMON"
+  | "RARE"
+  | "EPIC"
+  | "LEGENDARY";
+
 export interface AchievementDefinition {
   id: AchievementId;
 
@@ -22,6 +28,11 @@ export interface AchievementDefinition {
   icon: string;
 
   premium: boolean;
+
+  hidden: boolean;
+
+  rarity:
+    AchievementRarity;
 
   getProgress: (
     stats: PlayerLifetimeStats

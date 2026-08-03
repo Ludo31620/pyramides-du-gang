@@ -23,6 +23,7 @@ import {
 } from "@/lib/achievements/storage";
 
 import type {
+  AchievementDefinition,
   UnlockedAchievement,
 } from "@/lib/achievements/types";
 
@@ -106,6 +107,38 @@ export default function SuccessPage() {
           ) * 100
         )
       : 0;
+
+  function getRarityLabel(
+    rarity:
+      AchievementDefinition["rarity"]
+  ): string {
+    switch (rarity) {
+      case "COMMON":
+        return "Commun";
+      case "RARE":
+        return "Rare";
+      case "EPIC":
+        return "Épique";
+      case "LEGENDARY":
+        return "Légendaire";
+    }
+  }
+
+  function getRarityClasses(
+    rarity:
+      AchievementDefinition["rarity"]
+  ): string {
+    switch (rarity) {
+      case "COMMON":
+        return "bg-zinc-700 text-white";
+      case "RARE":
+        return "bg-blue-600 text-white";
+      case "EPIC":
+        return "bg-purple-600 text-white";
+      case "LEGENDARY":
+        return "bg-yellow-400 text-black";
+    }
+  }
 
   if (
     !ready ||
@@ -289,6 +322,20 @@ export default function SuccessPage() {
                     achievement.id
                   );
 
+const displayTitle: string =
+  achievement.hidden &&
+  !unlocked
+    ? "???"
+    : achievement.title;
+
+const displayDescription: string =
+  achievement.hidden &&
+  !unlocked
+    ? "Succès secret"
+    : achievement.description;
+
+
+
                 const progress =
                   getAchievementProgress(
                     achievement,
@@ -375,6 +422,16 @@ export default function SuccessPage() {
                               Premium
                             </span>
                           )}
+
+                          <span
+                            className={`rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-wider ${getRarityClasses(
+                              achievement.rarity
+                            )}`}
+                          >
+                            {getRarityLabel(
+                              achievement.rarity
+                            )}
+                          </span>
 
                           <span
                             className={`

@@ -24,6 +24,12 @@ export const ACHIEVEMENTS:
     premium:
       false,
 
+    hidden:
+      false,
+
+    rarity:
+      "COMMON",
+
     target:
       1,
 
@@ -47,6 +53,12 @@ export const ACHIEVEMENTS:
 
     premium:
       true,
+
+    hidden:
+      false,
+
+    rarity:
+      "RARE",
 
     target:
       10,
@@ -72,6 +84,12 @@ export const ACHIEVEMENTS:
     premium:
       false,
 
+    hidden:
+      false,
+
+    rarity:
+      "COMMON",
+
     target:
       1,
 
@@ -95,6 +113,12 @@ export const ACHIEVEMENTS:
 
     premium:
       true,
+
+    hidden:
+      false,
+
+    rarity:
+      "RARE",
 
     target:
       10,
@@ -120,6 +144,12 @@ export const ACHIEVEMENTS:
     premium:
       false,
 
+    hidden:
+      false,
+
+    rarity:
+      "COMMON",
+
     target:
       1,
 
@@ -143,6 +173,12 @@ export const ACHIEVEMENTS:
 
     premium:
       true,
+
+    hidden:
+      true,
+
+    rarity:
+      "EPIC",
 
     target:
       10,
@@ -168,6 +204,12 @@ export const ACHIEVEMENTS:
     premium:
       true,
 
+    hidden:
+      false,
+
+    rarity:
+      "RARE",
+
     target:
       100,
 
@@ -191,6 +233,12 @@ export const ACHIEVEMENTS:
 
     premium:
       true,
+
+    hidden:
+      true,
+
+    rarity:
+      "EPIC",
 
     target:
       100,
