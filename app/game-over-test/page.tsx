@@ -14,6 +14,9 @@ const PLAYER_NAMES = [
 ];
 
 const TEST_STATE: PlayerGameState = {
+
+  gameId:
+    "game-over-test",
   viewerPlayerIndex: 0,
 
   players: [

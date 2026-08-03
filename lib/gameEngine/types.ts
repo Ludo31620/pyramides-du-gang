@@ -150,6 +150,15 @@ export interface GameStats {
 }
 
 export interface GameState {
+  /**
+   * Identifiant unique de cette partie.
+   *
+   * Il est utilisé pour éviter
+   * d'enregistrer plusieurs fois
+   * les statistiques de la même partie.
+   */
+  gameId: string;
+
   players: Carte[][];
   pyramid: Carte[][];
   deck: Carte[];

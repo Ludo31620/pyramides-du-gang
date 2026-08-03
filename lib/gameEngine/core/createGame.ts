@@ -20,6 +20,26 @@ const MEMORY_DURATION_SECONDS =
 const MEMORY_JOKERS_PER_PLAYER =
   2;
 
+function createGameId(): string {
+  if (
+    typeof globalThis.crypto
+      ?.randomUUID ===
+    "function"
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return [
+    Date.now().toString(36),
+    Math.random()
+      .toString(36)
+      .slice(2),
+    Math.random()
+      .toString(36)
+      .slice(2),
+  ].join("-");
+}
+
 export function createGame(
   playerCount: number
 ): GameState {
@@ -58,20 +78,23 @@ export function createGame(
         length:
           playerCount,
       },
-() => ({
-  claimsMade: 0,
+      () => ({
+        claimsMade: 0,
 
-  drinksGiven: 0,
+        drinksGiven: 0,
 
-  bluffsAttempted: 0,
+        bluffsAttempted: 0,
 
-  successfulBluffs: 0,
+        successfulBluffs: 0,
 
-  caughtBluffs: 0,
-})
+        caughtBluffs: 0,
+      })
     );
 
   return {
+    gameId:
+      createGameId(),
+
     players,
 
     pyramid: [],
@@ -127,19 +150,20 @@ export function createGame(
 
     bluffResult: null,
 
-gameStats: {
-  claimsMade: 0,
+    gameStats: {
+      claimsMade: 0,
 
-  drinksGiven: 0,
+      drinksGiven: 0,
 
-  bluffsAttempted: 0,
+      bluffsAttempted: 0,
 
-  successfulBluffs: 0,
+      successfulBluffs: 0,
 
-  caughtBluffs: 0,
+      caughtBluffs: 0,
 
-  players: emptyPlayerStats,
-},
+      players:
+        emptyPlayerStats,
+    },
 
     phase:
       "DISTRIBUTION",

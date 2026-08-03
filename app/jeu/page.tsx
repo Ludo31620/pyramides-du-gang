@@ -1,6 +1,10 @@
 "use client";
 
 import {
+  recordCompletedGame,
+} from "@/lib/stats/storage";
+
+import {
   useEffect,
   useRef,
   useState,
@@ -127,8 +131,10 @@ function GameLoadingScreen() {
 }
 
 function GameScreen({
+  roomCode,
   playerNames,
 }: {
+  roomCode: string;
   playerNames: string[];
 }) {
   const {
@@ -151,6 +157,11 @@ function GameScreen({
 
   const initializedRef =
     useRef(false);
+
+    const recordedGameRef =
+  useRef<string | null>(
+    null
+  );
 
   const previousPhaseRef =
     useRef<Phase | null>(
@@ -334,6 +345,65 @@ function GameScreen({
   }, [
     state,
   ]);
+
+useEffect(() => {
+  if (
+    !state ||
+    state.phase !==
+      "GAME_OVER"
+  ) {
+    return;
+  }
+
+  const playerStats =
+    state.gameStats.players[
+      state.viewerPlayerIndex
+    ];
+
+  if (!playerStats) {
+    return;
+  }
+
+const gameId =
+  state.gameId;
+
+  if (
+    recordedGameRef.current ===
+    gameId
+  ) {
+    return;
+  }
+
+  recordCompletedGame({
+    gameId,
+
+    drinksGiven:
+      playerStats.drinksGiven,
+
+    drinksReceived:
+      state.drinks[
+        state.viewerPlayerIndex
+      ],
+
+    claimsMade:
+      playerStats.claimsMade,
+
+    bluffsAttempted:
+      playerStats.bluffsAttempted,
+
+    successfulBluffs:
+      playerStats.successfulBluffs,
+
+    caughtBluffs:
+      playerStats.caughtBluffs,
+  });
+
+  recordedGameRef.current =
+    gameId;
+}, [
+  state,
+  roomCode,
+]);
 
   if (
     loading ||
@@ -670,11 +740,14 @@ export default function JeuPage() {
         gameInfo.playerNames
       }
     >
-      <GameScreen
-        playerNames={
-          gameInfo.playerNames
-        }
-      />
+<GameScreen
+  roomCode={
+    gameInfo.roomCode
+  }
+  playerNames={
+    gameInfo.playerNames
+  }
+/>
     </GameProvider>
   );
 }

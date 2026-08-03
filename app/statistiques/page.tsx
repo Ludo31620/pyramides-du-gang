@@ -17,6 +17,7 @@ import {
 
 import {
   getPlayerLifetimeStats,
+  recordCompletedGame,
   resetPlayerLifetimeStats,
 } from "@/lib/stats/storage";
 
@@ -85,9 +86,10 @@ export default function StatisticsPage() {
   const [
     stats,
     setStats,
-  ] = useState<PlayerLifetimeStats | null>(
-    null
-  );
+  ] =
+    useState<PlayerLifetimeStats | null>(
+      null
+    );
 
   const [
     premium,
@@ -137,6 +139,31 @@ export default function StatisticsPage() {
       [stats]
     );
 
+  function handleAddTestGame():
+    void {
+    const updatedStats =
+      recordCompletedGame({
+        gameId:
+          `test-${Date.now()}`,
+
+        drinksGiven: 8,
+
+        drinksReceived: 5,
+
+        claimsMade: 4,
+
+        bluffsAttempted: 2,
+
+        successfulBluffs: 1,
+
+        caughtBluffs: 1,
+      });
+
+    setStats(
+      updatedStats
+    );
+  }
+
   function handleResetStats():
     void {
     const resetStats =
@@ -147,7 +174,10 @@ export default function StatisticsPage() {
     );
   }
 
-  if (!ready || !stats) {
+  if (
+    !ready ||
+    !stats
+  ) {
     return (
       <main
         className="
@@ -240,8 +270,9 @@ export default function StatisticsPage() {
                   text-[var(--color-text-muted)]
                 "
               >
-                Les statistiques personnelles
-                sont réservées aux joueurs
+                Les statistiques
+                personnelles sont
+                réservées aux joueurs
                 Premium.
               </p>
 
@@ -279,9 +310,10 @@ export default function StatisticsPage() {
                     text-[var(--color-text-muted)]
                   "
                 >
-                  Active Premium pour suivre
-                  tes parties, tes bluffs et
-                  tes gorgées.
+                  Active Premium pour
+                  suivre tes parties,
+                  tes bluffs et tes
+                  gorgées.
                 </p>
               </ThemeCard>
 
@@ -322,8 +354,9 @@ export default function StatisticsPage() {
                   text-[var(--color-text-muted)]
                 "
               >
-                Retrouve ici tes performances
-                cumulées sur cet appareil.
+                Retrouve ici tes
+                performances cumulées
+                sur cet appareil.
               </p>
 
               <div
@@ -402,10 +435,21 @@ export default function StatisticsPage() {
               <div className="mt-8">
                 <ThemeButton
                   type="button"
+                  variant="primary"
+                  onClick={
+                    handleAddTestGame
+                  }
+                >
+                  Ajouter une partie test
+                </ThemeButton>
+
+                <ThemeButton
+                  type="button"
                   variant="secondary"
                   onClick={
                     handleResetStats
                   }
+                  className="mt-3"
                 >
                   Réinitialiser les statistiques
                 </ThemeButton>
@@ -415,12 +459,13 @@ export default function StatisticsPage() {
                     mt-3
                     text-center
                     text-xs
+                    leading-5
                     text-[var(--color-text-muted)]
                   "
                 >
-                  Les statistiques sont encore
-                  stockées uniquement sur cet
-                  appareil.
+                  Le bouton d’ajout est
+                  temporaire et réservé
+                  aux tests de développement.
                 </p>
               </div>
             </>
