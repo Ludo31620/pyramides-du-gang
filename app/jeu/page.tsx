@@ -5,6 +5,10 @@ import {
 } from "@/lib/stats/storage";
 
 import {
+  checkAchievements,
+} from "@/lib/achievements/engine";
+
+import {
   useEffect,
   useRef,
   useState,
@@ -24,6 +28,8 @@ import GameHomeButton from "@/components/game/GameHomeButton";
 import GameOverModal from "@/components/game/GameOverModal";
 import ActionPanel from "@/components/panels/ActionPanel";
 import PlayerDrawer from "@/components/players/PlayerDrawer";
+import AchievementToast from "@/components/achievements/AchievementToast";
+
 
 import GameProvider, {
   useGame,
@@ -40,6 +46,16 @@ import {
 import type {
   Phase,
 } from "@/lib/gameEngine/types";
+
+
+
+import {
+  getAchievement,
+} from "@/lib/achievements/achievements";
+
+import type {
+  AchievementDefinition,
+} from "@/lib/achievements/types";
 
 interface StoredGameInfo {
   roomCode: string;
@@ -154,6 +170,14 @@ function GameScreen({
     useState<AnnouncementState | null>(
       null
     );
+
+const [
+  achievementToast,
+  setAchievementToast,
+] =
+  useState<AchievementDefinition | null>(
+    null
+  );
 
   const initializedRef =
     useRef(false);
@@ -374,6 +398,7 @@ const gameId =
     return;
   }
 
+  const updatedStats =
   recordCompletedGame({
     gameId,
 
@@ -398,11 +423,55 @@ const gameId =
       playerStats.caughtBluffs,
   });
 
-  recordedGameRef.current =
-    gameId;
+const achievementResult =
+  checkAchievements(
+    updatedStats
+  );
+
+const firstUnlockedAchievement =
+  achievementResult
+    .unlocked[0];
+
+if (
+  firstUnlockedAchievement
+) {
+  setAchievementToast(
+    getAchievement(
+      firstUnlockedAchievement.id
+    )
+  );
+}
+
+recordedGameRef.current =
+  gameId;
+  
 }, [
   state,
   roomCode,
+]);
+
+useEffect(() => {
+  if (!achievementToast) {
+    return;
+  }
+
+  const timeoutId =
+    window.setTimeout(
+      () => {
+        setAchievementToast(
+          null
+        );
+      },
+      4000
+    );
+
+  return () => {
+    window.clearTimeout(
+      timeoutId
+    );
+  };
+}, [
+  achievementToast,
 ]);
 
   if (
@@ -511,6 +580,15 @@ const gameId =
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
+      <AchievementToast
+  achievement={
+    achievementToast
+  }
+  visible={
+    achievementToast !==
+    null
+  }
+/>
       <GameHomeButton />
 
       <PlayerDrawer
