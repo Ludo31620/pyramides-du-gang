@@ -332,6 +332,8 @@ export default function HomePage() {
             gap-3
           "
         >
+
+
           <HubLink
             href="/statistiques"
             icon="📊"
@@ -345,6 +347,13 @@ export default function HomePage() {
             title="Succès"
             description="Découvre tes défis débloqués."
           />
+
+          <HubLink
+  href="/profil"
+  icon="👤"
+  title="Profil"
+  description="Modifie ton pseudo et ton avatar."
+/>
 
           <HubLink
             href="/premium"
