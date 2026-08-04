@@ -41,6 +41,7 @@ import {
 
 import {
   lireSessionPartie,
+  type StoredRoomPlayer,
 } from "@/lib/gameSession";
 
 import type {
@@ -62,11 +63,30 @@ interface StoredGameInfo {
   playerNames: string[];
 }
 
+type AnnouncementVariant =
+  | "DEFAULT"
+  | "SUCCESS"
+  | "DANGER"
+  | "DRINK";
+
 interface AnnouncementState {
   announcementKey: number;
+
   eyebrow?: string;
+
   title: string;
+
+  subtitle?: string;
+
   icon?: string;
+
+  player?:
+    StoredRoomPlayer;
+
+  drinks?: number;
+
+  variant?:
+    AnnouncementVariant;
 }
 
 function getActivePlayerIndex(
@@ -275,6 +295,14 @@ const [
     const viewerPlayerIndex =
       state.viewerPlayerIndex;
 
+    const session =
+  lireSessionPartie();
+
+const viewerPlayer =
+  session?.players[
+    viewerPlayerIndex
+  ];
+
     const newDrinkNotification =
       currentDrinkId !==
         null &&
@@ -293,77 +321,113 @@ const [
         phaseChanged
       );
 
-    if (
-      newDrinkNotification
-    ) {
-      setAnnouncement({
-        announcementKey:
-          Date.now(),
+if (
+  newDrinkNotification
+) {
+  setAnnouncement({
+    announcementKey:
+      Date.now(),
 
-        eyebrow:
-          "Distribution",
+    eyebrow:
+      "Distribution",
 
-        title:
-          "Tu bois 1 gorgée !",
+    title:
+      "Tu dois boire",
 
-        icon:
-          "🍺",
-      });
-    } else if (
-      phaseChanged &&
-      currentPhase ===
-        "MEMORY"
-    ) {
-      setAnnouncement({
-        announcementKey:
-          Date.now(),
+    subtitle:
+      "Mauvaise réponse pendant la distribution.",
 
-        eyebrow:
-          "Préparation",
+    icon:
+      "🍺",
 
-        title:
-          "Mémorise tes cartes",
+    player:
+      viewerPlayer,
 
-        icon:
-          "🧠",
-      });
-    } else if (
-      viewerBecameActive &&
-      currentPhase ===
-        "PLAYER_RESPONSE"
-    ) {
-      setAnnouncement({
-        announcementKey:
-          Date.now(),
+    drinks:
+      1,
 
-        eyebrow:
-          "Tu es la cible",
+    variant:
+      "DRINK",
+  });
+} else if (
+  phaseChanged &&
+  currentPhase ===
+    "MEMORY"
+) {
+  setAnnouncement({
+    announcementKey:
+      Date.now(),
 
-        title:
-          "À toi de répondre",
+    eyebrow:
+      "Préparation",
 
-        icon:
-          "❗",
-      });
-    } else if (
-      viewerBecameActive &&
-      currentPhase ===
-        "PLAYER_TURN"
-    ) {
-      setAnnouncement({
-        announcementKey:
-          Date.now(),
+    title:
+      "Mémorise tes cartes",
 
-        eyebrow:
-          "Tour actif",
+    subtitle:
+      "Observe bien ta main avant le début de la pyramide.",
 
-        title:
-          "À toi de jouer",
+    icon:
+      "🧠",
 
-        icon:
-          "🟡",
-      });
-    }
+    variant:
+      "DEFAULT",
+  });
+} else if (
+  viewerBecameActive &&
+  currentPhase ===
+    "PLAYER_RESPONSE"
+) {
+  setAnnouncement({
+    announcementKey:
+      Date.now(),
+
+    eyebrow:
+      "Tu es la cible",
+
+    title:
+      "À toi de répondre",
+
+    subtitle:
+      "Décide si tu crois l’annonce ou si tu cries menteur.",
+
+    icon:
+      "❗",
+
+    player:
+      viewerPlayer,
+
+    variant:
+      "DANGER",
+  });
+} else if (
+  viewerBecameActive &&
+  currentPhase ===
+    "PLAYER_TURN"
+) {
+  setAnnouncement({
+    announcementKey:
+      Date.now(),
+
+    eyebrow:
+      "Tour actif",
+
+    title:
+      "À toi de jouer",
+
+    subtitle:
+      "Fais une annonce ou passe ton tour.",
+
+    icon:
+      "🟡",
+
+    player:
+      viewerPlayer,
+
+    variant:
+      "DEFAULT",
+  });
+}
 
     previousDrinkRef.current =
       currentDrinkId;
@@ -663,29 +727,45 @@ useEffect(() => {
 
       <AnimatePresence>
         {announcement && (
-          <GameAnnouncement
-            announcementKey={
-              announcement
-                .announcementKey
-            }
-            eyebrow={
-              announcement
-                .eyebrow
-            }
-            title={
-              announcement
-                .title
-            }
-            icon={
-              announcement
-                .icon
-            }
-            onComplete={() => {
-              setAnnouncement(
-                null
-              );
-            }}
-          />
+         <GameAnnouncement
+  announcementKey={
+    announcement
+      .announcementKey
+  }
+  eyebrow={
+    announcement
+      .eyebrow
+  }
+  title={
+    announcement
+      .title
+  }
+  subtitle={
+    announcement
+      .subtitle
+  }
+  icon={
+    announcement
+      .icon
+  }
+  player={
+    announcement
+      .player
+  }
+  drinks={
+    announcement
+      .drinks
+  }
+  variant={
+    announcement
+      .variant
+  }
+  onComplete={() => {
+    setAnnouncement(
+      null
+    );
+  }}
+/>
         )}
       </AnimatePresence>
 
