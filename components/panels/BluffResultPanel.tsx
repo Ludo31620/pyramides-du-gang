@@ -2,15 +2,8 @@
 
 import {
   useEffect,
-  useState,
+  useRef,
 } from "react";
-
-import ProfileAvatar from "@/components/profile/ProfileAvatar";
-
-import {
-  lireSessionPartie,
-  type StoredRoomPlayer,
-} from "@/lib/gameSession";
 
 import {
   getPlayerName,
@@ -43,11 +36,12 @@ interface ResultContent {
   title: string;
   description: string;
   icon: string;
-  resultLabel: string;
   panelClasses: string;
-  bannerClasses: string;
   accentTextClasses: string;
 }
+
+const AUTO_CONTINUE_DELAY_MS =
+  3000;
 
 function getResultContent(
   outcome: BluffOutcome,
@@ -71,20 +65,13 @@ function getResultContent(
           `${targetName} a cru ${giverName}`,
 
         description:
-          `${targetName} accepte l’annonce et doit boire ` +
-          `${drinks} ${drinkLabel}.`,
+          `${targetName} accepte de boire ${drinks} ${drinkLabel}.`,
 
         icon:
           "🤝",
 
-        resultLabel:
-          `${targetName} doit boire`,
-
         panelClasses:
-          "border-yellow-400/35 bg-zinc-900",
-
-        bannerClasses:
-          "border-yellow-400/30 bg-yellow-400/10",
+          "border-yellow-400/40 bg-zinc-950/95 shadow-[0_0_45px_rgba(250,204,21,0.16)]",
 
         accentTextClasses:
           "text-yellow-400",
@@ -96,23 +83,16 @@ function getResultContent(
           "Annonce vérifiée",
 
         title:
-          `${giverName} disait vrai !`,
+          `${giverName} disait vrai`,
 
         description:
-          `${giverName} possédait bien une carte de la bonne valeur. ` +
           `${punishedPlayerName} doit boire ${drinks} ${drinkLabel}.`,
 
         icon:
           "✅",
 
-        resultLabel:
-          `${punishedPlayerName} doit boire`,
-
         panelClasses:
-          "border-emerald-500/35 bg-zinc-900",
-
-        bannerClasses:
-          "border-emerald-500/30 bg-emerald-500/10",
+          "border-emerald-400/40 bg-zinc-950/95 shadow-[0_0_45px_rgba(52,211,153,0.16)]",
 
         accentTextClasses:
           "text-emerald-400",
@@ -124,23 +104,16 @@ function getResultContent(
           "Bluff découvert",
 
         title:
-          `${giverName} bluffait !`,
+          `${giverName} bluffait`,
 
         description:
-          `${giverName} a été démasqué : il ne possédait aucune carte ` +
-          `de la bonne valeur.`,
+          `${punishedPlayerName} doit boire ${drinks} ${drinkLabel}.`,
 
         icon:
           "🚨",
 
-        resultLabel:
-          `${punishedPlayerName} doit boire`,
-
         panelClasses:
-          "border-red-500/60 bg-[#211315]",
-
-        bannerClasses:
-          "border-red-500/50 bg-red-600/15",
+          "border-red-500/45 bg-zinc-950/95 shadow-[0_0_45px_rgba(239,68,68,0.18)]",
 
         accentTextClasses:
           "text-red-400",
@@ -163,30 +136,63 @@ export default function BluffResultPanel({
   playerNames,
   onDispatch,
 }: BluffResultPanelProps) {
-  const [
-    roomPlayers,
-    setRoomPlayers,
-  ] =
-    useState<StoredRoomPlayer[]>(
-      []
-    );
+  const onDispatchRef =
+    useRef(onDispatch);
 
   useEffect(() => {
-    const session =
-      lireSessionPartie();
-
-    setRoomPlayers(
-      session?.players ??
-        []
-    );
-  }, []);
+    onDispatchRef.current =
+      onDispatch;
+  }, [
+    onDispatch,
+  ]);
 
   const result =
     state.bluffResult;
 
+  useEffect(() => {
+    if (
+      !result ||
+      !onDispatch
+    ) {
+      return;
+    }
+
+    const timeoutId =
+      window.setTimeout(
+        () => {
+          onDispatchRef.current?.({
+            type:
+              "CONTINUE_AFTER_BLUFF",
+          });
+        },
+        AUTO_CONTINUE_DELAY_MS
+      );
+
+    return () => {
+      window.clearTimeout(
+        timeoutId
+      );
+    };
+  }, [
+    result,
+    onDispatch,
+  ]);
+
   if (!result) {
     return (
-      <section className="rounded-3xl border border-red-500/30 bg-zinc-900 p-6 sm:p-8">
+      <section
+        className="
+          mx-auto
+          w-full
+          max-w-md
+          rounded-3xl
+          border
+          border-red-500/30
+          bg-zinc-950/95
+          p-5
+          text-center
+        "
+      >
         <p className="text-sm font-bold text-red-400">
           Aucun résultat de bluff
           n’est disponible.
@@ -213,21 +219,6 @@ export default function BluffResultPanel({
       result.punishedPlayer
     );
 
-  const giverPlayer =
-    roomPlayers[
-      result.giver
-    ];
-
-  const targetPlayer =
-    roomPlayers[
-      result.target
-    ];
-
-  const punishedPlayer =
-    roomPlayers[
-      result.punishedPlayer
-    ];
-
   const content =
     getResultContent(
       result.outcome,
@@ -237,360 +228,87 @@ export default function BluffResultPanel({
       result.drinks
     );
 
-  const revealedCard =
-    result.revealedCard;
-
-  const drinkLabel =
-    result.drinks > 1
-      ? "gorgées"
-      : "gorgée";
-
-  function handleContinue():
-    void {
-    if (!onDispatch) {
-      return;
-    }
-
-    onDispatch({
-      type:
-        "CONTINUE_AFTER_BLUFF",
-    });
-  }
-
   return (
     <section
+      aria-live="assertive"
       className={`
+        mx-auto
+        w-full
+        max-w-md
         overflow-hidden
-        rounded-3xl
-        border-2
-        p-5
+        rounded-[2rem]
+        border
+        px-5
+        py-7
+        text-center
         text-white
-        sm:p-8
+        backdrop-blur-md
+        sm:px-7
+        sm:py-8
         ${content.panelClasses}
       `}
     >
-      <header className="text-center">
-        <div
-          aria-hidden="true"
-          className="text-5xl"
-        >
-          {content.icon}
-        </div>
-
-        <p
-          className={`
-            mt-4
-            text-xs
-            font-black
-            uppercase
-            tracking-[0.25em]
-            ${content.accentTextClasses}
-          `}
-        >
-          {content.eyebrow}
-        </p>
-
-        <h2
-          className={`
-            mt-3
-            text-3xl
-            font-black
-            uppercase
-            leading-tight
-            tracking-tight
-            sm:text-5xl
-            ${content.accentTextClasses}
-          `}
-        >
-          {content.title}
-        </h2>
-
-        <p className="mx-auto mt-4 max-w-2xl text-base font-bold leading-7 text-zinc-200">
-          {content.description}
-        </p>
-      </header>
-
       <div
-        className="
-          mt-7
-          grid
-          gap-4
-          sm:grid-cols-[1fr_auto_1fr]
-          sm:items-center
-        "
+        aria-hidden="true"
+        className="text-4xl sm:text-5xl"
       >
-        <div
-          className="
-            rounded-2xl
-            border
-            border-white/10
-            bg-black/20
-            p-4
-            text-center
-          "
-        >
-          <ProfileAvatar
-            size="medium"
-            avatarType={
-              giverPlayer
-                ?.avatarType ??
-              "DEFAULT"
-            }
-            avatarId={
-              giverPlayer
-                ?.avatarId ??
-              "fox"
-            }
-            avatarPhoto={
-              giverPlayer
-                ?.avatarPhoto ??
-              null
-            }
-          />
-
-          <p
-            className="
-              mt-3
-              truncate
-              text-lg
-              font-black
-              text-white
-            "
-          >
-            {giverName}
-          </p>
-
-          <p
-            className="
-              mt-1
-              text-xs
-              font-bold
-              uppercase
-              tracking-wider
-              text-zinc-500
-            "
-          >
-            Annonceur
-          </p>
-        </div>
-
-        <div
-          aria-hidden="true"
-          className={`
-            text-center
-            text-2xl
-            font-black
-            sm:text-3xl
-            ${content.accentTextClasses}
-          `}
-        >
-          →
-        </div>
-
-        <div
-          className={`
-            rounded-2xl
-            border
-            p-4
-            text-center
-            ${content.bannerClasses}
-          `}
-        >
-          <ProfileAvatar
-            size="medium"
-            avatarType={
-              targetPlayer
-                ?.avatarType ??
-              "DEFAULT"
-            }
-            avatarId={
-              targetPlayer
-                ?.avatarId ??
-              "fox"
-            }
-            avatarPhoto={
-              targetPlayer
-                ?.avatarPhoto ??
-              null
-            }
-          />
-
-          <p
-            className="
-              mt-3
-              truncate
-              text-lg
-              font-black
-              text-white
-            "
-          >
-            {targetName}
-          </p>
-
-          <p
-            className={`
-              mt-1
-              text-xs
-              font-bold
-              uppercase
-              tracking-wider
-              ${content.accentTextClasses}
-            `}
-          >
-            Cible
-          </p>
-        </div>
+        {content.icon}
       </div>
 
-      {revealedCard && (
-        <div className="mt-7">
-          <p className="text-center text-xs font-black uppercase tracking-[0.2em] text-zinc-400">
-            Carte révélée
-          </p>
-
-          <div className="mt-4 flex justify-center">
-            <div className="flex h-36 w-28 flex-col items-center justify-center rounded-2xl border-2 border-zinc-300 bg-white text-center shadow-md">
-              <span
-                className={
-                  revealedCard.couleur ===
-                    "♥" ||
-                  revealedCard.couleur ===
-                    "♦"
-                    ? "text-3xl font-black text-red-600"
-                    : "text-3xl font-black text-black"
-                }
-              >
-                {
-                  revealedCard.valeur
-                }
-              </span>
-
-              <span
-                className={
-                  revealedCard.couleur ===
-                    "♥" ||
-                  revealedCard.couleur ===
-                    "♦"
-                    ? "mt-2 text-4xl text-red-600"
-                    : "mt-2 text-4xl text-black"
-                }
-              >
-                {
-                  revealedCard.couleur
-                }
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div
+      <p
         className={`
-          mt-7
-          rounded-3xl
-          border-2
-          px-5
-          py-7
-          text-center
-          ${content.bannerClasses}
-        `}
-      >
-        <ProfileAvatar
-          size="large"
-          avatarType={
-            punishedPlayer
-              ?.avatarType ??
-            "DEFAULT"
-          }
-          avatarId={
-            punishedPlayer
-              ?.avatarId ??
-            "fox"
-          }
-          avatarPhoto={
-            punishedPlayer
-              ?.avatarPhoto ??
-            null
-          }
-        />
-
-        <p className="mt-4 text-xl font-black text-white">
-          {punishedPlayerName}
-        </p>
-
-        <p
-          className={`
-            mt-1
-            text-sm
-            font-black
-            uppercase
-            tracking-wider
-            ${content.accentTextClasses}
-          `}
-        >
-          doit boire
-        </p>
-
-        <p
-          className={`
-            mt-4
-            text-7xl
-            font-black
-            leading-none
-            ${content.accentTextClasses}
-          `}
-        >
-          {result.drinks}
-        </p>
-
-        <p
-          className={`
-            mt-2
-            text-xl
-            font-black
-            uppercase
-            ${content.accentTextClasses}
-          `}
-        >
-          {drinkLabel}
-        </p>
-      </div>
-
-      <button
-        type="button"
-        onClick={
-          handleContinue
-        }
-        disabled={
-          !onDispatch
-        }
-        className="
-          mt-8
-          min-h-16
-          w-full
-          rounded-2xl
-          bg-yellow-400
-          px-6
-          py-4
-          text-lg
+          mt-4
+          text-[11px]
           font-black
           uppercase
-          tracking-wide
-          text-black
-          transition
-          hover:bg-yellow-300
-          active:scale-[0.98]
-          disabled:cursor-not-allowed
-          disabled:opacity-40
+          tracking-[0.28em]
+          sm:text-xs
+          ${content.accentTextClasses}
+        `}
+      >
+        {content.eyebrow}
+      </p>
+
+      <h2
+        className={`
+          mt-3
+          text-2xl
+          font-black
+          uppercase
+          leading-tight
+          tracking-tight
+          sm:text-4xl
+          ${content.accentTextClasses}
+        `}
+      >
+        {content.title}
+      </h2>
+
+      <p
+        className="
+          mx-auto
+          mt-4
+          max-w-sm
+          text-sm
+          font-bold
+          leading-6
+          text-zinc-200
+          sm:text-base
         "
       >
-        Continuer
-      </button>
+        {content.description}
+      </p>
 
       {!onDispatch && (
-        <p className="mt-3 text-center text-xs text-zinc-600">
-          Action désactivée sur
-          cette page de test.
+        <p
+          className="
+            mt-4
+            text-[11px]
+            font-semibold
+            text-zinc-600
+          "
+        >
+          Résultat affiché sur cette page.
         </p>
       )}
     </section>
