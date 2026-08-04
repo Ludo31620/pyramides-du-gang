@@ -32,16 +32,17 @@ export default function AvatarPicker({
         "
       >
         L’avatar sélectionné sera utilisé
-        sur ton profil et, prochainement,
-        dans les parties multijoueur.
+        sur ton profil et dans les parties
+        multijoueur.
       </p>
 
       <div
         className="
           mt-4
           grid
-          grid-cols-4
+          grid-cols-3
           gap-3
+          sm:grid-cols-4
         "
       >
         {BUILT_IN_AVATARS.map(
@@ -73,13 +74,12 @@ export default function AvatarPicker({
                   );
                 }}
                 className={`
-                  flex
+                  relative
                   aspect-square
-                  items-center
-                  justify-center
+                  overflow-hidden
                   rounded-2xl
-                  border
-                  text-3xl
+                  border-2
+                  bg-zinc-950
                   transition
                   duration-200
                   active:scale-95
@@ -87,21 +87,53 @@ export default function AvatarPicker({
                     selected
                       ? `
                           border-[var(--color-primary)]
-                          bg-[var(--color-primary)]
-                          text-[var(--color-primary-text)]
-                          shadow-lg
+                          shadow-[0_0_20px_rgba(250,204,21,0.28)]
                         `
                       : `
                           border-[var(--color-border)]
-                          bg-[var(--color-surface-elevated)]
                           hover:border-[var(--color-primary)]
                         `
                   }
                 `}
               >
-                {
-                  avatar.emoji
-                }
+                <img
+                  src={
+                    avatar.image
+                  }
+                  alt={
+                    avatar.name
+                  }
+                  className="
+                    h-full
+                    w-full
+                    object-cover
+                  "
+                />
+
+                {selected && (
+                  <span
+                    aria-hidden="true"
+                    className="
+                      absolute
+                      bottom-1
+                      right-1
+                      flex
+                      h-6
+                      w-6
+                      items-center
+                      justify-center
+                      rounded-full
+                      border-2
+                      border-zinc-950
+                      bg-[var(--color-primary)]
+                      text-xs
+                      font-black
+                      text-[var(--color-primary-text)]
+                    "
+                  >
+                    ✓
+                  </span>
+                )}
               </button>
             );
           }

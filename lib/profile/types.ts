@@ -20,7 +20,7 @@ export interface PlayerProfile {
    * Identifiant d’un avatar intégré.
    *
    * Exemple :
-   * "fox", "wolf" ou "king".
+   * "fox", "wolf" ou "dragon".
    */
   avatarId:
     string | null;

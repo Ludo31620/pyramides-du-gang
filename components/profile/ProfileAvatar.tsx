@@ -41,13 +41,24 @@ interface ProfileAvatarProps {
 
 const SIZE_CLASSES = {
   small:
-    "h-12 w-12 text-2xl",
+    "h-12 w-12",
 
   medium:
-    "h-16 w-16 text-3xl",
+    "h-16 w-16",
 
   large:
-    "h-24 w-24 text-5xl",
+    "h-24 w-24",
+} as const;
+
+const FALLBACK_ICON_CLASSES = {
+  small:
+    "text-2xl",
+
+  medium:
+    "text-3xl",
+
+  large:
+    "text-5xl",
 } as const;
 
 const CAMERA_SIZE_CLASSES = {
@@ -149,8 +160,7 @@ export default function ProfileAvatar({
             rounded-full
             border-2
             border-[var(--color-primary)]
-            bg-[var(--color-primary)]
-            text-[var(--color-primary-text)]
+            bg-zinc-950
             shadow-lg
             ${SIZE_CLASSES[size]}
           `}
@@ -169,19 +179,32 @@ export default function ProfileAvatar({
             "NONE" ? (
             <span
               aria-hidden="true"
+              className={
+                FALLBACK_ICON_CLASSES[
+                  size
+                ]
+              }
             >
               👤
             </span>
           ) : (
-            <span
-              aria-hidden="true"
-            >
-              {
+            <img
+              src={
                 builtInAvatar
-                  ?.emoji ??
-                "👤"
+                  ?.image ??
+                "/avatars/fox.png"
               }
-            </span>
+              alt={
+                builtInAvatar
+                  ?.name ??
+                "Avatar"
+              }
+              className="
+                h-full
+                w-full
+                object-cover
+              "
+            />
           )}
         </div>
 

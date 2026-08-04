@@ -1,108 +1,81 @@
 export interface BuiltInAvatar {
   id: string;
-  emoji: string;
+  image: string;
   name: string;
 }
 
-export const BUILT_IN_AVATARS: BuiltInAvatar[] = [
+export const BUILT_IN_AVATARS:
+  BuiltInAvatar[] = [
   {
     id: "fox",
-    emoji: "🦊",
+    image:
+      "/avatars/fox.png",
     name: "Renard",
   },
   {
     id: "wolf",
-    emoji: "🐺",
+    image:
+      "/avatars/wolf.png",
     name: "Loup",
   },
   {
-    id: "bear",
-    emoji: "🐻",
-    name: "Ours",
+    id: "panda",
+    image:
+      "/avatars/panda.png",
+    name: "Panda",
+  },
+  {
+    id: "raccoon",
+    image:
+      "/avatars/raccoon.png",
+    name: "Raton laveur",
+  },
+  {
+    id: "owl",
+    image:
+      "/avatars/owl.png",
+    name: "Hibou",
+  },
+  {
+    id: "crocodile",
+    image:
+      "/avatars/crocodile.png",
+    name: "Crocodile",
   },
   {
     id: "lion",
-    emoji: "🦁",
+    image:
+      "/avatars/lion.png",
     name: "Lion",
   },
   {
     id: "tiger",
-    emoji: "🐯",
+    image:
+      "/avatars/tiger.png",
     name: "Tigre",
   },
   {
-    id: "panda",
-    emoji: "🐼",
-    name: "Panda",
-  },
-  {
-    id: "owl",
-    emoji: "🦉",
-    name: "Hibou",
-  },
-  {
-    id: "eagle",
-    emoji: "🦅",
-    name: "Aigle",
-  },
-  {
     id: "dragon",
-    emoji: "🐉",
+    image:
+      "/avatars/dragon.png",
     name: "Dragon",
   },
   {
     id: "octopus",
-    emoji: "🐙",
+    image:
+      "/avatars/octopus.png",
     name: "Pieuvre",
   },
   {
     id: "robot",
-    emoji: "🤖",
+    image:
+      "/avatars/robot.png",
     name: "Robot",
   },
   {
     id: "ghost",
-    emoji: "👻",
+    image:
+      "/avatars/ghost.png",
     name: "Fantôme",
-  },
-  {
-    id: "king",
-    emoji: "👑",
-    name: "Roi",
-  },
-  {
-    id: "hat",
-    emoji: "🎩",
-    name: "Chapeau",
-  },
-  {
-    id: "glasses",
-    emoji: "🕶️",
-    name: "Lunettes",
-  },
-  {
-    id: "joker",
-    emoji: "🎭",
-    name: "Joker",
-  },
-  {
-    id: "spade",
-    emoji: "♠️",
-    name: "Pique",
-  },
-  {
-    id: "heart",
-    emoji: "♥️",
-    name: "Cœur",
-  },
-  {
-    id: "diamond",
-    emoji: "♦️",
-    name: "Carreau",
-  },
-  {
-    id: "club",
-    emoji: "♣️",
-    name: "Trèfle",
   },
 ];
