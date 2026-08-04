@@ -1,4 +1,12 @@
 import {
+  GameRoom,
+} from "./server/GameRoom";
+
+import {
+  BotController,
+} from "./server/bots/BotController";
+
+import {
   createServer,
 } from "node:http";
 
@@ -212,6 +220,9 @@ const handle =
 const roomManager =
   new RoomManager();
 
+const botController =
+  new BotController();
+
 const pendingLobbyRemovals =
   new Map<
     string,
@@ -398,6 +409,24 @@ function diffuserEtatJeu(
 
   console.log(
     `🔒 État privé envoyé à ${sentStateCount} joueurs`
+  );
+}
+
+function programmerTourBot(
+  io: Server,
+  gameRoom: GameRoom
+): void {
+  botController.schedule(
+    gameRoom,
+    (
+      updatedGameRoom
+    ) => {
+      diffuserEtatJeu(
+        io,
+        roomManager,
+        updatedGameRoom.code
+      );
+    }
   );
 }
 
@@ -1117,6 +1146,18 @@ const result =
               result.room.code
             );
 
+const gameRoom =
+  roomManager.getGameRoom(
+    result.room.code
+  );
+
+if (gameRoom) {
+  programmerTourBot(
+    io,
+    gameRoom
+  );
+}
+
             console.log(
               `🎮 Partie démarrée : ${result.room.code}`
             );
@@ -1586,6 +1627,11 @@ const result =
               roomManager,
               gameRoom.code
             );
+
+programmerTourBot(
+  io,
+  gameRoom
+);
 
             callback({
               success: true,
