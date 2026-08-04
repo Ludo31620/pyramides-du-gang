@@ -1,12 +1,21 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
+  useState,
 } from "react";
 
 import {
   motion,
 } from "framer-motion";
+
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
+
+import {
+  lireSessionPartie,
+  type StoredRoomPlayer,
+} from "@/lib/gameSession";
 
 import {
   getBluffMaster,
@@ -25,6 +34,14 @@ interface GameOverModalProps {
   playerNames: string[];
 
   onReturnToLobby: () => void;
+}
+
+interface Award {
+  icon: string;
+  title: string;
+  playerIndex: number;
+  value: number;
+  valueLabel: string;
 }
 
 const WINNER_MESSAGES = [
@@ -53,11 +70,91 @@ function getRankIcon(
   }
 }
 
+function getRankingTitle(
+  rankIndex: number,
+  successfulBluffs: number
+): string {
+  if (
+    rankIndex === 0 &&
+    successfulBluffs > 0
+  ) {
+    return "Maître du Bluff";
+  }
+
+  if (
+    rankIndex === 1 &&
+    successfulBluffs > 0
+  ) {
+    return "Bluffeur confirmé";
+  }
+
+  if (
+    rankIndex === 2 &&
+    successfulBluffs > 0
+  ) {
+    return "Escroc prometteur";
+  }
+
+  if (
+    successfulBluffs > 0
+  ) {
+    return "Membre rusé";
+  }
+
+  return "Honnête malgré lui";
+}
+
+function findMaxPlayerIndex(
+  values: number[]
+): number | null {
+  if (
+    values.length === 0
+  ) {
+    return null;
+  }
+
+  let bestIndex = 0;
+
+  for (
+    let index = 1;
+    index < values.length;
+    index += 1
+  ) {
+    if (
+      values[index] >
+      values[bestIndex]
+    ) {
+      bestIndex =
+        index;
+    }
+  }
+
+  return bestIndex;
+}
+
 export default function GameOverModal({
   state,
   playerNames,
   onReturnToLobby,
 }: GameOverModalProps) {
+  const [
+    roomPlayers,
+    setRoomPlayers,
+  ] =
+    useState<StoredRoomPlayer[]>(
+      []
+    );
+
+  useEffect(() => {
+    const session =
+      lireSessionPartie();
+
+    setRoomPlayers(
+      session?.players ??
+        []
+    );
+  }, []);
+
   const {
     winner,
     ranking,
@@ -82,6 +179,13 @@ export default function GameOverModal({
           ]
       : null;
 
+  const winnerPlayer =
+    winner !== null
+      ? roomPlayers[
+          winner
+        ]
+      : null;
+
   const winnerMessage =
     useMemo(() => {
       const index =
@@ -98,6 +202,168 @@ export default function GameOverModal({
       );
     }, []);
 
+  const awards =
+    useMemo(() => {
+      const playerStats =
+        state.gameStats.players;
+
+      const drinksGiven =
+        playerStats.map(
+          (
+            stats
+          ) =>
+            stats.drinksGiven
+        );
+
+      const drinksReceived =
+        state.drinks.map(
+          (
+            drinks
+          ) =>
+            drinks ?? 0
+        );
+
+      const bluffsAttempted =
+        playerStats.map(
+          (
+            stats
+          ) =>
+            stats.bluffsAttempted
+        );
+
+      const caughtBluffs =
+        playerStats.map(
+          (
+            stats
+          ) =>
+            stats.caughtBluffs
+        );
+
+      const entries:
+        Award[] = [];
+
+      const barmanIndex =
+        findMaxPlayerIndex(
+          drinksGiven
+        );
+
+      const spongeIndex =
+        findMaxPlayerIndex(
+          drinksReceived
+        );
+
+      const blufferIndex =
+        findMaxPlayerIndex(
+          bluffsAttempted
+        );
+
+      const inspectorIndex =
+        findMaxPlayerIndex(
+          caughtBluffs
+        );
+
+      if (
+        barmanIndex !==
+        null
+      ) {
+        entries.push({
+          icon:
+            "🍺",
+
+          title:
+            "Barman du Gang",
+
+          playerIndex:
+            barmanIndex,
+
+          value:
+            drinksGiven[
+              barmanIndex
+            ] ?? 0,
+
+          valueLabel:
+            "gorgées données",
+        });
+      }
+
+      if (
+        spongeIndex !==
+        null
+      ) {
+        entries.push({
+          icon:
+            "🥴",
+
+          title:
+            "Éponge officielle",
+
+          playerIndex:
+            spongeIndex,
+
+          value:
+            drinksReceived[
+              spongeIndex
+            ] ?? 0,
+
+          valueLabel:
+            "gorgées reçues",
+        });
+      }
+
+      if (
+        blufferIndex !==
+        null
+      ) {
+        entries.push({
+          icon:
+            "🎭",
+
+          title:
+            "Menteur compulsif",
+
+          playerIndex:
+            blufferIndex,
+
+          value:
+            bluffsAttempted[
+              blufferIndex
+            ] ?? 0,
+
+          valueLabel:
+            "bluffs tentés",
+        });
+      }
+
+      if (
+        inspectorIndex !==
+        null
+      ) {
+        entries.push({
+          icon:
+            "🚨",
+
+          title:
+            "Inspecteur du Gang",
+
+          playerIndex:
+            inspectorIndex,
+
+          value:
+            caughtBluffs[
+              inspectorIndex
+            ] ?? 0,
+
+          valueLabel:
+            "bluffs démasqués",
+        });
+      }
+
+      return entries;
+    }, [
+      state.drinks,
+      state.gameStats.players,
+    ]);
+
   return (
     <div
       role="dialog"
@@ -107,11 +373,8 @@ export default function GameOverModal({
         fixed
         inset-0
         z-[9500]
-        flex
-        items-center
-        justify-center
         overflow-y-auto
-        bg-black/75
+        bg-black/80
         px-4
         py-6
         backdrop-blur-sm
@@ -120,8 +383,8 @@ export default function GameOverModal({
       <motion.section
         initial={{
           opacity: 0,
-          scale: 0.92,
-          y: 30,
+          scale: 0.94,
+          y: 28,
         }}
         animate={{
           opacity: 1,
@@ -129,7 +392,7 @@ export default function GameOverModal({
           y: 0,
         }}
         transition={{
-          duration: 0.35,
+          duration: 0.38,
           ease: [
             0.22,
             1,
@@ -139,8 +402,9 @@ export default function GameOverModal({
         }}
         className="
           relative
+          mx-auto
           w-full
-          max-w-2xl
+          max-w-3xl
           overflow-hidden
           rounded-[2rem]
           border
@@ -166,7 +430,7 @@ export default function GameOverModal({
           "
         />
 
-        <div className="relative text-center">
+        <header className="relative text-center">
           <div className="text-5xl">
             🏆
           </div>
@@ -175,25 +439,73 @@ export default function GameOverModal({
             Fin de partie
           </p>
 
-          <h1 className="mt-2 text-3xl font-black sm:text-4xl">
-            Partie terminée !
+          <h1 className="mt-2 text-3xl font-black sm:text-5xl">
+            La pyramide est terminée
           </h1>
 
-          <p className="mt-3 text-sm leading-6 text-zinc-400">
-            Toutes les cartes de la
-            pyramide ont été révélées.
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-zinc-400">
+            Le Gang a parlé. Il reste
+            maintenant à distribuer les
+            titres officiels, parce que
+            l’humiliation mérite un peu
+            de cérémonie.
           </p>
-        </div>
+        </header>
 
-        <div className="relative mt-7 rounded-3xl border border-yellow-400/20 bg-yellow-400/5 p-5 text-center sm:p-7">
+        <motion.section
+          initial={{
+            opacity: 0,
+            y: 20,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            delay: 0.12,
+            duration: 0.35,
+          }}
+          className="
+            relative
+            mt-7
+            rounded-3xl
+            border
+            border-yellow-400/25
+            bg-yellow-400/5
+            p-5
+            text-center
+            sm:p-7
+          "
+        >
           {winnerName &&
           winnerStats ? (
             <>
               <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
-                Maître du Bluff
+                👑 Maître du Bluff
               </p>
 
-              <h2 className="mt-3 text-3xl font-black text-white sm:text-5xl">
+              <div className="mt-5">
+                <ProfileAvatar
+                  size="large"
+                  avatarType={
+                    winnerPlayer
+                      ?.avatarType ??
+                    "DEFAULT"
+                  }
+                  avatarId={
+                    winnerPlayer
+                      ?.avatarId ??
+                    "fox"
+                  }
+                  avatarPhoto={
+                    winnerPlayer
+                      ?.avatarPhoto ??
+                    null
+                  }
+                />
+              </div>
+
+              <h2 className="mt-4 text-3xl font-black text-white sm:text-5xl">
                 {winnerName}
               </h2>
 
@@ -223,7 +535,7 @@ export default function GameOverModal({
           ) : (
             <>
               <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
-                Maître du Bluff
+                👑 Maître du Bluff
               </p>
 
               <h2 className="mt-3 text-2xl font-black text-white sm:text-3xl">
@@ -233,34 +545,75 @@ export default function GameOverModal({
               <p className="mt-3 text-sm text-zinc-400">
                 Aucun bluff n’a été
                 réussi pendant cette
-                partie.
+                partie. Une honnêteté
+                presque inquiétante.
               </p>
             </>
           )}
-        </div>
+        </motion.section>
 
-        <div className="relative mt-6">
-          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-zinc-400">
-            Classement
-          </h3>
+        <section className="relative mt-7">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
+                Podium
+              </p>
 
-          <div className="mt-3 space-y-3">
+              <h3 className="mt-2 text-2xl font-black">
+                Classement du Gang
+              </h3>
+            </div>
+
+            <p className="text-xs text-zinc-500">
+              Basé sur les bluffs réussis
+            </p>
+          </div>
+
+          <div className="mt-4 space-y-3">
             {ranking.map(
               (
                 entry,
                 rankIndex
               ) => {
+                const player =
+                  roomPlayers[
+                    entry.playerIndex
+                  ];
+
                 const playerName =
                   getPlayerName(
                     playerNames,
                     entry.playerIndex
                   );
 
+                const rankingTitle =
+                  getRankingTitle(
+                    rankIndex,
+                    entry.stats
+                      .successfulBluffs
+                  );
+
                 return (
-                  <div
+                  <motion.article
                     key={
                       entry.playerIndex
                     }
+                    initial={{
+                      opacity: 0,
+                      x: -20,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      x: 0,
+                    }}
+                    transition={{
+                      delay:
+                        0.18 +
+                        rankIndex *
+                          0.06,
+
+                      duration: 0.3,
+                    }}
                     className={[
                       "flex items-center gap-3 rounded-2xl border px-4 py-3",
                       rankIndex === 0 &&
@@ -275,30 +628,32 @@ export default function GameOverModal({
                       )}
                     </div>
 
+                    <ProfileAvatar
+                      size="small"
+                      avatarType={
+                        player
+                          ?.avatarType ??
+                        "DEFAULT"
+                      }
+                      avatarId={
+                        player
+                          ?.avatarId ??
+                        "fox"
+                      }
+                      avatarPhoto={
+                        player
+                          ?.avatarPhoto ??
+                        null
+                      }
+                    />
+
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-black text-white">
-                        {
-                          playerName
-                        }
+                        {playerName}
                       </p>
 
-                      <p className="mt-0.5 text-xs text-zinc-500">
-                        {
-                          entry.stats
-                            .bluffsAttempted
-                        }{" "}
-                        bluff
-                        {entry.stats
-                          .bluffsAttempted >
-                        1
-                          ? "s"
-                          : ""}{" "}
-                        tenté
-                        {entry.stats
-                          .bluffsAttempted >
-                        1
-                          ? "s"
-                          : ""}
+                      <p className="mt-0.5 truncate text-xs font-bold text-zinc-500">
+                        {rankingTitle}
                       </p>
                     </div>
 
@@ -314,66 +669,187 @@ export default function GameOverModal({
                         réussis
                       </p>
                     </div>
-                  </div>
+                  </motion.article>
                 );
               }
             )}
           </div>
-        </div>
+        </section>
 
-        <div className="relative mt-6 grid gap-3 sm:grid-cols-4">
-          <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4 text-center">
-            <p className="text-xs uppercase tracking-wider text-zinc-500">
-              Annonces
-            </p>
+        <section className="relative mt-7">
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
+            Récompenses
+          </p>
 
-            <p className="mt-2 text-2xl font-black">
-              {
-                state.gameStats
-                  .claimsMade
+          <h3 className="mt-2 text-2xl font-black">
+            Les titres de la soirée
+          </h3>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {awards.map(
+              (
+                award,
+                awardIndex
+              ) => {
+                const player =
+                  roomPlayers[
+                    award.playerIndex
+                  ];
+
+                const playerName =
+                  getPlayerName(
+                    playerNames,
+                    award.playerIndex
+                  );
+
+                return (
+                  <motion.article
+                    key={
+                      award.title
+                    }
+                    initial={{
+                      opacity: 0,
+                      y: 14,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                    }}
+                    transition={{
+                      delay:
+                        0.28 +
+                        awardIndex *
+                          0.06,
+
+                      duration: 0.28,
+                    }}
+                    className="
+                      flex
+                      items-center
+                      gap-3
+                      rounded-2xl
+                      border
+                      border-white/10
+                      bg-zinc-900
+                      p-4
+                    "
+                  >
+                    <div
+                      aria-hidden="true"
+                      className="
+                        flex
+                        h-11
+                        w-11
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-xl
+                        bg-black/25
+                        text-2xl
+                      "
+                    >
+                      {award.icon}
+                    </div>
+
+                    <ProfileAvatar
+                      size="small"
+                      avatarType={
+                        player
+                          ?.avatarType ??
+                        "DEFAULT"
+                      }
+                      avatarId={
+                        player
+                          ?.avatarId ??
+                        "fox"
+                      }
+                      avatarPhoto={
+                        player
+                          ?.avatarPhoto ??
+                        null
+                      }
+                    />
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-black text-white">
+                        {award.title}
+                      </p>
+
+                      <p className="mt-0.5 truncate text-xs text-zinc-500">
+                        {playerName}
+                      </p>
+
+                      <p className="mt-1 text-xs font-bold text-yellow-400">
+                        {award.value}{" "}
+                        {award.valueLabel}
+                      </p>
+                    </div>
+                  </motion.article>
+                );
               }
-            </p>
+            )}
           </div>
+        </section>
 
-          <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4 text-center">
-            <p className="text-xs uppercase tracking-wider text-zinc-500">
-              Bluffs
-            </p>
+        <section className="relative mt-7">
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-yellow-400">
+            Totaux
+          </p>
 
-            <p className="mt-2 text-2xl font-black">
-              {
-                state.gameStats
-                  .bluffsAttempted
-              }
-            </p>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4 text-center">
+              <p className="text-xs uppercase tracking-wider text-zinc-500">
+                Annonces
+              </p>
+
+              <p className="mt-2 text-2xl font-black">
+                {
+                  state.gameStats
+                    .claimsMade
+                }
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4 text-center">
+              <p className="text-xs uppercase tracking-wider text-zinc-500">
+                Bluffs
+              </p>
+
+              <p className="mt-2 text-2xl font-black">
+                {
+                  state.gameStats
+                    .bluffsAttempted
+                }
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4 text-center">
+              <p className="text-xs uppercase tracking-wider text-zinc-500">
+                Réussis
+              </p>
+
+              <p className="mt-2 text-2xl font-black text-green-400">
+                {
+                  state.gameStats
+                    .successfulBluffs
+                }
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4 text-center">
+              <p className="text-xs uppercase tracking-wider text-zinc-500">
+                Démasqués
+              </p>
+
+              <p className="mt-2 text-2xl font-black text-red-400">
+                {
+                  state.gameStats
+                    .caughtBluffs
+                }
+              </p>
+            </div>
           </div>
-
-          <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4 text-center">
-            <p className="text-xs uppercase tracking-wider text-zinc-500">
-              Réussis
-            </p>
-
-            <p className="mt-2 text-2xl font-black text-green-400">
-              {
-                state.gameStats
-                  .successfulBluffs
-              }
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4 text-center">
-            <p className="text-xs uppercase tracking-wider text-zinc-500">
-              Démasqués
-            </p>
-
-            <p className="mt-2 text-2xl font-black text-red-400">
-              {
-                state.gameStats
-                  .caughtBluffs
-              }
-            </p>
-          </div>
-        </div>
+        </section>
 
         <button
           type="button"

@@ -6,6 +6,11 @@ export type RoomStatus =
   | "LOBBY"
   | "IN_GAME";
 
+export type BotDifficulty =
+  | "EASY"
+  | "NORMAL"
+  | "HARD";
+
 export type RoomPlayer = {
   id: string;
 
@@ -15,6 +20,8 @@ export type RoomPlayer = {
    *
    * Il devient null lorsqu'un joueur est
    * momentanément déconnecté.
+   *
+   * Pour un bot, il reste toujours null.
    */
   socketId: string | null;
 
@@ -22,8 +29,8 @@ export type RoomPlayer = {
    * Identifiant persistant stocké dans
    * le navigateur du joueur.
    *
-   * Contrairement au socketId, il ne change
-   * pas après une reconnexion.
+   * Pour un bot, il contient un identifiant
+   * généré côté serveur.
    */
   playerToken: string;
 
@@ -39,6 +46,11 @@ export type RoomPlayer = {
     string | null;
 
   isHost: boolean;
+
+  isBot: boolean;
+
+  botDifficulty:
+    BotDifficulty | null;
 
   connectedAt: number;
 };
@@ -72,6 +84,11 @@ export type PublicRoomPlayer = {
     string | null;
 
   isHost: boolean;
+
+  isBot: boolean;
+
+  botDifficulty:
+    BotDifficulty | null;
 };
 
 export type PublicRoom = {
@@ -138,6 +155,23 @@ export type StartRoomInput = {
   code: string;
 };
 
+export type AddBotRoomInput = {
+  socketId: string;
+
+  code: string;
+
+  difficulty:
+    BotDifficulty;
+};
+
+export type RemoveBotRoomInput = {
+  socketId: string;
+
+  code: string;
+
+  botId: string;
+};
+
 export type RoomResult =
   | {
       success: true;
@@ -155,7 +189,7 @@ export type RoomResult =
         string;
     };
 
-export type StartRoomResult =
+export type RoomMutationResult =
   | {
       success: true;
 
@@ -168,6 +202,9 @@ export type StartRoomResult =
       error:
         string;
     };
+
+export type StartRoomResult =
+  RoomMutationResult;
 
 export type DisconnectedPlayer = {
   code: string;

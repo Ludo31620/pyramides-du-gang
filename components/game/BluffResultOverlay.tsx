@@ -245,10 +245,10 @@ export default function BluffResultOverlay({
           rounded-[2rem]
           border
           bg-[#111318]
-          p-6
+          p-5
           text-center
           shadow-[0_0_80px_rgba(255,209,102,0.18)]
-          sm:p-8
+          sm:p-6
           ${accentClasses.border}
         `}
       >
@@ -264,130 +264,76 @@ export default function BluffResultOverlay({
 
         <div
           className="
-            grid
-            grid-cols-[1fr_auto_1fr]
+            flex
             items-center
-            gap-3
+            justify-center
+            gap-2
+            rounded-2xl
+            border
+            border-white/10
+            bg-black/30
+            px-3
+            py-2
           "
         >
-          <div
+          <ProfileAvatar
+            size="small"
+            avatarType={
+              giverPlayer
+                ?.avatarType ??
+              "DEFAULT"
+            }
+            avatarId={
+              giverPlayer
+                ?.avatarId ??
+              "fox"
+            }
+            avatarPhoto={
+              giverPlayer
+                ?.avatarPhoto ??
+              null
+            }
+          />
+
+          <p
             className="
-              rounded-2xl
-              border
-              border-white/10
-              bg-black/25
-              p-3
+              min-w-0
+              flex-1
+              text-center
+              text-sm
+              leading-5
+              text-zinc-400
             "
           >
-            <ProfileAvatar
-              size="medium"
-              avatarType={
-                giverPlayer
-                  ?.avatarType ??
-                "DEFAULT"
-              }
-              avatarId={
-                giverPlayer
-                  ?.avatarId ??
-                "fox"
-              }
-              avatarPhoto={
-                giverPlayer
-                  ?.avatarPhoto ??
-                null
-              }
-            />
-
-            <p
-              className="
-                mt-3
-                truncate
-                text-sm
-                font-black
-                text-white
-              "
-            >
+            <span className="font-black text-white">
               {giverName}
-            </p>
+            </span>
 
-            <p
-              className="
-                mt-1
-                text-[10px]
-                font-black
-                uppercase
-                tracking-wider
-                text-zinc-500
-              "
-            >
-              Annonceur
-            </p>
-          </div>
+            {" annonce à "}
 
-          <div
-            aria-hidden="true"
-            className={`
-              text-2xl
-              font-black
-              ${accentClasses.text}
-            `}
-          >
-            →
-          </div>
-
-          <div
-            className={`
-              rounded-2xl
-              border
-              p-3
-              ${accentClasses.border}
-              ${accentClasses.background}
-            `}
-          >
-            <ProfileAvatar
-              size="medium"
-              avatarType={
-                targetPlayer
-                  ?.avatarType ??
-                "DEFAULT"
-              }
-              avatarId={
-                targetPlayer
-                  ?.avatarId ??
-                "fox"
-              }
-              avatarPhoto={
-                targetPlayer
-                  ?.avatarPhoto ??
-                null
-              }
-            />
-
-            <p
-              className="
-                mt-3
-                truncate
-                text-sm
-                font-black
-                text-white
-              "
-            >
+            <span className="font-black text-white">
               {targetName}
-            </p>
+            </span>
+          </p>
 
-            <p
-              className={`
-                mt-1
-                text-[10px]
-                font-black
-                uppercase
-                tracking-wider
-                ${accentClasses.text}
-              `}
-            >
-              Cible
-            </p>
-          </div>
+          <ProfileAvatar
+            size="small"
+            avatarType={
+              targetPlayer
+                ?.avatarType ??
+              "DEFAULT"
+            }
+            avatarId={
+              targetPlayer
+                ?.avatarId ??
+              "fox"
+            }
+            avatarPhoto={
+              targetPlayer
+                ?.avatarPhoto ??
+              null
+            }
+          />
         </div>
 
         {isBelieved && (
@@ -552,17 +498,17 @@ export default function BluffResultOverlay({
 
         <div
           className={`
-            mt-7
+            mt-5
             rounded-3xl
             border
             px-5
-            py-5
+            py-4
             ${accentClasses.border}
             ${accentClasses.background}
           `}
         >
           <ProfileAvatar
-            size="large"
+            size="medium"
             avatarType={
               punishedPlayer
                 ?.avatarType ??
@@ -582,9 +528,9 @@ export default function BluffResultOverlay({
 
           <p
             className="
-              mt-4
+              mt-3
               truncate
-              text-xl
+              text-lg
               font-black
               text-white
             "
@@ -607,8 +553,8 @@ export default function BluffResultOverlay({
 
           <p
             className={`
-              mt-3
-              text-6xl
+              mt-2
+              text-5xl
               font-black
               leading-none
               ${accentClasses.text}
@@ -631,7 +577,7 @@ export default function BluffResultOverlay({
           </p>
         </div>
 
-        <div className="mt-8 h-1 overflow-hidden rounded-full bg-zinc-800">
+        <div className="mt-5 h-1 overflow-hidden rounded-full bg-zinc-800">
           <div
             className={`
               bluff-result-progress

@@ -22,7 +22,9 @@ import type {
 } from "./lib/deck";
 
 import type {
+  BotDifficulty,
   PublicRoom,
+  RoomMutationResult,
   RoomResult,
   StartRoomResult,
 } from "./server/types";
@@ -67,6 +69,19 @@ type GetRoomPayload = {
 
 type StartRoomPayload = {
   code: string;
+};
+
+type AddBotPayload = {
+  code: string;
+
+  difficulty:
+    BotDifficulty;
+};
+
+type RemoveBotPayload = {
+  code: string;
+
+  botId: string;
 };
 
 type ReturnToLobbyPayload = {
@@ -116,6 +131,11 @@ type GameCallback = (
 
 type StartRoomCallback = (
   result: StartRoomResult
+) => void;
+
+type RoomMutationCallback = (
+  result:
+    RoomMutationResult
 ) => void;
 
 type RevealAnimationResult =
@@ -851,6 +871,173 @@ const result =
               success: false,
               error:
                 "Impossible de synchroniser la partie.",
+            });
+          }
+        }
+      );
+
+      socket.on(
+        "room:add-bot",
+        (
+          payload:
+            AddBotPayload,
+
+          callback:
+            RoomMutationCallback
+        ) => {
+          try {
+            const reconnectResult =
+              reconnecterJoueur(
+                socket,
+                payload?.code ??
+                  ""
+              );
+
+            if (
+              !reconnectResult
+                .success
+            ) {
+              callback(
+                reconnectResult
+              );
+
+              return;
+            }
+
+            const result =
+              roomManager
+                .addBot({
+                  socketId:
+                    socket.id,
+
+                  code:
+                    payload?.code ??
+                    "",
+
+                  difficulty:
+                    payload
+                      ?.difficulty ??
+                    "EASY",
+                });
+
+            if (
+              !result.success
+            ) {
+              callback(
+                result
+              );
+
+              return;
+            }
+
+            callback(
+              result
+            );
+
+            diffuserSalon(
+              io,
+              result.room
+            );
+
+            console.log(
+              `🤖 Bot ajouté dans ${result.room.code}`
+            );
+          } catch (
+            error: unknown
+          ) {
+            console.error(
+              "Erreur pendant l'ajout du bot :",
+              error
+            );
+
+            callback({
+              success: false,
+
+              error:
+                "Impossible d'ajouter le bot.",
+            });
+          }
+        }
+      );
+
+      socket.on(
+        "room:remove-bot",
+        (
+          payload:
+            RemoveBotPayload,
+
+          callback:
+            RoomMutationCallback
+        ) => {
+          try {
+            const reconnectResult =
+              reconnecterJoueur(
+                socket,
+                payload?.code ??
+                  ""
+              );
+
+            if (
+              !reconnectResult
+                .success
+            ) {
+              callback(
+                reconnectResult
+              );
+
+              return;
+            }
+
+            const result =
+              roomManager
+                .removeBot({
+                  socketId:
+                    socket.id,
+
+                  code:
+                    payload?.code ??
+                    "",
+
+                  botId:
+                    payload?.botId ??
+                    "",
+                });
+
+            if (
+              !result.success
+            ) {
+              callback(
+                result
+              );
+
+              return;
+            }
+
+            callback(
+              result
+            );
+
+            diffuserSalon(
+              io,
+              result.room
+            );
+
+            console.log(
+              `🗑️ Bot retiré de ${result.room.code}`
+            );
+          } catch (
+            error: unknown
+          ) {
+            console.error(
+              "Erreur pendant la suppression du bot :",
+              error
+            );
+
+            callback({
+              success: false,
+
+              error:
+                "Impossible de retirer le bot.",
             });
           }
         }

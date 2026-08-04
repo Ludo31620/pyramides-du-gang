@@ -3,12 +3,16 @@ import {
 } from "./GameRoom";
 
 import type {
+  AddBotRoomInput,
+  BotDifficulty,
   CreateRoomInput,
   DisconnectedPlayer,
   JoinRoomInput,
   PublicRoom,
   ReconnectRoomInput,
+  RemoveBotRoomInput,
   Room,
+  RoomMutationResult,
   RoomPlayer,
   RoomResult,
   StartRoomInput,
@@ -17,6 +21,24 @@ import type {
 
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 9;
+
+const BOT_NAMES = [
+  "Rico",
+  "Maya",
+  "Nox",
+  "Ghost",
+  "Nova",
+  "Pixel",
+  "Vega",
+  "Milo",
+] as const;
+
+const BOT_AVATAR_IDS = [
+  "fox",
+  "wolf",
+  "lion",
+  "panda",
+] as const;
 
 export class RoomManager {
   private readonly rooms =
@@ -81,26 +103,26 @@ export class RoomManager {
     const code =
       this.generateUniqueCode();
 
-const host =
-  this.createPlayer({
-    socketId:
-      input.socketId,
+    const host =
+      this.createPlayer({
+        socketId:
+          input.socketId,
 
-    playerToken,
+        playerToken,
 
-    pseudo,
+        pseudo,
 
-    avatarType:
-      input.avatarType,
+        avatarType:
+          input.avatarType,
 
-    avatarId:
-      input.avatarId,
+        avatarId:
+          input.avatarId,
 
-    avatarPhoto:
-      input.avatarPhoto,
+        avatarPhoto:
+          input.avatarPhoto,
 
-    isHost: true,
-  });
+        isHost: true,
+      });
 
     const room: Room = {
       code,
@@ -284,26 +306,26 @@ const host =
       playerToken
     );
 
-const player =
-  this.createPlayer({
-    socketId:
-      input.socketId,
+    const player =
+      this.createPlayer({
+        socketId:
+          input.socketId,
 
-    playerToken,
+        playerToken,
 
-    pseudo,
+        pseudo,
 
-    avatarType:
-      input.avatarType,
+        avatarType:
+          input.avatarType,
 
-    avatarId:
-      input.avatarId,
+        avatarId:
+          input.avatarId,
 
-    avatarPhoto:
-      input.avatarPhoto,
+        avatarPhoto:
+          input.avatarPhoto,
 
-    isHost: false,
-  });
+        isHost: false,
+      });
 
     room.players.push(
       player
@@ -391,6 +413,193 @@ const player =
 
       playerId:
         player.id,
+    };
+  }
+
+  addBot(
+    input: AddBotRoomInput
+  ): RoomMutationResult {
+    const code =
+      this.normalizeCode(
+        input.code
+      );
+
+    const room =
+      this.rooms.get(
+        code
+      );
+
+    if (!room) {
+      return {
+        success: false,
+        error:
+          "Cette partie n'existe pas.",
+      };
+    }
+
+    if (
+      room.status !==
+      "LOBBY"
+    ) {
+      return {
+        success: false,
+        error:
+          "Impossible d'ajouter un bot après le début de la partie.",
+      };
+    }
+
+    const host =
+      room.players.find(
+        (player) =>
+          player.socketId ===
+          input.socketId
+      );
+
+    if (!host) {
+      return {
+        success: false,
+        error:
+          "Tu ne fais pas partie de cette partie.",
+      };
+    }
+
+    if (!host.isHost) {
+      return {
+        success: false,
+        error:
+          "Seul l'hôte peut ajouter un bot.",
+      };
+    }
+
+    if (
+      room.players.length >=
+      room.maxPlayers
+    ) {
+      return {
+        success: false,
+        error:
+          "Cette partie est complète.",
+      };
+    }
+
+    const difficulty =
+      this.normalizeBotDifficulty(
+        input.difficulty
+      );
+
+    if (!difficulty) {
+      return {
+        success: false,
+        error:
+          "Le niveau du bot est invalide.",
+      };
+    }
+
+    const bot =
+      this.createBot(
+        room,
+        difficulty
+      );
+
+    room.players.push(
+      bot
+    );
+
+    return {
+      success: true,
+
+      room:
+        this.toPublicRoom(
+          room
+        ),
+    };
+  }
+
+  removeBot(
+    input: RemoveBotRoomInput
+  ): RoomMutationResult {
+    const code =
+      this.normalizeCode(
+        input.code
+      );
+
+    const room =
+      this.rooms.get(
+        code
+      );
+
+    if (!room) {
+      return {
+        success: false,
+        error:
+          "Cette partie n'existe pas.",
+      };
+    }
+
+    if (
+      room.status !==
+      "LOBBY"
+    ) {
+      return {
+        success: false,
+        error:
+          "Impossible de retirer un bot après le début de la partie.",
+      };
+    }
+
+    const host =
+      room.players.find(
+        (player) =>
+          player.socketId ===
+          input.socketId
+      );
+
+    if (!host) {
+      return {
+        success: false,
+        error:
+          "Tu ne fais pas partie de cette partie.",
+      };
+    }
+
+    if (!host.isHost) {
+      return {
+        success: false,
+        error:
+          "Seul l'hôte peut retirer un bot.",
+      };
+    }
+
+    const botIndex =
+      room.players.findIndex(
+        (player) =>
+          player.id ===
+            input.botId &&
+          player.isBot
+      );
+
+    if (
+      botIndex === -1
+    ) {
+      return {
+        success: false,
+        error:
+          "Ce bot est introuvable.",
+      };
+    }
+
+    room.players.splice(
+      botIndex,
+      1
+    );
+
+    return {
+      success: true,
+
+      room:
+        this.toPublicRoom(
+          room
+        ),
     };
   }
 
@@ -782,13 +991,29 @@ const player =
     if (
       removedPlayer?.isHost
     ) {
+      const nextHumanHost =
+        room.players.find(
+          (player) =>
+            !player.isBot
+        );
+
+      if (!nextHumanHost) {
+        this.rooms.delete(
+          normalizedCode
+        );
+
+        this.gameRooms.delete(
+          normalizedCode
+        );
+
+        return null;
+      }
+
       room.players.forEach(
-        (
-          player,
-          index
-        ) => {
+        (player) => {
           player.isHost =
-            index === 0;
+            player.id ===
+            nextHumanHost.id;
         }
       );
     }
@@ -839,52 +1064,198 @@ const player =
   }
 
   private createPlayer(
-  input: {
-    socketId: string;
-    playerToken: string;
-    pseudo: string;
+    input: {
+      socketId: string;
+      playerToken: string;
+      pseudo: string;
 
-    avatarType:
-      RoomPlayer["avatarType"];
+      avatarType:
+        RoomPlayer["avatarType"];
 
-    avatarId:
-      string | null;
+      avatarId:
+        string | null;
 
-    avatarPhoto:
-      string | null;
+      avatarPhoto:
+        string | null;
 
-    isHost: boolean;
+      isHost: boolean;
+    }
+  ): RoomPlayer {
+    return {
+      id:
+        this.generatePlayerId(),
+
+      socketId:
+        input.socketId,
+
+      playerToken:
+        input.playerToken,
+
+      pseudo:
+        input.pseudo,
+
+      avatarType:
+        input.avatarType,
+
+      avatarId:
+        input.avatarId,
+
+      avatarPhoto:
+        input.avatarPhoto,
+
+      isHost:
+        input.isHost,
+
+      isBot:
+        false,
+
+      botDifficulty:
+        null,
+
+      connectedAt:
+        Date.now(),
+    };
   }
-): RoomPlayer {
-  return {
-    id:
-      this.generatePlayerId(),
 
-    socketId:
-      input.socketId,
+  private createBot(
+    room: Room,
+    difficulty:
+      BotDifficulty
+  ): RoomPlayer {
+    const botNumber =
+      room.players.filter(
+        (player) =>
+          player.isBot
+      ).length;
 
-    playerToken:
-      input.playerToken,
+    const pseudo =
+      this.getAvailableBotName(
+        room,
+        botNumber
+      );
 
-    pseudo:
-      input.pseudo,
+    const avatarId =
+      BOT_AVATAR_IDS[
+        botNumber %
+          BOT_AVATAR_IDS.length
+      ] ??
+      "fox";
 
-    avatarType:
-      input.avatarType,
+    return {
+      id:
+        this.generatePlayerId(),
 
-    avatarId:
-      input.avatarId,
+      socketId:
+        null,
 
-    avatarPhoto:
-      input.avatarPhoto,
+      playerToken:
+        this.generateBotToken(),
 
-    isHost:
-      input.isHost,
+      pseudo,
 
-    connectedAt:
-      Date.now(),
-  };
-}
+      avatarType:
+        "DEFAULT",
+
+      avatarId,
+
+      avatarPhoto:
+        null,
+
+      isHost:
+        false,
+
+      isBot:
+        true,
+
+      botDifficulty:
+        difficulty,
+
+      connectedAt:
+        Date.now(),
+    };
+  }
+
+  private getAvailableBotName(
+    room: Room,
+    botNumber: number
+  ): string {
+    for (
+      let offset = 0;
+      offset <
+        BOT_NAMES.length;
+      offset += 1
+    ) {
+      const candidate =
+        BOT_NAMES[
+          (
+            botNumber +
+            offset
+          ) %
+            BOT_NAMES.length
+        ];
+
+      if (!candidate) {
+        continue;
+      }
+
+      const alreadyUsed =
+        room.players.some(
+          (player) =>
+            player.pseudo
+              .toLowerCase() ===
+            candidate
+              .toLowerCase()
+        );
+
+      if (!alreadyUsed) {
+        return candidate;
+      }
+    }
+
+    let suffix = 1;
+
+    while (
+      room.players.some(
+        (player) =>
+          player.pseudo ===
+          `Bot ${suffix}`
+      )
+    ) {
+      suffix += 1;
+    }
+
+    return `Bot ${suffix}`;
+  }
+
+  private generateBotToken():
+    string {
+    return [
+      "bot",
+      Date.now()
+        .toString(36),
+      Math.random()
+        .toString(36)
+        .slice(2, 12),
+    ].join("-");
+  }
+
+  private normalizeBotDifficulty(
+    difficulty:
+      BotDifficulty
+  ): BotDifficulty | null {
+    if (
+      difficulty ===
+        "EASY" ||
+      difficulty ===
+        "NORMAL" ||
+      difficulty ===
+        "HARD"
+    ) {
+      return difficulty;
+    }
+
+    return null;
+  }
 
   private generatePlayerId():
     string {
@@ -1005,28 +1376,35 @@ const player =
       maxPlayers:
         room.maxPlayers,
 
-     players:
-  room.players.map(
-    (player) => ({
-      id:
-        player.id,
+      players:
+        room.players.map(
+          (player) => ({
+            id:
+              player.id,
 
-      pseudo:
-        player.pseudo,
+            pseudo:
+              player.pseudo,
 
-      avatarType:
-        player.avatarType,
+            avatarType:
+              player.avatarType,
 
-      avatarId:
-        player.avatarId,
+            avatarId:
+              player.avatarId,
 
-      avatarPhoto:
-        player.avatarPhoto,
+            avatarPhoto:
+              player.avatarPhoto,
 
-      isHost:
-        player.isHost,
-    })
-  ),
+            isHost:
+              player.isHost,
+
+            isBot:
+              player.isBot,
+
+            botDifficulty:
+              player.botDifficulty,
+          })
+        ),
     };
   }
+
 }
