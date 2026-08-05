@@ -1394,21 +1394,33 @@ if (gameRoom) {
               return;
             }
 
-            const playerState =
-              gameRoom
-                .getStateForPlayer(
-                  playerIndex
-                );
+/*
+ * La reconnexion a mis à jour le statut
+ * isConnected dans RoomManager et GameRoom.
+ *
+ * On rediffuse donc le salon et l’état privé
+ * à tous les joueurs, afin que l’avatar
+ * redevienne immédiatement normal partout.
+ */
+diffuserSalon(
+  io,
+  reconnectResult.room
+);
 
-            socket.emit(
-              "game:state",
-              playerState
-            );
+diffuserEtatJeu(
+  io,
+  roomManager,
+  gameRoom.code
+);
 
-            callback({
-              success: true,
-            });
+programmerTourBot(
+  io,
+  gameRoom
+);
 
+callback({
+  success: true,
+});
             console.log(
               `🎯 État du jeu synchronisé pour le joueur ${playerIndex + 1} dans ${gameRoom.code}`
             );
