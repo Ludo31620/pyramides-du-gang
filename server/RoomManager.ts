@@ -403,17 +403,17 @@ export class RoomManager {
     player.connectedAt =
       Date.now();
 
-    return {
-      success: true,
+return {
+  success: true,
 
-      room:
-        this.toPublicRoom(
-          room
-        ),
+  room:
+    this.synchronizeGameRoom(
+      room
+    ),
 
-      playerId:
-        player.id,
-    };
+  playerId:
+    player.id,
+};
   }
 
   addBot(
