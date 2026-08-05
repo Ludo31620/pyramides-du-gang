@@ -7,6 +7,10 @@ import {
 } from "./server/bots/BotController";
 
 import {
+  DisconnectedPlayerController,
+} from "./server/bots/DisconnectedPlayerController";
+
+import {
   createServer,
 } from "node:http";
 
@@ -223,6 +227,11 @@ const roomManager =
 const botController =
   new BotController();
 
+const disconnectedPlayerController =
+  new DisconnectedPlayerController(
+    botController
+  );
+
 const pendingLobbyRemovals =
   new Map<
     string,
@@ -335,6 +344,12 @@ function reconnecterJoueur(
       result.playerId
     );
 
+    disconnectedPlayerController
+      .markReconnected(
+        result.room.code,
+        result.playerId
+      );
+
     rejoindreSalonSocket(
       socket,
       result.room.code
@@ -416,18 +431,39 @@ function programmerTourBot(
   io: Server,
   gameRoom: GameRoom
 ): void {
-  botController.schedule(
-    gameRoom,
+  const handleAutomaticStateChange =
     (
-      updatedGameRoom
-    ) => {
+      updatedGameRoom:
+        GameRoom
+    ): void => {
       diffuserEtatJeu(
         io,
         roomManager,
         updatedGameRoom.code
       );
-    }
+
+      botController.schedule(
+        updatedGameRoom,
+        handleAutomaticStateChange
+      );
+
+      disconnectedPlayerController
+        .schedule(
+          updatedGameRoom,
+          handleAutomaticStateChange
+        );
+    };
+
+  botController.schedule(
+    gameRoom,
+    handleAutomaticStateChange
   );
+
+  disconnectedPlayerController
+    .schedule(
+      gameRoom,
+      handleAutomaticStateChange
+    );
 }
 
 function creerPayloadAnimationRevelation(
@@ -1695,6 +1731,51 @@ programmerTourBot(
               .status ===
             "IN_GAME"
           ) {
+            diffuserSalon(
+              io,
+              disconnectedPlayer.room
+            );
+
+            diffuserEtatJeu(
+              io,
+              roomManager,
+              disconnectedPlayer.code
+            );
+
+            const gameRoom =
+              roomManager
+                .getGameRoom(
+                  disconnectedPlayer
+                    .code
+                );
+
+            if (gameRoom) {
+              const handleAutomaticStateChange =
+                (
+                  updatedGameRoom:
+                    GameRoom
+                ): void => {
+                  diffuserEtatJeu(
+                    io,
+                    roomManager,
+                    updatedGameRoom.code
+                  );
+
+                  programmerTourBot(
+                    io,
+                    updatedGameRoom
+                  );
+                };
+
+              disconnectedPlayerController
+                .markDisconnected(
+                  gameRoom,
+                  disconnectedPlayer
+                    .playerId,
+                  handleAutomaticStateChange
+                );
+            }
+
             console.log(
               `💾 Joueur ${disconnectedPlayer.playerId} conservé dans ${disconnectedPlayer.code}`
             );

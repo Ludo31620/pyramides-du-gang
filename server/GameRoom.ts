@@ -25,8 +25,24 @@ import type {
 export class GameRoom {
   public readonly code: string;
 
-  public readonly room:
-    PublicRoom;
+public room:
+  PublicRoom;
+
+public updateRoom(
+  room: PublicRoom
+): void {
+  if (
+    room.code !==
+    this.code
+  ) {
+    throw new Error(
+      "Impossible de synchroniser un autre salon."
+    );
+  }
+
+  this.room =
+    room;
+}
 
   private readonly engine:
     GameEngine;
@@ -55,6 +71,8 @@ export class GameRoom {
       `🃏 GameEngine créé pour ${this.code} avec ${room.players.length} joueurs`
     );
   }
+
+
 
   public getState():
     GameState {

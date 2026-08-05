@@ -90,71 +90,28 @@ export class BotController {
             gameRoom.code
           );
 
-          try {
-            const latestState =
-              gameRoom.getState();
-
-            const latestBotTurn =
-              this.getBotTurn(
-                gameRoom,
-                latestState
-              );
-
-            if (
-              !latestBotTurn ||
-              latestBotTurn
-                .playerIndex !==
-                playerIndex
-            ) {
-              return;
-            }
-
-            const action =
-              this.chooseAction(
-                gameRoom,
-                latestState,
-                playerIndex,
-                difficulty
-              );
-
-            if (!action) {
-              return;
-            }
-
-            gameRoom
-              .dispatchForPlayer(
-                playerIndex,
-                action
-              );
-
-            console.log(
-              `🤖 ${player.pseudo} exécute ${action.type} dans ${gameRoom.code}`
-            );
-
-            onStateChanged(
-              gameRoom
-            );
-
-            /*
-             * Une action de bot peut laisser
-             * le même bot actif, notamment
-             * pendant la distribution.
-             *
-             * On programme donc immédiatement
-             * l'étape suivante.
-             */
-            this.schedule(
+          const played =
+            this.playForPlayer(
               gameRoom,
-              onStateChanged
+              playerIndex,
+              difficulty,
+              onStateChanged,
+              player.pseudo
             );
-          } catch (
-            error: unknown
-          ) {
-            console.error(
-              `Action du bot refusée dans ${gameRoom.code} :`,
-              error
-            );
+
+          if (!played) {
+            return;
           }
+
+          /*
+           * Une action de bot peut laisser
+           * le même bot actif, notamment
+           * pendant la distribution.
+           */
+          this.schedule(
+            gameRoom,
+            onStateChanged
+          );
         },
         baseDelay +
           randomDelay
@@ -164,6 +121,87 @@ export class BotController {
       gameRoom.code,
       timer
     );
+  }
+
+  /**
+   * Exécute une seule action automatique
+   * pour l'index demandé.
+   *
+   * Cette méthode est également utilisée
+   * lorsqu'un humain déconnecté doit être
+   * remplacé temporairement.
+   */
+  public playForPlayer(
+    gameRoom: GameRoom,
+    playerIndex: number,
+    difficulty:
+      BotDifficulty,
+    onStateChanged:
+      StateChangedCallback,
+    displayName?:
+      string
+  ): boolean {
+    try {
+      const state =
+        gameRoom.getState();
+
+      const expectedPlayerIndex =
+        this.getExpectedPlayerIndex(
+          state
+        );
+
+      if (
+        expectedPlayerIndex !==
+        playerIndex
+      ) {
+        return false;
+      }
+
+      const action =
+        this.chooseAction(
+          gameRoom,
+          state,
+          playerIndex,
+          difficulty
+        );
+
+      if (!action) {
+        return false;
+      }
+
+      gameRoom
+        .dispatchForPlayer(
+          playerIndex,
+          action
+        );
+
+      const playerName =
+        displayName ??
+        gameRoom.room
+          .players[
+            playerIndex
+          ]?.pseudo ??
+        `Joueur ${playerIndex + 1}`;
+
+      console.log(
+        `🤖 ${playerName} exécute ${action.type} dans ${gameRoom.code}`
+      );
+
+      onStateChanged(
+        gameRoom
+      );
+
+      return true;
+    } catch (
+      error: unknown
+    ) {
+      console.error(
+        `Action automatique refusée dans ${gameRoom.code} :`,
+        error
+      );
+
+      return false;
+    }
   }
 
   public cancel(
@@ -495,7 +533,7 @@ export class BotController {
       0
     ) {
       throw new Error(
-        "Aucune cible disponible pour le bot."
+        "Aucune cible disponible pour l'action automatique."
       );
     }
 

@@ -230,7 +230,7 @@ export class RoomManager {
         success: true,
 
         room:
-          this.toPublicRoom(
+          this.synchronizeGameRoom(
             room
           ),
 
@@ -335,7 +335,7 @@ export class RoomManager {
       success: true,
 
       room:
-        this.toPublicRoom(
+        this.synchronizeGameRoom(
           room
         ),
 
@@ -921,7 +921,7 @@ export class RoomManager {
           room.status,
 
         room:
-          this.toPublicRoom(
+          this.synchronizeGameRoom(
             room
           ),
       };
@@ -1363,6 +1363,28 @@ export class RoomManager {
     return normalized;
   }
 
+  private synchronizeGameRoom(
+    room: Room
+  ): PublicRoom {
+    const publicRoom =
+      this.toPublicRoom(
+        room
+      );
+
+    const gameRoom =
+      this.gameRooms.get(
+        room.code
+      );
+
+    if (gameRoom) {
+      gameRoom.updateRoom(
+        publicRoom
+      );
+    }
+
+    return publicRoom;
+  }
+
   private toPublicRoom(
     room: Room
   ): PublicRoom {
@@ -1377,38 +1399,38 @@ export class RoomManager {
         room.maxPlayers,
 
       players:
-  room.players.map(
-    (player) => ({
-      id:
-        player.id,
+        room.players.map(
+          (player) => ({
+            id:
+              player.id,
 
-      pseudo:
-        player.pseudo,
+            pseudo:
+              player.pseudo,
 
-      avatarType:
-        player.avatarType,
+            avatarType:
+              player.avatarType,
 
-      avatarId:
-        player.avatarId,
+            avatarId:
+              player.avatarId,
 
-      avatarPhoto:
-        player.avatarPhoto,
+            avatarPhoto:
+              player.avatarPhoto,
 
-      isHost:
-        player.isHost,
+            isHost:
+              player.isHost,
 
-      isBot:
-        player.isBot,
+            isBot:
+              player.isBot,
 
-      botDifficulty:
-        player.botDifficulty,
+            botDifficulty:
+              player.botDifficulty,
 
-      isConnected:
-        player.isBot ||
-        player.socketId !==
-          null,
-    })
-  ),
+            isConnected:
+              player.isBot ||
+              player.socketId !==
+                null,
+          })
+        ),
     };
   }
 
