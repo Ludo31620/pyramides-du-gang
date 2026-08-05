@@ -57,6 +57,8 @@ interface PublicRoomPlayer {
 
   botDifficulty:
     BotDifficulty | null;
+
+  isConnected: boolean;
 }
 
 interface PublicRoom {
@@ -171,6 +173,9 @@ function creerSalonInitial(
 
       botDifficulty:
         null,
+
+      isConnected:
+        true,
     })
   ),
   };
@@ -1295,12 +1300,21 @@ export default function LobbyPage() {
                   player.id ===
                   storedGame.playerId;
 
+                const estConnecte =
+                  player.isBot ||
+                  player.isConnected;
+
                 return (
                   <article
                     key={
                       player.id
                     }
-                    className="flex min-h-16 items-center gap-4 rounded-2xl border border-white/5 bg-black/25 px-4 py-3"
+                    className={[
+                      "flex min-h-16 items-center gap-4 rounded-2xl border border-white/5 bg-black/25 px-4 py-3 transition",
+                      estConnecte
+                        ? ""
+                        : "opacity-70",
+                    ].join(" ")}
                   >
                     <div className="shrink-0">
   <ProfileAvatar
@@ -1313,6 +1327,11 @@ export default function LobbyPage() {
     }
     avatarPhoto={
       player.avatarPhoto
+    }
+    className={
+      estConnecte
+        ? ""
+        : "grayscale opacity-45"
     }
   />
 </div>
@@ -1348,7 +1367,14 @@ export default function LobbyPage() {
                           </span>
                         )}
 
-                        {!player.isHost &&
+                        {!estConnecte && (
+                          <span className="font-bold text-zinc-500">
+                            Déconnecté
+                          </span>
+                        )}
+
+                        {estConnecte &&
+                          !player.isHost &&
                           !player.isBot && (
                           <span className="text-zinc-500">
                             Joueur connecté

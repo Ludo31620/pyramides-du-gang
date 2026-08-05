@@ -10,6 +10,13 @@ import {
   motion,
 } from "framer-motion";
 
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
+
+import {
+  lireSessionPartie,
+  type StoredRoomPlayer,
+} from "@/lib/gameSession";
+
 import {
   getPlayerName,
 } from "@/lib/gameEngine/getPlayerName";
@@ -57,10 +64,28 @@ export default function PlayerDrawer({
     setOpen,
   ] = useState(false);
 
+  const [
+    roomPlayers,
+    setRoomPlayers,
+  ] =
+    useState<StoredRoomPlayer[]>(
+      []
+    );
+
   const activePlayerIndex =
     getActivePlayerIndex(
       state
     );
+
+  useEffect(() => {
+    const session =
+      lireSessionPartie();
+
+    setRoomPlayers(
+      session?.players ??
+        []
+    );
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(
@@ -243,8 +268,22 @@ export default function PlayerDrawer({
                         playerIndex
                       );
 
+                    const roomPlayer =
+                      roomPlayers[
+                        playerIndex
+                      ];
+
                     const isHost =
+                      roomPlayer
+                        ?.isHost ??
                       playerIndex === 0;
+
+                    const isConnected =
+                      state
+                        .connectedPlayers[
+                          playerIndex
+                        ] ??
+                      true;
 
                     const isActive =
                       activePlayerIndex ===
@@ -266,8 +305,8 @@ export default function PlayerDrawer({
                     const jokers =
                       state.memory
                         .jokers[
-                        playerIndex
-                      ] ?? 0;
+                          playerIndex
+                        ] ?? 0;
 
                     return (
                       <article
@@ -279,20 +318,36 @@ export default function PlayerDrawer({
                           isActive
                             ? "border-yellow-400/50 bg-yellow-400/10 shadow-[0_0_24px_rgba(250,204,21,0.1)]"
                             : "border-white/10 bg-zinc-900",
+                          isConnected
+                            ? ""
+                            : "opacity-70",
                         ].join(" ")}
                       >
                         <div className="flex items-center gap-3">
-                          <div
-                            className={[
-                              "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-lg font-black",
-                              isActive
-                                ? "border-yellow-400/50 bg-yellow-400 text-zinc-950"
-                                : "border-white/10 bg-zinc-800 text-yellow-400",
-                            ].join(" ")}
-                          >
-                            {playerName
-                              .charAt(0)
-                              .toUpperCase()}
+                          <div className="shrink-0">
+                            <ProfileAvatar
+                              size="small"
+                              avatarType={
+                                roomPlayer
+                                  ?.avatarType ??
+                                "DEFAULT"
+                              }
+                              avatarId={
+                                roomPlayer
+                                  ?.avatarId ??
+                                "fox"
+                              }
+                              avatarPhoto={
+                                roomPlayer
+                                  ?.avatarPhoto ??
+                                null
+                              }
+                              className={
+                                isConnected
+                                  ? ""
+                                  : "grayscale opacity-45"
+                              }
+                            />
                           </div>
 
                           <div className="min-w-0 flex-1">
@@ -306,7 +361,14 @@ export default function PlayerDrawer({
                                 </span>
                               )}
 
-                              <h3 className="truncate text-base font-black text-white">
+                              <h3
+                                className={[
+                                  "truncate text-base font-black",
+                                  isConnected
+                                    ? "text-white"
+                                    : "text-zinc-500",
+                                ].join(" ")}
+                              >
                                 {
                                   playerName
                                 }
@@ -315,8 +377,7 @@ export default function PlayerDrawer({
 
                             <p className="mt-0.5 text-xs text-zinc-500">
                               {hand.length} carte
-                              {hand.length >
-                              1
+                              {hand.length > 1
                                 ? "s"
                                 : ""}{" "}
                               en main
@@ -335,6 +396,12 @@ export default function PlayerDrawer({
                         </div>
 
                         <div className="mt-3 flex flex-wrap items-center gap-2">
+                          {!isConnected && (
+                            <span className="rounded-full border border-zinc-500/30 bg-zinc-500/10 px-3 py-1 text-xs font-black uppercase text-zinc-400">
+                              Déconnecté
+                            </span>
+                          )}
+
                           {isActive && (
                             <span className="rounded-full bg-yellow-400 px-3 py-1 text-xs font-black uppercase text-zinc-950">
                               {mustRespond

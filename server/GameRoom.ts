@@ -24,7 +24,9 @@ import type {
 
 export class GameRoom {
   public readonly code: string;
-  public readonly room: PublicRoom;
+
+  public readonly room:
+    PublicRoom;
 
   private readonly engine:
     GameEngine;
@@ -32,14 +34,18 @@ export class GameRoom {
   constructor(
     room: PublicRoom
   ) {
-    this.room = room;
-    this.code = room.code;
+    this.room =
+      room;
+
+    this.code =
+      room.code;
 
     this.engine =
       new GameEngine();
 
     this.engine.dispatch({
-      type: "START_GAME",
+      type:
+        "START_GAME",
 
       playerCount:
         room.players.length,
@@ -50,8 +56,10 @@ export class GameRoom {
     );
   }
 
-  public getState(): GameState {
-    return this.engine.getState();
+  public getState():
+    GameState {
+    return this.engine
+      .getState();
   }
 
   public dispatchForPlayer(
@@ -59,7 +67,8 @@ export class GameRoom {
     action: GameAction
   ): GameState {
     const state =
-      this.engine.getState();
+      this.engine
+        .getState();
 
     this.assertValidPlayerIndex(
       playerIndex,
@@ -72,16 +81,18 @@ export class GameRoom {
       state
     );
 
-    return this.engine.dispatch(
-      action
-    );
+    return this.engine
+      .dispatch(
+        action
+      );
   }
 
   public getStateForPlayer(
     playerIndex: number
   ): PlayerGameState {
     const state =
-      this.engine.getState();
+      this.engine
+        .getState();
 
     this.assertValidPlayerIndex(
       playerIndex,
@@ -94,8 +105,14 @@ export class GameRoom {
       ];
 
     const viewerIsHost =
-      viewer?.isHost === true;
+      viewer?.isHost ===
+      true;
 
+const connectedPlayers =
+  this.room.players.map(
+    (player) =>
+      player.isConnected
+  );
     const realNextRow =
       state.pyramid.length -
       1 -
@@ -105,12 +122,14 @@ export class GameRoom {
       state.pyramid[
         realNextRow
       ]?.[
-        state.progress.nextColumn
+        state.progress
+          .nextColumn
       ] ?? null;
 
     const nextCardForReveal =
       viewerIsHost &&
-      state.phase === "WAITING" &&
+      state.phase ===
+        "WAITING" &&
       nextCard
         ? {
             ...nextCard,
@@ -119,7 +138,9 @@ export class GameRoom {
 
     const visiblePlayers:
       Array<
-        Array<Carte | null>
+        Array<
+          Carte | null
+        >
       > =
       state.players.map(
         (
@@ -152,7 +173,8 @@ export class GameRoom {
                 card.revelee
               ) {
                 return {
-                  hidden: false,
+                  hidden:
+                    false,
 
                   card: {
                     ...card,
@@ -161,8 +183,11 @@ export class GameRoom {
               }
 
               return {
-                hidden: true,
-                card: null,
+                hidden:
+                  true,
+
+                card:
+                  null,
               };
             }
           )
@@ -173,6 +198,8 @@ export class GameRoom {
 
       viewerPlayerIndex:
         playerIndex,
+
+      connectedPlayers,
 
       nextCardForReveal,
 
@@ -190,7 +217,9 @@ export class GameRoom {
         card:
           state.current.card
             ? {
-                ...state.current.card,
+                ...state
+                  .current
+                  .card,
               }
             : null,
       },
@@ -230,7 +259,8 @@ export class GameRoom {
         ...state.memory,
 
         jokers: [
-          ...state.memory.jokers,
+          ...state.memory
+            .jokers,
         ],
 
         revealedPlayers: [
@@ -252,7 +282,8 @@ export class GameRoom {
         ],
 
         pendingAction:
-          state.turn.pendingAction
+          state.turn
+            .pendingAction
             ? {
                 ...state.turn
                   .pendingAction,
@@ -269,7 +300,8 @@ export class GameRoom {
       bluffResult:
         state.bluffResult
           ? {
-              ...state.bluffResult,
+              ...state
+                .bluffResult,
 
               revealedCard:
                 state.bluffResult
@@ -337,7 +369,9 @@ export class GameRoom {
     action: GameAction,
     state: GameState
   ): void {
-    switch (action.type) {
+    switch (
+      action.type
+    ) {
       case "START_GAME": {
         throw new Error(
           "La partie est déjà démarrée."
@@ -415,31 +449,31 @@ export class GameRoom {
         return;
       }
 
-case "USE_MEMORY_JOKER":
-case "HIDE_MEMORY_JOKER": {
-  if (
-    action.player !==
-    playerIndex
-  ) {
-    throw new Error(
-      "Tu ne peux utiliser que ton propre joker mémoire."
-    );
-  }
+      case "USE_MEMORY_JOKER":
+      case "HIDE_MEMORY_JOKER": {
+        if (
+          action.player !==
+          playerIndex
+        ) {
+          throw new Error(
+            "Tu ne peux utiliser que ton propre joker mémoire."
+          );
+        }
 
-  if (
-    state.phase !==
-      "PLAYER_TURN" ||
-    state.turn
-      .currentPlayer !==
-      playerIndex
-  ) {
-    throw new Error(
-      "Le joker mémoire ne peut être utilisé que pendant ton tour."
-    );
-  }
+        if (
+          state.phase !==
+            "PLAYER_TURN" ||
+          state.turn
+            .currentPlayer !==
+            playerIndex
+        ) {
+          throw new Error(
+            "Le joker mémoire ne peut être utilisé que pendant ton tour."
+          );
+        }
 
-  return;
-}
+        return;
+      }
 
       case "PASS":
       case "GIVE": {
@@ -488,7 +522,8 @@ case "HIDE_MEMORY_JOKER": {
       }
 
       default: {
-        const exhaustiveCheck: never =
+        const exhaustiveCheck:
+          never =
           action;
 
         throw new Error(

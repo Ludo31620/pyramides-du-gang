@@ -15,7 +15,10 @@ import type {
  */
 export interface PublicPyramidCard {
   hidden: boolean;
-  card: Carte | null;
+
+  card:
+    | Carte
+    | null;
 }
 
 /**
@@ -38,21 +41,38 @@ export interface PlayerGameState
   viewerPlayerIndex: number;
 
   /**
+   * Indique quels joueurs sont
+   * actuellement connectés au serveur.
+   *
+   * L'index correspond à celui du joueur
+   * dans la liste du salon.
+   *
+   * Les bots sont toujours considérés
+   * comme connectés.
+   */
+  connectedPlayers:
+    boolean[];
+
+  /**
    * La main du joueur connecté est visible.
    *
    * Les cartes des autres joueurs sont
    * remplacées par null.
    */
-  players: Array<
-    Array<Carte | null>
-  >;
+  players:
+    Array<
+      Array<
+        Carte | null
+      >
+    >;
 
   /**
    * La structure de la pyramide reste visible,
    * mais la valeur des cartes cachées n'est
    * jamais envoyée.
    */
-  pyramid: PublicPyramidCard[][];
+  pyramid:
+    PublicPyramidCard[][];
 
   /**
    * Carte utilisée uniquement par l'hôte

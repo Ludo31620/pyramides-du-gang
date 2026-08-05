@@ -1377,33 +1377,38 @@ export class RoomManager {
         room.maxPlayers,
 
       players:
-        room.players.map(
-          (player) => ({
-            id:
-              player.id,
+  room.players.map(
+    (player) => ({
+      id:
+        player.id,
 
-            pseudo:
-              player.pseudo,
+      pseudo:
+        player.pseudo,
 
-            avatarType:
-              player.avatarType,
+      avatarType:
+        player.avatarType,
 
-            avatarId:
-              player.avatarId,
+      avatarId:
+        player.avatarId,
 
-            avatarPhoto:
-              player.avatarPhoto,
+      avatarPhoto:
+        player.avatarPhoto,
 
-            isHost:
-              player.isHost,
+      isHost:
+        player.isHost,
 
-            isBot:
-              player.isBot,
+      isBot:
+        player.isBot,
 
-            botDifficulty:
-              player.botDifficulty,
-          })
-        ),
+      botDifficulty:
+        player.botDifficulty,
+
+      isConnected:
+        player.isBot ||
+        player.socketId !==
+          null,
+    })
+  ),
     };
   }
 

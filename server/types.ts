@@ -89,6 +89,15 @@ export type PublicRoomPlayer = {
 
   botDifficulty:
     BotDifficulty | null;
+
+  /**
+   * Indique si le joueur est actuellement
+   * connecté au serveur.
+   *
+   * Les bots sont toujours considérés
+   * comme connectés.
+   */
+  isConnected: boolean;
 };
 
 export type PublicRoom = {

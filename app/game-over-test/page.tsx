@@ -19,6 +19,12 @@ const TEST_STATE: PlayerGameState = {
     "game-over-test",
   viewerPlayerIndex: 0,
 
+connectedPlayers: [
+  true,
+  true,
+  true,
+],
+
   players: [
     [],
     [],
