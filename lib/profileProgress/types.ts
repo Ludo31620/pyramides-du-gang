@@ -193,6 +193,9 @@ export interface ProgressUpdateResult {
   unlockedTitles:
     PlayerTitleDefinition[];
 
+  unlockedRewards:
+    LevelReward[];
+
   levelBefore: number;
 
   levelAfter: number;

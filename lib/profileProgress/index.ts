@@ -38,3 +38,16 @@ export {
 export {
   recordCompletedGame,
 } from "./recordCompletedGame";
+
+export {
+  createGameOverSummary,
+} from "./gameOverSummary";
+
+export type {
+  GameOverSummary,
+} from "./gameOverSummary";
+
+export {
+  LEVEL_REWARDS,
+  getRewardsUnlockedBetweenLevels,
+} from "./rewards";

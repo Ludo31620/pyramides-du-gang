@@ -50,6 +50,14 @@ import type {
   AchievementDefinition,
 } from "@/lib/profileProgress/types";
 
+import {
+  createGameOverSummary,
+} from "@/lib/profileProgress";
+
+import type {
+  GameOverSummary,
+} from "@/lib/profileProgress";
+
 interface StoredGameInfo {
   roomCode: string;
   playerNames: string[];
@@ -196,8 +204,17 @@ const [
   useState<AchievementDefinition | null>(
     null
   );
-  const initializedRef =
-    useRef(false);
+
+const [
+  gameOverSummary,
+  setGameOverSummary,
+] =
+  useState<GameOverSummary | null>(
+    null
+  );
+
+const initializedRef =
+  useRef(false);
 
     const recordedGameRef =
   useRef<string | null>(
@@ -310,6 +327,14 @@ const viewerPlayer =
           viewerPlayerIndex ||
         phaseChanged
       );
+
+const [
+  gameOverSummary,
+  setGameOverSummary,
+] =
+  useState<GameOverSummary | null>(
+    null
+  );
 
 if (
   newDrinkNotification
@@ -540,6 +565,12 @@ useEffect(() => {
         0,
     });
 
+setGameOverSummary(
+  createGameOverSummary(
+    result
+  )
+);
+
   if (
     result.unlockedAchievements
       .length > 0
@@ -554,6 +585,7 @@ useEffect(() => {
       ]
     );
   }
+
 
   window.localStorage.setItem(
     storageKey,
@@ -748,15 +780,20 @@ useEffect(() => {
       <AnimatePresence>
         {state.phase ===
           "GAME_OVER" && (
-          <GameOverModal
-            state={state}
-            playerNames={
-              playerNames
-            }
-            onReturnToLobby={
-              returnToLobby
-            }
-          />
+
+<GameOverModal
+  state={state}
+  playerNames={
+    playerNames
+  }
+  summary={
+    gameOverSummary
+  }
+  onReturnToLobby={
+    returnToLobby
+  }
+/>
+
         )}
       </AnimatePresence>
 

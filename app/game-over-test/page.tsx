@@ -143,17 +143,20 @@ export default function GameOverTestPage() {
         </p>
       </div>
 
-      <GameOverModal
-        state={TEST_STATE}
-        playerNames={
-          PLAYER_NAMES
-        }
-        onReturnToLobby={() => {
-          console.log(
-            "Retour au lobby demandé."
-          );
-        }}
-      />
+<GameOverModal
+  state={TEST_STATE}
+  playerNames={
+    PLAYER_NAMES
+  }
+  summary={
+    null
+  }
+  onReturnToLobby={() => {
+    console.log(
+      "Retour au lobby"
+    );
+  }}
+/>
     </main>
   );
 }

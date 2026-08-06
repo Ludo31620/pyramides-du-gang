@@ -1,5 +1,8 @@
 "use client";
 
+
+import GameOverProgress from "./GameOverProgress";
+
 import {
   useEffect,
   useMemo,
@@ -29,9 +32,17 @@ import type {
   PlayerGameState,
 } from "@/lib/gameEngine/publicTypes";
 
+import type {
+  GameOverSummary,
+} from "@/lib/profileProgress";
+
 interface GameOverModalProps {
   state: PlayerGameState;
+
   playerNames: string[];
+
+  summary:
+    GameOverSummary | null;
 
   onReturnToLobby: () => void;
 }
@@ -135,8 +146,11 @@ function findMaxPlayerIndex(
 export default function GameOverModal({
   state,
   playerNames,
+  summary,
   onReturnToLobby,
 }: GameOverModalProps) {
+
+
   const [
     roomPlayers,
     setRoomPlayers,

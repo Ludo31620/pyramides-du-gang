@@ -2,6 +2,8 @@ import {
   getUnlockedAchievements,
 } from "./achievements";
 
+
+
 import {
   addXp,
   getLevelFromXp,
@@ -14,6 +16,10 @@ import type {
   PlayerProgressStats,
   ProgressUpdateResult,
 } from "./types";
+
+import {
+  getRewardsUnlockedBetweenLevels,
+} from "./rewards";
 
 const PROFILE_VERSION =
   1;
@@ -367,20 +373,28 @@ export function applyCompletedGame(
       progress.totalXp
     );
 
-  return {
-    progress,
-
-    xpGained:
-      gameXp +
-      achievementXp,
-
-    unlockedAchievements,
-
-    unlockedTitles:
-      [],
-
+const unlockedRewards =
+  getRewardsUnlockedBetweenLevels(
     levelBefore,
+    levelAfter
+  );
 
-    levelAfter,
-  };
+return {
+  progress,
+
+xpGained:
+  gameXp +
+  achievementXp,
+
+  unlockedAchievements,
+
+  unlockedTitles:
+   [],
+
+  unlockedRewards,
+
+  levelBefore,
+
+  levelAfter,
+};
 }
