@@ -16,14 +16,15 @@ import {
 } from "@/lib/premium/storage";
 
 import {
-  getPlayerLifetimeStats,
+  createPlayerProgress,
+  loadProgress,
   recordCompletedGame,
-  resetPlayerLifetimeStats,
-} from "@/lib/stats/storage";
+  saveProgress,
+} from "@/lib/profileProgress";
 
 import type {
-  PlayerLifetimeStats,
-} from "@/lib/stats/types";
+  PlayerProgress,
+} from "@/lib/profileProgress/types";
 
 interface StatItemProps {
   icon: string;
@@ -84,10 +85,10 @@ function StatItem({
 
 export default function StatisticsPage() {
   const [
-    stats,
-    setStats,
+    progress,
+    setProgress,
   ] =
-    useState<PlayerLifetimeStats | null>(
+    useState<PlayerProgress | null>(
       null
     );
 
@@ -109,8 +110,9 @@ export default function StatisticsPage() {
       entitlements.premium
     );
 
-    setStats(
-      getPlayerLifetimeStats()
+    setProgress(
+      loadProgress() ??
+        createPlayerProgress()
     );
 
     setReady(true);
@@ -119,6 +121,9 @@ export default function StatisticsPage() {
   const bluffSuccessRate =
     useMemo(
       () => {
+        const stats =
+          progress?.stats;
+
         if (
           !stats ||
           stats.bluffsAttempted <= 0
@@ -136,19 +141,48 @@ export default function StatisticsPage() {
 
         return `${percentage} %`;
       },
-      [stats]
+      [
+        progress,
+      ]
+    );
+
+  const winRate =
+    useMemo(
+      () => {
+        const stats =
+          progress?.stats;
+
+        if (
+          !stats ||
+          stats.gamesPlayed <= 0
+        ) {
+          return "0 %";
+        }
+
+        const percentage =
+          Math.round(
+            (
+              stats.gamesWon /
+              stats.gamesPlayed
+            ) * 100
+          );
+
+        return `${percentage} %`;
+      },
+      [
+        progress,
+      ]
     );
 
   function handleAddTestGame():
     void {
-    const updatedStats =
+    const result =
       recordCompletedGame({
-        gameId:
-          `test-${Date.now()}`,
+        won: true,
 
         drinksGiven: 8,
 
-        drinksReceived: 5,
+        drinksTaken: 5,
 
         claimsMade: 4,
 
@@ -157,26 +191,44 @@ export default function StatisticsPage() {
         successfulBluffs: 1,
 
         caughtBluffs: 1,
+
+        distributionAnswers: 4,
+
+        correctDistributionAnswers: 3,
+
+        usedMemoryJokers: 1,
+
+        completedMemoryWithoutJoker:
+          false,
+
+        cardsRevealed: 15,
+
+        playTimeMs:
+          12 * 60 * 1000,
       });
 
-    setStats(
-      updatedStats
+    setProgress(
+      result.progress
     );
   }
 
   function handleResetStats():
     void {
-    const resetStats =
-      resetPlayerLifetimeStats();
+    const resetProgress =
+      createPlayerProgress();
 
-    setStats(
-      resetStats
+    saveProgress(
+      resetProgress
+    );
+
+    setProgress(
+      resetProgress
     );
   }
 
   if (
     !ready ||
-    !stats
+    !progress
   ) {
     return (
       <main
@@ -202,6 +254,15 @@ export default function StatisticsPage() {
       </main>
     );
   }
+
+  const stats =
+    progress.stats;
+
+  const totalPlayMinutes =
+    Math.floor(
+      stats.totalPlayTimeMs /
+      60_000
+    );
 
   return (
     <main
@@ -312,8 +373,8 @@ export default function StatisticsPage() {
                 >
                   Active Premium pour
                   suivre tes parties,
-                  tes bluffs et tes
-                  gorgées.
+                  tes victoires, tes
+                  bluffs et tes gorgées.
                 </p>
               </ThemeCard>
 
@@ -376,6 +437,22 @@ export default function StatisticsPage() {
                 />
 
                 <StatItem
+                  icon="🏆"
+                  label="Victoires"
+                  value={
+                    stats.gamesWon
+                  }
+                />
+
+                <StatItem
+                  icon="📈"
+                  label="Taux de victoire"
+                  value={
+                    winRate
+                  }
+                />
+
+                <StatItem
                   icon="🍻"
                   label="Gorgées données"
                   value={
@@ -387,7 +464,7 @@ export default function StatisticsPage() {
                   icon="🥴"
                   label="Gorgées reçues"
                   value={
-                    stats.drinksReceived
+                    stats.drinksTaken
                   }
                 />
 
@@ -424,10 +501,42 @@ export default function StatisticsPage() {
                 />
 
                 <StatItem
-                  icon="📈"
+                  icon="🎯"
                   label="Réussite bluff"
                   value={
                     bluffSuccessRate
+                  }
+                />
+
+                <StatItem
+                  icon="🔥"
+                  label="Meilleure série"
+                  value={
+                    stats.bestWinStreak
+                  }
+                />
+
+                <StatItem
+                  icon="⏱️"
+                  label="Temps joué"
+                  value={
+                    `${totalPlayMinutes} min`
+                  }
+                />
+
+                <StatItem
+                  icon="🧠"
+                  label="Jokers mémoire"
+                  value={
+                    stats.memoryJokersUsed
+                  }
+                />
+
+                <StatItem
+                  icon="🃏"
+                  label="Cartes révélées"
+                  value={
+                    stats.cardsRevealed
                   }
                 />
               </div>

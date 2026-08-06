@@ -4,21 +4,14 @@ import Link from "next/link";
 
 import {
   useEffect,
-  useMemo,
   useState,
 } from "react";
 
-import ProfileAvatar from "@/components/profile/ProfileAvatar";
+import ProfileAchievementPreview from "@/components/profile/ProfileAchievementPreview";
 import ProfileEditor from "@/components/profile/ProfileEditor";
+import ProfileHeader from "@/components/profile/ProfileHeader";
+import ProfileStatsGrid from "@/components/profile/ProfileStatsGrid";
 import ThemeCard from "@/components/ui/ThemeCard";
-
-import {
-  getAllAchievements,
-} from "@/lib/achievements/achievements";
-
-import {
-  getUnlockedAchievements,
-} from "@/lib/achievements/storage";
 
 import {
   imageFileToDataUrl,
@@ -40,40 +33,52 @@ import type {
 } from "@/lib/profile/types";
 
 import {
-  getPlayerLifetimeStats,
-} from "@/lib/stats/storage";
+  ACHIEVEMENTS,
+  createPlayerProgress,
+  getLevelProgress,
+  loadProgress,
+} from "@/lib/profileProgress";
 
 import type {
-  PlayerLifetimeStats,
-} from "@/lib/stats/types";
+  PlayerProgress,
+  PlayerProgressStats,
+} from "@/lib/profileProgress/types";
 
 function getPlayerRank(
-  stats: PlayerLifetimeStats
+  stats: PlayerProgressStats
 ): string {
   if (
-    stats.gamesPlayed >= 250 ||
-    stats.successfulBluffs >= 100
+    stats.gamesPlayed >=
+      250 ||
+    stats.successfulBluffs >=
+      100
   ) {
     return "Légende du Gang";
   }
 
   if (
-    stats.gamesPlayed >= 100 ||
-    stats.successfulBluffs >= 50
+    stats.gamesPlayed >=
+      100 ||
+    stats.successfulBluffs >=
+      50
   ) {
     return "Le Parrain";
   }
 
   if (
-    stats.gamesPlayed >= 50 ||
-    stats.successfulBluffs >= 25
+    stats.gamesPlayed >=
+      50 ||
+    stats.successfulBluffs >=
+      25
   ) {
     return "Maître du Bluff";
   }
 
   if (
-    stats.gamesPlayed >= 10 ||
-    stats.successfulBluffs >= 10
+    stats.gamesPlayed >=
+      10 ||
+    stats.successfulBluffs >=
+      10
   ) {
     return "Membre confirmé";
   }
@@ -81,69 +86,12 @@ function getPlayerRank(
   return "Nouvelle recrue";
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: string;
-  label: string;
-  value: number | string;
-}) {
-  return (
-    <ThemeCard
-      as="div"
-      variant="elevated"
-      className="
-        rounded-2xl
-        p-4
-        shadow-none
-        sm:p-4
-      "
-    >
-      <div className="flex items-center gap-3">
-        <span
-          aria-hidden="true"
-          className="text-2xl"
-        >
-          {icon}
-        </span>
-
-        <div className="min-w-0">
-          <p
-            className="
-              text-xs
-              font-bold
-              uppercase
-              tracking-wider
-              text-[var(--color-text-muted)]
-            "
-          >
-            {label}
-          </p>
-
-          <p
-            className="
-              mt-1
-              text-xl
-              font-black
-              text-[var(--color-text)]
-            "
-          >
-            {value}
-          </p>
-        </div>
-      </div>
-    </ThemeCard>
-  );
-}
-
 export default function ProfilePage() {
   const [
-    stats,
-    setStats,
+    progress,
+    setProgress,
   ] =
-    useState<PlayerLifetimeStats | null>(
+    useState<PlayerProgress | null>(
       null
     );
 
@@ -173,11 +121,6 @@ export default function ProfilePage() {
     );
 
   const [
-    unlockedCount,
-    setUnlockedCount,
-  ] = useState(0);
-
-  const [
     ready,
     setReady,
   ] = useState(false);
@@ -190,17 +133,13 @@ export default function ProfilePage() {
       null
     );
 
-  const totalAchievements =
-    useMemo(
-      () =>
-        getAllAchievements()
-          .length,
-      []
-    );
-
   useEffect(() => {
     const storedProfile =
       getPlayerProfile();
+
+    const storedProgress =
+      loadProgress() ??
+      createPlayerProgress();
 
     setProfile(
       storedProfile
@@ -215,13 +154,8 @@ export default function ProfilePage() {
         "fox"
     );
 
-    setStats(
-      getPlayerLifetimeStats()
-    );
-
-    setUnlockedCount(
-      getUnlockedAchievements()
-        .length
+    setProgress(
+      storedProgress
     );
 
     setReady(true);
@@ -320,17 +254,22 @@ export default function ProfilePage() {
           256
         );
 
+      const updatedProfile:
+        PlayerProfile = {
+        ...profile,
+
+        avatarType:
+          "PHOTO",
+
+        avatarPhoto,
+      };
+
       setProfile(
-        (
-          currentProfile
-        ) => ({
-          ...currentProfile,
+        updatedProfile
+      );
 
-          avatarType:
-            "PHOTO",
-
-          avatarPhoto,
-        })
+      savePlayerProfile(
+        updatedProfile
       );
 
       setSavedMessage(
@@ -345,21 +284,26 @@ export default function ProfilePage() {
 
   function handlePhotoRemoved():
     void {
+    const updatedProfile:
+      PlayerProfile = {
+      ...profile,
+
+      avatarType:
+        "DEFAULT",
+
+      avatarId:
+        selectedAvatarId,
+
+      avatarPhoto:
+        null,
+    };
+
     setProfile(
-      (
-        currentProfile
-      ) => ({
-        ...currentProfile,
+      updatedProfile
+    );
 
-        avatarType:
-          "DEFAULT",
-
-        avatarId:
-          selectedAvatarId,
-
-        avatarPhoto:
-          null,
-      })
+    savePlayerProfile(
+      updatedProfile
     );
 
     setSavedMessage(
@@ -419,7 +363,7 @@ export default function ProfilePage() {
 
   if (
     !ready ||
-    !stats
+    !progress
   ) {
     return (
       <main
@@ -446,12 +390,21 @@ export default function ProfilePage() {
     );
   }
 
-  const bluffSuccessRate =
-    stats.bluffsAttempted > 0
+  const stats =
+    progress.stats;
+
+  const levelProgress =
+    getLevelProgress(
+      progress.totalXp
+    );
+
+  const winRate =
+    stats.gamesPlayed >
+      0
       ? Math.round(
           (
-            stats.successfulBluffs /
-            stats.bluffsAttempted
+            stats.gamesWon /
+            stats.gamesPlayed
           ) * 100
         )
       : 0;
@@ -495,159 +448,120 @@ export default function ProfilePage() {
           ← Retour
         </Link>
 
-        <ThemeCard
-          variant="highlighted"
-          className="mt-8"
-        >
-          <div className="text-center">
-            <ProfileAvatar
-              avatarType={
-                profile.avatarType
-              }
-              avatarId={
-                selectedAvatarId
-              }
-              avatarPhoto={
-                profile.avatarPhoto
-              }
-              onPhotoSelected={
-                handlePhotoSelected
-              }
-              onPhotoRemoved={
-                handlePhotoRemoved
-              }
-            />
-
-            <p
-              className="
-                mt-5
-                text-xs
-                font-black
-                uppercase
-                tracking-[0.25em]
-                text-[var(--color-primary)]
-              "
-            >
-              Profil joueur
-            </p>
-
-            <h1
-              className="
-                mt-2
-                break-words
-                text-4xl
-                font-black
-              "
-            >
-              {displayedPseudo}
-            </h1>
-
-            <div
-              className="
-                mt-4
-                inline-flex
-                items-center
-                gap-2
-                rounded-full
-                border
-                border-[var(--color-border)]
-                bg-[var(--color-surface-elevated)]
-                px-4
-                py-2
-              "
-            >
-              <span aria-hidden="true">
-                👑
-              </span>
-
-              <span className="text-sm font-black">
-                {rank}
-              </span>
-            </div>
-          </div>
-
-          <ProfileEditor
+        <div className="mt-8 space-y-8">
+          <ProfileHeader
             pseudo={
-              pseudo
+              displayedPseudo
             }
-            onPseudoChange={
-              setPseudo
+            rank={
+              rank
             }
-            selectedAvatarId={
+            avatarType={
+              profile.avatarType
+            }
+            avatarId={
               selectedAvatarId
             }
-            onAvatarSelect={
-              handleAvatarSelect
+            avatarPhoto={
+              profile.avatarPhoto
             }
-            onSave={
-              handleSaveProfile
+            levelProgress={
+              levelProgress
             }
-            onReset={
-              handleResetProfile
+            onPhotoSelected={
+              handlePhotoSelected
             }
-            savedMessage={
-              savedMessage
+            onPhotoRemoved={
+              handlePhotoRemoved
             }
           />
 
-          <div
-            className="
-              mt-10
-              grid
-              grid-cols-2
-              gap-3
-            "
+          <ThemeCard
+            variant="elevated"
+            className="rounded-3xl"
           >
-            <StatCard
-              icon="🎮"
-              label="Parties"
-              value={
-                stats.gamesPlayed
+            <div>
+              <p
+                className="
+                  text-xs
+                  font-black
+                  uppercase
+                  tracking-[0.22em]
+                  text-[var(--color-primary)]
+                "
+              >
+                Personnalisation
+              </p>
+
+              <h2
+                className="
+                  mt-1
+                  text-2xl
+                  font-black
+                  text-[var(--color-text)]
+                "
+              >
+                Modifier le profil
+              </h2>
+            </div>
+
+            <ProfileEditor
+              pseudo={
+                pseudo
+              }
+              onPseudoChange={
+                setPseudo
+              }
+              selectedAvatarId={
+                selectedAvatarId
+              }
+              onAvatarSelect={
+                handleAvatarSelect
+              }
+              onSave={
+                handleSaveProfile
+              }
+              onReset={
+                handleResetProfile
+              }
+              savedMessage={
+                savedMessage
               }
             />
+          </ThemeCard>
 
-            <StatCard
-              icon="🏆"
-              label="Succès"
-              value={
-                `${unlockedCount} / ${totalAchievements}`
-              }
-            />
+          <ProfileStatsGrid
+            gamesPlayed={
+              stats.gamesPlayed
+            }
+            gamesWon={
+              stats.gamesWon
+            }
+            winRate={
+              winRate
+            }
+            drinksGiven={
+              stats.drinksGiven
+            }
+            drinksTaken={
+              stats.drinksTaken
+            }
+            successfulBluffs={
+              stats.successfulBluffs
+            }
+          />
 
-            <StatCard
-              icon="🍻"
-              label="Données"
-              value={
-                stats.drinksGiven
-              }
-            />
+          <ProfileAchievementPreview
+            achievements={
+              ACHIEVEMENTS
+            }
+            unlockedAchievements={
+              progress
+                .unlockedAchievements
+            }
+          />
 
-            <StatCard
-              icon="🥴"
-              label="Reçues"
-              value={
-                stats.drinksReceived
-              }
-            />
-
-            <StatCard
-              icon="🎭"
-              label="Bluffs"
-              value={
-                stats.bluffsAttempted
-              }
-            />
-
-            <StatCard
-              icon="📈"
-              label="Réussite"
-              value={
-                `${bluffSuccessRate} %`
-              }
-            />
-          </div>
-
-          <div className="mt-8 space-y-3">
+          <section className="space-y-3">
             <Link
               href="/statistiques"
               className="
@@ -670,38 +584,6 @@ export default function ProfilePage() {
             >
               <span>
                 📊 Statistiques détaillées
-              </span>
-
-              <span
-                aria-hidden="true"
-                className="text-[var(--color-text-muted)]"
-              >
-                ›
-              </span>
-            </Link>
-
-            <Link
-              href="/succes"
-              className="
-                flex
-                min-h-14
-                w-full
-                items-center
-                justify-between
-                rounded-2xl
-                border
-                border-[var(--color-border)]
-                bg-[var(--color-surface-elevated)]
-                px-5
-                py-4
-                font-black
-                transition
-                hover:border-[var(--color-primary)]
-                active:scale-[0.98]
-              "
-            >
-              <span>
-                🏆 Voir les succès
               </span>
 
               <span
@@ -741,21 +623,22 @@ export default function ProfilePage() {
                 ›
               </span>
             </Link>
-          </div>
+          </section>
 
           <p
             className="
-              mt-6
+              pb-4
               text-center
               text-xs
               leading-5
               text-[var(--color-text-muted)]
             "
           >
-            Le profil est enregistré
-            localement sur cet appareil.
+            Le profil et la progression sont
+            enregistrés localement sur cet
+            appareil.
           </p>
-        </ThemeCard>
+        </div>
       </div>
     </main>
   );

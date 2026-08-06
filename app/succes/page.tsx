@@ -11,45 +11,430 @@ import {
 import ThemeCard from "@/components/ui/ThemeCard";
 
 import {
-  getAllAchievements,
-} from "@/lib/achievements/achievements";
-
-import {
-  getAchievementProgress,
-} from "@/lib/achievements/progress";
-
-import {
-  getUnlockedAchievements,
-} from "@/lib/achievements/storage";
+  ACHIEVEMENTS,
+  createPlayerProgress,
+  loadProgress,
+} from "@/lib/profileProgress";
 
 import type {
   AchievementDefinition,
-  UnlockedAchievement,
-} from "@/lib/achievements/types";
+  AchievementId,
+  PlayerProgress,
+  PlayerProgressStats,
+} from "@/lib/profileProgress/types";
 
-import {
-  getPlayerLifetimeStats,
-} from "@/lib/stats/storage";
+interface AchievementProgress {
+  current: number;
+  target: number;
+  percentage: number;
+}
 
-import type {
-  PlayerLifetimeStats,
-} from "@/lib/stats/types";
+function getAchievementProgress(
+  achievementId:
+    AchievementId,
+  stats:
+    PlayerProgressStats
+): AchievementProgress {
+  let current =
+    0;
+
+  let target =
+    1;
+
+  switch (
+    achievementId
+  ) {
+    case "FIRST_GAME":
+      current =
+        stats.gamesPlayed;
+      target =
+        1;
+      break;
+
+    case "TEN_GAMES":
+      current =
+        stats.gamesPlayed;
+      target =
+        10;
+      break;
+
+    case "HUNDRED_GAMES":
+      current =
+        stats.gamesPlayed;
+      target =
+        100;
+      break;
+
+    case "FIRST_WIN":
+      current =
+        stats.gamesWon;
+      target =
+        1;
+      break;
+
+    case "TEN_WINS":
+      current =
+        stats.gamesWon;
+      target =
+        10;
+      break;
+
+    case "TWENTY_FIVE_WINS":
+      current =
+        stats.gamesWon;
+      target =
+        25;
+      break;
+
+    case "FIRST_BLUFF":
+      current =
+        stats.successfulBluffs;
+      target =
+        1;
+      break;
+
+    case "TEN_SUCCESSFUL_BLUFFS":
+      current =
+        stats.successfulBluffs;
+      target =
+        10;
+      break;
+
+    case "FIFTY_SUCCESSFUL_BLUFFS":
+      current =
+        stats.successfulBluffs;
+      target =
+        50;
+      break;
+
+    case "HUNDRED_SUCCESSFUL_BLUFFS":
+      current =
+        stats.successfulBluffs;
+      target =
+        100;
+      break;
+
+    case "HUNDRED_DRINKS_GIVEN":
+      current =
+        stats.drinksGiven;
+      target =
+        100;
+      break;
+
+    case "FIVE_HUNDRED_DRINKS_GIVEN":
+      current =
+        stats.drinksGiven;
+      target =
+        500;
+      break;
+
+    case "THOUSAND_DRINKS_GIVEN":
+      current =
+        stats.drinksGiven;
+      target =
+        1000;
+      break;
+
+    case "HUNDRED_DRINKS_TAKEN":
+      current =
+        stats.drinksTaken;
+      target =
+        100;
+      break;
+
+    case "FIVE_HUNDRED_DRINKS_TAKEN":
+      current =
+        stats.drinksTaken;
+      target =
+        500;
+      break;
+
+    case "FIRST_MEMORY_JOKER":
+      current =
+        stats.memoryJokersUsed;
+      target =
+        1;
+      break;
+
+    case "TEN_MEMORY_JOKERS":
+      current =
+        stats.memoryJokersUsed;
+      target =
+        10;
+      break;
+
+    case "FIFTY_MEMORY_JOKERS":
+      current =
+        stats.memoryJokersUsed;
+      target =
+        50;
+      break;
+
+    case "FIRST_PERFECT_DISTRIBUTION":
+      current =
+        stats.perfectDistributions;
+      target =
+        1;
+      break;
+
+    case "TEN_PERFECT_DISTRIBUTIONS":
+      current =
+        stats.perfectDistributions;
+      target =
+        10;
+      break;
+
+    case "FIRST_MEMORY_MASTER":
+      current =
+        stats
+          .memoryRoundsCompletedWithoutJoker;
+      target =
+        1;
+      break;
+
+    case "TEN_MEMORY_MASTERS":
+      current =
+        stats
+          .memoryRoundsCompletedWithoutJoker;
+      target =
+        10;
+      break;
+
+    default: {
+      const exhaustiveCheck:
+        never =
+        achievementId;
+
+      return exhaustiveCheck;
+    }
+  }
+
+  const percentage =
+    target > 0
+      ? Math.min(
+          100,
+          Math.round(
+            (
+              current /
+              target
+            ) * 100
+          )
+        )
+      : 0;
+
+  return {
+    current,
+    target,
+    percentage,
+  };
+}
+
+function AchievementCard({
+  achievement,
+  progress,
+  unlocked,
+}: {
+  achievement:
+    AchievementDefinition;
+
+  progress:
+    AchievementProgress;
+
+  unlocked:
+    boolean;
+}) {
+  const hidden =
+    achievement.hidden ===
+      true &&
+    !unlocked;
+
+  const title =
+    hidden
+      ? "???"
+      : achievement.title;
+
+  const description =
+    hidden
+      ? "Succès secret"
+      : achievement.description;
+
+  const icon =
+    hidden
+      ? "❔"
+      : achievement.icon;
+
+  return (
+    <ThemeCard
+      as="article"
+      variant={
+        unlocked
+          ? "highlighted"
+          : "elevated"
+      }
+      className="
+        rounded-2xl
+        p-5
+        shadow-none
+        sm:p-5
+      "
+    >
+      <div className="flex items-start gap-4">
+        <div
+          className={`
+            flex
+            h-14
+            w-14
+            shrink-0
+            items-center
+            justify-center
+            rounded-2xl
+            border
+            text-2xl
+            ${
+              unlocked
+                ? `
+                    border-[var(--color-primary)]
+                    bg-[var(--color-primary)]
+                    text-[var(--color-primary-text)]
+                  `
+                : `
+                    border-[var(--color-border)]
+                    bg-[var(--color-surface)]
+                    opacity-60
+                  `
+            }
+          `}
+          aria-hidden="true"
+        >
+          {icon}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2
+              className="
+                text-lg
+                font-black
+              "
+            >
+              {title}
+            </h2>
+
+            <span
+              className="
+                rounded-full
+                bg-[var(--color-primary)]
+                px-2
+                py-1
+                text-[10px]
+                font-black
+                uppercase
+                tracking-wider
+                text-[var(--color-primary-text)]
+              "
+            >
+              +{achievement.xpReward} XP
+            </span>
+
+            <span
+              className={`
+                ml-auto
+                text-sm
+                font-black
+                ${
+                  unlocked
+                    ? "text-[var(--color-success)]"
+                    : "text-[var(--color-text-muted)]"
+                }
+              `}
+            >
+              {unlocked
+                ? "Débloqué"
+                : "Verrouillé"}
+            </span>
+          </div>
+
+          <p
+            className="
+              mt-2
+              text-sm
+              leading-6
+              text-[var(--color-text-muted)]
+            "
+          >
+            {description}
+          </p>
+
+          <div className="mt-4">
+            <div className="flex items-center justify-between gap-3">
+              <p
+                className="
+                  text-xs
+                  font-bold
+                  uppercase
+                  tracking-wider
+                  text-[var(--color-text-muted)]
+                "
+              >
+                Progression
+              </p>
+
+              <p
+                className="
+                  text-sm
+                  font-black
+                "
+              >
+                {Math.min(
+                  progress.current,
+                  progress.target
+                )}
+                {" / "}
+                {progress.target}
+              </p>
+            </div>
+
+            <div
+              className="
+                mt-2
+                h-2.5
+                overflow-hidden
+                rounded-full
+                bg-black/30
+              "
+            >
+              <div
+                className={`
+                  h-full
+                  rounded-full
+                  transition-[width]
+                  duration-300
+                  ${
+                    unlocked
+                      ? "bg-[var(--color-success)]"
+                      : "bg-[var(--color-primary)]"
+                  }
+                `}
+                style={{
+                  width:
+                    `${progress.percentage}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </ThemeCard>
+  );
+}
 
 export default function SuccessPage() {
   const [
-    stats,
-    setStats,
+    progress,
+    setProgress,
   ] =
-    useState<PlayerLifetimeStats | null>(
+    useState<PlayerProgress | null>(
       null
-    );
-
-  const [
-    unlockedAchievements,
-    setUnlockedAchievements,
-  ] =
-    useState<UnlockedAchievement[]>(
-      []
     );
 
   const [
@@ -57,20 +442,10 @@ export default function SuccessPage() {
     setReady,
   ] = useState(false);
 
-  const achievements =
-    useMemo(
-      () =>
-        getAllAchievements(),
-      []
-    );
-
   useEffect(() => {
-    setStats(
-      getPlayerLifetimeStats()
-    );
-
-    setUnlockedAchievements(
-      getUnlockedAchievements()
+    setProgress(
+      loadProgress() ??
+        createPlayerProgress()
     );
 
     setReady(true);
@@ -80,23 +455,29 @@ export default function SuccessPage() {
     useMemo(
       () =>
         new Set(
-          unlockedAchievements.map(
-            (
-              achievement
-            ) =>
-              achievement.id
-          )
+          progress
+            ?.unlockedAchievements
+            .map(
+              (
+                achievement
+              ) =>
+                achievement.id
+            ) ??
+            []
         ),
       [
-        unlockedAchievements,
+        progress,
       ]
     );
 
   const unlockedCount =
-    unlockedAchievements.length;
+    progress
+      ?.unlockedAchievements
+      .length ??
+    0;
 
   const totalCount =
-    achievements.length;
+    ACHIEVEMENTS.length;
 
   const globalPercentage =
     totalCount > 0
@@ -108,41 +489,9 @@ export default function SuccessPage() {
         )
       : 0;
 
-  function getRarityLabel(
-    rarity:
-      AchievementDefinition["rarity"]
-  ): string {
-    switch (rarity) {
-      case "COMMON":
-        return "Commun";
-      case "RARE":
-        return "Rare";
-      case "EPIC":
-        return "Épique";
-      case "LEGENDARY":
-        return "Légendaire";
-    }
-  }
-
-  function getRarityClasses(
-    rarity:
-      AchievementDefinition["rarity"]
-  ): string {
-    switch (rarity) {
-      case "COMMON":
-        return "bg-zinc-700 text-white";
-      case "RARE":
-        return "bg-blue-600 text-white";
-      case "EPIC":
-        return "bg-purple-600 text-white";
-      case "LEGENDARY":
-        return "bg-yellow-400 text-black";
-    }
-  }
-
   if (
     !ready ||
-    !stats
+    !progress
   ) {
     return (
       <main
@@ -295,6 +644,13 @@ export default function SuccessPage() {
                 rounded-full
                 bg-black/30
               "
+              role="progressbar"
+              aria-label="Progression globale des succès"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={
+                globalPercentage
+              }
             >
               <div
                 className="
@@ -313,221 +669,30 @@ export default function SuccessPage() {
           </ThemeCard>
 
           <div className="mt-6 space-y-4">
-            {achievements.map(
+            {ACHIEVEMENTS.map(
               (
                 achievement
-              ) => {
-                const unlocked =
-                  unlockedIds.has(
+              ) => (
+                <AchievementCard
+                  key={
                     achievement.id
-                  );
-
-const displayTitle: string =
-  achievement.hidden &&
-  !unlocked
-    ? "???"
-    : achievement.title;
-
-const displayDescription: string =
-  achievement.hidden &&
-  !unlocked
-    ? "Succès secret"
-    : achievement.description;
-
-
-
-                const progress =
-                  getAchievementProgress(
-                    achievement,
-                    stats
-                  );
-
-                return (
-                  <ThemeCard
-                    key={
+                  }
+                  achievement={
+                    achievement
+                  }
+                  unlocked={
+                    unlockedIds.has(
                       achievement.id
-                    }
-                    as="article"
-                    variant={
-                      unlocked
-                        ? "highlighted"
-                        : "elevated"
-                    }
-                    className="
-                      rounded-2xl
-                      p-5
-                      shadow-none
-                      sm:p-5
-                    "
-                  >
-                    <div className="flex items-start gap-4">
-                      <div
-                        className={`
-                          flex
-                          h-14
-                          w-14
-                          shrink-0
-                          items-center
-                          justify-center
-                          rounded-2xl
-                          border
-                          text-2xl
-                          ${
-                            unlocked
-                              ? `
-                                  border-[var(--color-primary)]
-                                  bg-[var(--color-primary)]
-                                  text-[var(--color-primary-text)]
-                                `
-                              : `
-                                  border-[var(--color-border)]
-                                  bg-[var(--color-surface)]
-                                  opacity-60
-                                `
-                          }
-                        `}
-                      >
-                        {
-                          achievement.icon
-                        }
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h2
-                            className="
-                              text-lg
-                              font-black
-                            "
-                          >
-                            {
-                              achievement.title
-                            }
-                          </h2>
-
-                          {achievement.premium && (
-                            <span
-                              className="
-                                rounded-full
-                                bg-[var(--color-primary)]
-                                px-2
-                                py-1
-                                text-[10px]
-                                font-black
-                                uppercase
-                                tracking-wider
-                                text-[var(--color-primary-text)]
-                              "
-                            >
-                              Premium
-                            </span>
-                          )}
-
-                          <span
-                            className={`rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-wider ${getRarityClasses(
-                              achievement.rarity
-                            )}`}
-                          >
-                            {getRarityLabel(
-                              achievement.rarity
-                            )}
-                          </span>
-
-                          <span
-                            className={`
-                              ml-auto
-                              text-sm
-                              font-black
-                              ${
-                                unlocked
-                                  ? "text-[var(--color-success)]"
-                                  : "text-[var(--color-text-muted)]"
-                              }
-                            `}
-                          >
-                            {unlocked
-                              ? "Débloqué"
-                              : "Verrouillé"}
-                          </span>
-                        </div>
-
-                        <p
-                          className="
-                            mt-2
-                            text-sm
-                            leading-6
-                            text-[var(--color-text-muted)]
-                          "
-                        >
-                          {
-                            achievement.description
-                          }
-                        </p>
-
-                        <div className="mt-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <p
-                              className="
-                                text-xs
-                                font-bold
-                                uppercase
-                                tracking-wider
-                                text-[var(--color-text-muted)]
-                              "
-                            >
-                              Progression
-                            </p>
-
-                            <p
-                              className="
-                                text-sm
-                                font-black
-                              "
-                            >
-                              {Math.min(
-                                progress.current,
-                                progress.target
-                              )}
-                              {" / "}
-                              {
-                                progress.target
-                              }
-                            </p>
-                          </div>
-
-                          <div
-                            className="
-                              mt-2
-                              h-2.5
-                              overflow-hidden
-                              rounded-full
-                              bg-black/30
-                            "
-                          >
-                            <div
-                              className={`
-                                h-full
-                                rounded-full
-                                transition-[width]
-                                duration-300
-                                ${
-                                  unlocked
-                                    ? "bg-[var(--color-success)]"
-                                    : "bg-[var(--color-primary)]"
-                                }
-                              `}
-                              style={{
-                                width:
-                                  `${progress.percentage}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </ThemeCard>
-                );
-              }
+                    )
+                  }
+                  progress={
+                    getAchievementProgress(
+                      achievement.id,
+                      progress.stats
+                    )
+                  }
+                />
+              )
             )}
           </div>
 
@@ -540,9 +705,9 @@ const displayDescription: string =
               text-[var(--color-text-muted)]
             "
           >
-            Les succès sont enregistrés
-            sur cet appareil à la fin de
-            chaque partie.
+            Les succès et leur progression
+            sont enregistrés localement sur
+            cet appareil.
           </p>
         </ThemeCard>
       </div>

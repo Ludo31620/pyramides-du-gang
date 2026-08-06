@@ -2,11 +2,7 @@
 
 import {
   recordCompletedGame,
-} from "@/lib/stats/storage";
-
-import {
-  checkAchievements,
-} from "@/lib/achievements/engine";
+} from "@/lib/profileProgress";
 
 import {
   useEffect,
@@ -50,13 +46,9 @@ import type {
 
 
 
-import {
-  getAchievement,
-} from "@/lib/achievements/achievements";
-
 import type {
   AchievementDefinition,
-} from "@/lib/achievements/types";
+} from "@/lib/profileProgress/types";
 
 interface StoredGameInfo {
   roomCode: string;
@@ -167,10 +159,8 @@ function GameLoadingScreen() {
 }
 
 function GameScreen({
-  roomCode,
   playerNames,
 }: {
-  roomCode: string;
   playerNames: string[];
 }) {
   const {
@@ -459,8 +449,8 @@ useEffect(() => {
     return;
   }
 
-const gameId =
-  state.gameId;
+  const gameId =
+    state.gameId;
 
   if (
     recordedGameRef.current ===
@@ -469,66 +459,111 @@ const gameId =
     return;
   }
 
-  const updatedStats =
-  recordCompletedGame({
-    gameId,
+  const storageKey =
+    `pyramides-progress-recorded-${gameId}`;
 
-    drinksGiven:
-      playerStats.drinksGiven,
+  if (
+    window.localStorage.getItem(
+      storageKey
+    ) === "true"
+  ) {
+    recordedGameRef.current =
+      gameId;
 
-    drinksReceived:
-      state.drinks[
-        state.viewerPlayerIndex
-      ],
+    return;
+  }
 
-    claimsMade:
-      playerStats.claimsMade,
+  const drinksTaken =
+    state.drinks[
+      state.viewerPlayerIndex
+    ] ?? 0;
 
-    bluffsAttempted:
-      playerStats.bluffsAttempted,
+  const minimumDrinks =
+    Math.min(
+      ...state.drinks
+    );
 
-    successfulBluffs:
-      playerStats.successfulBluffs,
+  const won =
+    drinksTaken ===
+    minimumDrinks;
 
-    caughtBluffs:
-      playerStats.caughtBluffs,
-  });
+  const remainingJokers =
+    state.memory.jokers[
+      state.viewerPlayerIndex
+    ] ?? 0;
 
-const achievementResult =
-  checkAchievements(
-    updatedStats
+  const usedMemoryJokers =
+    Math.max(
+      0,
+      2 -
+        remainingJokers
+    );
+
+  const result =
+    recordCompletedGame({
+      won,
+
+      drinksGiven:
+        playerStats.drinksGiven,
+
+      drinksTaken,
+
+      claimsMade:
+        playerStats.claimsMade,
+
+      bluffsAttempted:
+        playerStats.bluffsAttempted,
+
+      successfulBluffs:
+        playerStats.successfulBluffs,
+
+      caughtBluffs:
+        playerStats.caughtBluffs,
+
+      distributionAnswers:
+        0,
+
+      correctDistributionAnswers:
+        0,
+
+      usedMemoryJokers,
+
+      completedMemoryWithoutJoker:
+        usedMemoryJokers ===
+        0,
+
+      cardsRevealed:
+        state.progress
+          .revealedCards,
+
+      playTimeMs:
+        0,
+    });
+
+  if (
+    result.unlockedAchievements
+      .length > 0
+  ) {
+    setAchievementQueue(
+      (
+        currentQueue
+      ) => [
+        ...currentQueue,
+        ...result
+          .unlockedAchievements,
+      ]
+    );
+  }
+
+  window.localStorage.setItem(
+    storageKey,
+    "true"
   );
 
-const unlockedAchievements =
-  achievementResult.unlocked.map(
-    (
-      achievement
-    ) =>
-      getAchievement(
-        achievement.id
-      )
-  );
-
-if (
-  unlockedAchievements.length >
-  0
-) {
-  setAchievementQueue(
-    (
-      currentQueue
-    ) => [
-      ...currentQueue,
-      ...unlockedAchievements,
-    ]
-  );
-}
-
-recordedGameRef.current =
-  gameId;
-  
+  recordedGameRef.current =
+    gameId;
 }, [
   state,
-  roomCode,
 ]);
 
 useEffect(() => {
@@ -947,9 +982,6 @@ export default function JeuPage() {
       }
     >
 <GameScreen
-  roomCode={
-    gameInfo.roomCode
-  }
   playerNames={
     gameInfo.playerNames
   }

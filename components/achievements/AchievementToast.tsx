@@ -2,7 +2,7 @@
 
 import type {
   AchievementDefinition,
-} from "@/lib/achievements/types";
+} from "@/lib/profileProgress/types";
 
 interface AchievementToastProps {
   achievement:
@@ -15,9 +15,7 @@ export default function AchievementToast({
   achievement,
   visible,
 }: AchievementToastProps) {
-  if (
-    !achievement
-  ) {
+  if (!achievement) {
     return null;
   }
 
@@ -42,7 +40,7 @@ export default function AchievementToast({
         ${
           visible
             ? "translate-y-0 opacity-100"
-            : "-translate-y-10 opacity-0 pointer-events-none"
+            : "-translate-y-10 pointer-events-none opacity-0"
         }
       `}
     >
@@ -52,17 +50,19 @@ export default function AchievementToast({
             flex
             h-14
             w-14
+            shrink-0
             items-center
             justify-center
             rounded-2xl
             bg-yellow-400
             text-3xl
           "
+          aria-hidden="true"
         >
           {achievement.icon}
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p
             className="
               text-xs
@@ -90,10 +90,22 @@ export default function AchievementToast({
             className="
               mt-1
               text-sm
+              leading-5
               text-zinc-400
             "
           >
             {achievement.description}
+          </p>
+
+          <p
+            className="
+              mt-2
+              text-xs
+              font-black
+              text-yellow-400
+            "
+          >
+            +{achievement.xpReward} XP
           </p>
         </div>
       </div>
